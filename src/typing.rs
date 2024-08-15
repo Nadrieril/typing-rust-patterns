@@ -30,13 +30,58 @@ pub enum MutOnRefBehavior {
 }
 
 /// Choice of typing rules.
-// TODO: eat_two_layers
 #[derive(Debug, Clone, Copy, Hash)]
 pub struct RuleOptions {
     pub ref_on_ref: RefOnRefBehavior,
     pub mut_on_ref: MutOnRefBehavior,
+    /// Whether a `&p` pattern is allowed on `&mut T`.
     pub allow_ref_pat_on_ref_mut: bool,
+    /// Whether to simplify some expressions, which removes some borrow errors involving mixes of
+    /// `&mut` and `&`.
     pub simplify_expressions: bool,
+    /// Stable rust behavior: when a `&p` pattern applies to `&&T` where the outer `&` is an
+    /// inherited reference, the `&` pattern consumes both layers of reference type.
+    // TODO: implement
+    pub eat_two_layers: bool,
+    /// If false, a `&p` pattern is not allowed on a `&T` if the reference is inherited (except in
+    /// the case above).
+    // TODO: implement
+    pub eat_inherited_ref: bool,
+}
+
+impl RuleOptions {
+    /// Reproduces stable rust behavior.
+    pub const STABLE_RUST: Self = RuleOptions {
+        ref_on_ref: RefOnRefBehavior::Skip,
+        mut_on_ref: MutOnRefBehavior::ResetBindingMode,
+        allow_ref_pat_on_ref_mut: false,
+        simplify_expressions: false,
+        eat_two_layers: true,
+        eat_inherited_ref: false,
+    };
+
+    /// A fairly permissive proposal.
+    pub const PERMISSIVE: Self = RuleOptions {
+        ref_on_ref: RefOnRefBehavior::AllocTemporary,
+        mut_on_ref: MutOnRefBehavior::Keep,
+        allow_ref_pat_on_ref_mut: true,
+        simplify_expressions: true,
+        eat_two_layers: false,
+        eat_inherited_ref: true,
+    };
+
+    /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
+    /// inspect the DBM, we only follow the types.
+    pub const STATELESS: Self = RuleOptions {
+        simplify_expressions: false,
+        ..Self::PERMISSIVE
+    };
+
+    /// My favored proposal.
+    pub const NADRIS_PROPOSAL: Self = RuleOptions {
+        ref_on_ref: RefOnRefBehavior::Error,
+        ..Self::PERMISSIVE
+    };
 }
 
 #[derive(Clone, Copy)]

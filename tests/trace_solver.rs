@@ -26,16 +26,11 @@ fn spanshot_request(request: &str, options: RuleOptions) -> anyhow::Result<()> {
 
 #[test]
 fn test_solver_traces() -> anyhow::Result<()> {
-    let options = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::AllocTemporary,
-        mut_on_ref: MutOnRefBehavior::Keep,
-        allow_ref_pat_on_ref_mut: true,
-        simplify_expressions: true,
-    };
+    // The most permissive options.
+    let options = RuleOptions::PERMISSIVE;
     let requests: &[&str] = &[
         "&x: &T",
         "&x: T",
-        "ref x: T",
         "[x]: &&&[T]",
         "[x]: &&mut [T]",
         "[x]: &mut &[T]",
@@ -65,10 +60,8 @@ fn test_solver_traces() -> anyhow::Result<()> {
     }
 
     let options = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::AllocTemporary,
-        mut_on_ref: MutOnRefBehavior::Keep,
         allow_ref_pat_on_ref_mut: false,
-        simplify_expressions: true,
+        ..RuleOptions::PERMISSIVE
     };
     let requests: &[&str] = &["&x: &mut T", "&[[&x]]: &[&mut [T]]"];
     for request in requests {
@@ -76,10 +69,8 @@ fn test_solver_traces() -> anyhow::Result<()> {
     }
 
     let options = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::AllocTemporary,
-        mut_on_ref: MutOnRefBehavior::Keep,
-        allow_ref_pat_on_ref_mut: true,
         simplify_expressions: false,
+        ..RuleOptions::PERMISSIVE
     };
     let requests: &[&str] = &[
         "&[[&x]]: &[&mut [T]]",
@@ -92,9 +83,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
 
     let options = RuleOptions {
         ref_on_ref: RefOnRefBehavior::Skip,
-        mut_on_ref: MutOnRefBehavior::Keep,
-        allow_ref_pat_on_ref_mut: true,
-        simplify_expressions: true,
+        ..RuleOptions::PERMISSIVE
     };
     let requests: &[&str] = &[
         "[ref x]: &[T]",
@@ -107,10 +96,8 @@ fn test_solver_traces() -> anyhow::Result<()> {
     }
 
     let options = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::AllocTemporary,
         mut_on_ref: MutOnRefBehavior::ResetBindingMode,
-        allow_ref_pat_on_ref_mut: true,
-        simplify_expressions: true,
+        ..RuleOptions::PERMISSIVE
     };
     let requests: &[&str] = &["mut x: &T", "[mut x]: &[T]", "[mut ref x]: &[T]"];
     for request in requests {

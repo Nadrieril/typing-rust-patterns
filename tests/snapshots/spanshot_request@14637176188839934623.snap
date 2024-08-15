@@ -1,0 +1,14 @@
+---
+source: tests/trace_solver.rs
+description: "RuleOptions { ref_on_ref: AllocTemporary, mut_on_ref: Keep, allow_ref_pat_on_ref_mut: true, simplify_expressions: true, eat_two_layers: false, eat_inherited_ref: true }"
+---
+Query: `[&x]: &[&T]`
+
+[&x] @ p: &[&T]
+// Applying rule `ConstructorRef`
+&x @ &(*p).0: &&T
+// Applying rule `Deref`
+x @ *&(*p).0: &T
+
+// Final bindings:
+let x: &T = *&(*p).0
