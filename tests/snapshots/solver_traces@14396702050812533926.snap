@@ -1,0 +1,9 @@
+---
+source: tests/trace_solver.rs
+---
+Query: `[&mut x]: &[&mut T]`
+
+[&mut x] @ p: &[&mut T]
+// Applying rule `ConstructorRef`
+&mut x @ &(*p).0: &&mut T
+// ERROR: no rules applies to &mut x @ &(*p).0: &&mut T

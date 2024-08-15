@@ -7,5 +7,5 @@ Query: `[x]: &[T]`
 // Applying rule `ConstructorRef`
 x @ &(*p).0: &T
 
-// Successful:
+// Final bindings:
 let x: &T = &(*p).0

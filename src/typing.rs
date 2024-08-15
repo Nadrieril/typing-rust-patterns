@@ -21,6 +21,8 @@ pub enum RefOnExprBehavior {
 #[derive(Clone, Copy)]
 pub struct RuleOptions {
     pub ref_on_expr: RefOnExprBehavior,
+    pub allow_ref_pat_on_ref_mut: bool,
+    pub simplify_expressions: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -44,6 +46,7 @@ pub enum Rule {
     ConstructorRef,
     Deref,
     Binding,
+    ExprSimplification,
 }
 
 pub enum CantStep<'a> {
@@ -64,8 +67,50 @@ impl<'a> TypingPredicate<'a> {
 
     /// Apply one step of rule to this predicate.
     pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), CantStep<'a>> {
+        if ctx.options.simplify_expressions {
+            // Expression simplification rules.
+            match self.expr.kind {
+                ExprKind::CastAsImmRef(Expression {
+                    kind: ExprKind::Ref(Mutable::Yes, e),
+                    ..
+                }) => {
+                    return Ok((
+                        Rule::ExprSimplification,
+                        vec![TypingPredicate {
+                            pat: self.pat,
+                            expr: e.borrow(ctx.arenas, Mutable::No),
+                        }],
+                    ))
+                }
+                ExprKind::Deref(Expression {
+                    kind: ExprKind::Ref(Mutable::Yes, e),
+                    ..
+                }) => {
+                    return Ok((
+                        Rule::ExprSimplification,
+                        vec![TypingPredicate {
+                            pat: self.pat,
+                            expr: **e,
+                        }],
+                    ))
+                }
+                _ => {}
+            }
+        }
+
         match (*self.pat, *self.expr.ty) {
             // Constructor rules
+            (Pattern::Tuple(pats), Type::Tuple(tys)) if pats.len() == tys.len() => {
+                let preds = pats
+                    .iter()
+                    .enumerate()
+                    .map(|(i, pat)| {
+                        let expr = self.expr.field(ctx.arenas, i);
+                        TypingPredicate { pat, expr }
+                    })
+                    .collect();
+                Ok((Rule::Constructor, preds))
+            }
             (Pattern::Tuple(pats), Type::Ref(t_mtbl, Type::Tuple(tys)))
                 if pats.len() == tys.len() =>
             {
@@ -83,21 +128,27 @@ impl<'a> TypingPredicate<'a> {
                     .collect();
                 Ok((Rule::ConstructorRef, preds))
             }
-            (Pattern::Tuple(_), Type::Ref(_, Type::Tuple(_))) => {
-                Err(CantStep::NoApplicableRule(self.clone()))
-            }
+            (Pattern::Tuple(_), _) => Err(CantStep::NoApplicableRule(self.clone())),
 
             // Dereference rules
             (Pattern::Ref(p_mtbl, p_inner), Type::Ref(t_mtbl, _)) => match (p_mtbl, t_mtbl) {
-                (Mutable::No, Mutable::No) => Ok((
+                (Mutable::No, Mutable::No) | (Mutable::Yes, Mutable::Yes) => Ok((
                     Rule::Deref,
                     vec![TypingPredicate {
                         pat: p_inner,
                         expr: self.expr.deref(ctx.arenas),
                     }],
                 )),
-
-                _ => todo!("{self}"),
+                (Mutable::No, Mutable::Yes) if ctx.options.allow_ref_pat_on_ref_mut => Ok((
+                    Rule::Deref,
+                    vec![TypingPredicate {
+                        pat: self.pat,
+                        expr: self.expr.cast_as_imm_ref(ctx.arenas),
+                    }],
+                )),
+                (Mutable::No, Mutable::Yes) | (Mutable::Yes, Mutable::No) => {
+                    Err(CantStep::NoApplicableRule(self.clone()))
+                }
             },
             (Pattern::Ref(..), _) => Err(CantStep::NoApplicableRule(self.clone())),
 
@@ -123,8 +174,6 @@ impl<'a> TypingPredicate<'a> {
                 }
             }
             (Pattern::Binding(_, BindingMode::ByMove, _), _) => Err(CantStep::Done),
-
-            _ => todo!("{self}"),
         }
     }
 
@@ -201,7 +250,7 @@ pub fn trace_solver(request: &str, options: RuleOptions) -> String {
             Err(e) => {
                 match e {
                     CantStep::Done => {
-                        let _ = write!(&mut trace, "\n// Successful:\n");
+                        let _ = write!(&mut trace, "\n// Final bindings:\n");
                         let _ = write!(&mut trace, "{}\n", solver.display_state());
                     }
                     CantStep::NoApplicableRule(pred) => {

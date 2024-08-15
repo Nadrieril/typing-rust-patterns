@@ -8,6 +8,6 @@ Query: `[x, y]: &[T, U]`
 x @ &(*p).0: &T
 y @ &(*p).1: &U
 
-// Successful:
+// Final bindings:
 let x: &T = &(*p).0
 let y: &U = &(*p).1

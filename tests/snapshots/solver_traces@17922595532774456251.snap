@@ -7,5 +7,5 @@ Query: `&x: &T`
 // Applying rule `Deref`
 x @ *p: T
 
-// Successful:
+// Final bindings:
 let x: T = *p

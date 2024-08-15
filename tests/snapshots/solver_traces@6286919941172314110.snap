@@ -1,0 +1,15 @@
+---
+source: tests/trace_solver.rs
+---
+Query: `[&mut x]: &mut [&T]`
+
+[&mut x] @ p: &mut [&T]
+// Applying rule `ConstructorRef`
+&mut x @ &mut (*p).0: &mut &T
+// Applying rule `Deref`
+x @ *&mut (*p).0: &T
+// Applying rule `ExprSimplification`
+x @ (*p).0: &T
+
+// Final bindings:
+let x: &T = (*p).0

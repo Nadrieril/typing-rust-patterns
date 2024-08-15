@@ -7,5 +7,5 @@ mut ref mut x @ p: T
 // Applying rule `Binding`
 mut x @ &mut p: &mut T
 
-// Successful:
+// Final bindings:
 let mut x: &mut T = &mut p

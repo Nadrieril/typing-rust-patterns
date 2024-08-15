@@ -17,10 +17,21 @@ fn test_solver_traces() {
         "[x, y]: &[T, U]",
         "[x, &y]: &[T, U]",
         "[ref x]: &[T]",
+        "[&x]: &[&T]",
+        "[&x]: &[&mut T]",
+        "[&&mut x]: &[&mut T]",
+        "[&mut x]: &mut [&T]",
+        "[&mut x]: &[&mut T]",
+        "&[[x]]: &[&mut [T]]",
+        "&[[&x]]: &[&mut [T]]",
+        "&[[&mut x]]: &[&mut [T]]",
+        "[&ref mut x]: &mut [T]",
     ];
     for request in requests {
         let options = RuleOptions {
             ref_on_expr: RefOnExprBehavior::AllocTemporary,
+            allow_ref_pat_on_ref_mut: true,
+            simplify_expressions: true,
         };
         let trace = trace_solver(request, options);
         let req_hash = {

@@ -90,6 +90,16 @@ impl<'a> Expression<'a> {
         }
     }
 
+    pub fn cast_as_imm_ref(&self, arenas: &'a Arenas<'a>) -> Self {
+        let Type::Ref(_, ty) = self.ty else {
+            panic!("type error")
+        };
+        Expression {
+            ty: Type::Ref(Mutable::No, ty).alloc(arenas),
+            kind: ExprKind::CastAsImmRef(self.alloc(arenas)),
+        }
+    }
+
     /// An expression is either a place or a reference to a place. This corresponds to the "default
     /// binding mode" of RFC??? match ergonomics.
     pub fn binding_mode(&self) -> BindingMode {
