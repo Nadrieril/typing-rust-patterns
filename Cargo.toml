@@ -15,7 +15,7 @@ serde_yaml = "0.9.34"
 typed-arena = "2.0.2"
 
 [dev-dependencies]
-insta = "1.39.0"
+insta = { version = "1.39.0", features = ["serde"] }
 
 [profile.dev.package]
 insta.opt-level = 3

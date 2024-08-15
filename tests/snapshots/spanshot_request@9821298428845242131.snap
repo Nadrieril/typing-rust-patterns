@@ -1,0 +1,18 @@
+---
+source: tests/trace_solver.rs
+info:
+  options:
+    ref_on_ref: AllocTemporary
+    mut_on_ref: Keep
+    allow_ref_pat_on_ref_mut: true
+    simplify_expressions: true
+    eat_two_layers: false
+    eat_inherited_ref_alone: true
+  request: "&x: &T"
+---
+&x @ p: &T
+// Applying rule `Deref`
+x @ *p: T
+
+// Final bindings:
+let x: T = *p

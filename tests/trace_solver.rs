@@ -1,21 +1,28 @@
+use serde::Serialize;
+
 use typing_rust_patterns::*;
 
-fn spanshot_request(request: &str, options: RuleOptions) -> anyhow::Result<()> {
+#[derive(Hash, Serialize)]
+struct TestCase<'a> {
+    options: RuleOptions,
+    request: &'a str,
+}
+
+fn spanshot_request(test_case: TestCase<'_>) -> anyhow::Result<()> {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
     // Identify each snapshot file by the hash of the request and options.
     let req_hash = {
         let mut hasher = DefaultHasher::new();
-        request.hash(&mut hasher);
-        options.hash(&mut hasher);
+        test_case.hash(&mut hasher);
         hasher.finish().to_string()
     };
-    let trace = trace_solver(request, options)?;
-    let trace = format!("Query: `{request}`\n\n{trace}");
+    let trace = trace_solver(test_case.request, test_case.options)?;
+    // let trace = format!("Query: `{request}`\n\n{trace}");
     insta::with_settings!({
         snapshot_suffix => req_hash,
-        description => format!("{options:?}"),
+        info => &test_case,
         omit_expression => true,
         prepend_module_to_snapshot => false,
     }, {
@@ -108,7 +115,8 @@ fn test_solver_traces() -> anyhow::Result<()> {
 
     for &(options, requests) in test_cases {
         for request in requests {
-            spanshot_request(request, options)?;
+            let test_case = TestCase { request, options };
+            spanshot_request(test_case)?;
         }
     }
 
