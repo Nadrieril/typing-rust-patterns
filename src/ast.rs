@@ -2,13 +2,13 @@
 //!
 //! Note: we arena-allocate everything to make pattern-matching easy.
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Mutable {
-    Yes,
     No,
+    Yes,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BindingMode {
     ByMove,
     ByRef(Mutable),

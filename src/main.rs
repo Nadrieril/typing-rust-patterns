@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
                         whether to simplify some expressions, which removes some borrow errors\n\
                     - eat_two_layers: bool\n    \
                         whether `&p: &&T` eats both references when the outer one is inherited\n\
-                    - eat_inherited_ref: bool\n    \
+                    - eat_inherited_ref_alone: bool\n    \
                         whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`"
                 )
             }
@@ -96,7 +96,7 @@ fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> Option<()> {
         "allow_ref_pat_on_ref_mut" => options.allow_ref_pat_on_ref_mut = from_str(val)?,
         "simplify_expressions" => options.simplify_expressions = from_str(val)?,
         "eat_two_layers" => options.eat_two_layers = from_str(val)?,
-        "eat_inherited_ref" => options.eat_inherited_ref = from_str(val)?,
+        "eat_inherited_ref_alone" => options.eat_inherited_ref_alone = from_str(val)?,
         _ => return None,
     }
     Some(())

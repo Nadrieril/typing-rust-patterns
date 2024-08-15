@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::cmp::min;
 use std::collections::VecDeque;
 use std::fmt;
 
@@ -42,12 +43,10 @@ pub struct RuleOptions {
     pub simplify_expressions: bool,
     /// Stable rust behavior: when a `&p` pattern applies to `&&T` where the outer `&` is an
     /// inherited reference, the `&` pattern consumes both layers of reference type.
-    // TODO: implement
     pub eat_two_layers: bool,
     /// If false, a `&p` pattern is not allowed on a `&T` if the reference is inherited (except in
-    /// the case above).
-    // TODO: implement
-    pub eat_inherited_ref: bool,
+    /// the case above i.e. if `T` itself it some `&U`).
+    pub eat_inherited_ref_alone: bool,
 }
 
 impl RuleOptions {
@@ -58,7 +57,7 @@ impl RuleOptions {
         allow_ref_pat_on_ref_mut: false,
         simplify_expressions: false,
         eat_two_layers: true,
-        eat_inherited_ref: false,
+        eat_inherited_ref_alone: false,
     };
 
     /// A fairly permissive proposal.
@@ -68,7 +67,7 @@ impl RuleOptions {
         allow_ref_pat_on_ref_mut: true,
         simplify_expressions: true,
         eat_two_layers: false,
-        eat_inherited_ref: true,
+        eat_inherited_ref_alone: true,
     };
 
     /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
@@ -189,11 +188,8 @@ impl<'a> TypingPredicate<'a> {
                     .collect();
                 Ok((Rule::ConstructorRef, preds))
             }
-            (Pattern::Tuple(_), Type::Ref(outer_mtbl, Type::Ref(inner_mtbl, _))) => {
-                let mtbl = match (outer_mtbl, inner_mtbl) {
-                    (Mutable::Yes, Mutable::Yes) => Mutable::Yes,
-                    _ => Mutable::No,
-                };
+            (Pattern::Tuple(_), Type::Ref(outer_mtbl, &Type::Ref(inner_mtbl, _))) => {
+                let mtbl = min(outer_mtbl, inner_mtbl);
                 let mut expr = self.expr.deref(ctx.arenas);
                 if let Mutable::Yes = inner_mtbl {
                     // Reborrow
@@ -210,25 +206,45 @@ impl<'a> TypingPredicate<'a> {
             (Pattern::Tuple(_), _) => Err(CantStep::NoApplicableRule(self.clone())),
 
             // Dereference rules
-            (Pattern::Ref(p_mtbl, p_inner), Type::Ref(t_mtbl, _)) => match (p_mtbl, t_mtbl) {
-                (Mutable::No, Mutable::No) | (Mutable::Yes, Mutable::Yes) => Ok((
-                    Rule::Deref,
-                    vec![TypingPredicate {
-                        pat: p_inner,
-                        expr: self.expr.deref(ctx.arenas),
-                    }],
-                )),
-                (Mutable::No, Mutable::Yes) if ctx.options.allow_ref_pat_on_ref_mut => Ok((
-                    Rule::Deref,
-                    vec![TypingPredicate {
-                        pat: self.pat,
-                        expr: self.expr.cast_as_imm_ref(ctx.arenas),
-                    }],
-                )),
-                (Mutable::No, Mutable::Yes) | (Mutable::Yes, Mutable::No) => {
-                    Err(CantStep::NoApplicableRule(self.clone()))
+            (Pattern::Ref(p_mtbl, p_inner), Type::Ref(mut t_mtbl, _)) => {
+                let mut expr = self.expr;
+                // To reproduce stable rust behavior, we need to inspect the type of the place
+                // currently being matched on..
+                let type_of_underlying_place = expr.reset_binding_mode().ty;
+                if !ctx.options.eat_inherited_ref_alone
+                    && !matches!(type_of_underlying_place, Type::Ref(..))
+                {
+                    // The underlying place is not a reference, so we can't eat the inherited
+                    // reference.
+                    return Err(CantStep::NoApplicableRule(self.clone()));
                 }
-            },
+                if ctx.options.eat_two_layers
+                    && let Type::Ref(inner_mtbl, _) = type_of_underlying_place
+                    && matches!(expr.binding_mode(), BindingMode::ByRef(..))
+                {
+                    expr = expr.reset_binding_mode();
+                    t_mtbl = *inner_mtbl;
+                }
+                match (p_mtbl, t_mtbl) {
+                    (Mutable::No, Mutable::No) | (Mutable::Yes, Mutable::Yes) => Ok((
+                        Rule::Deref,
+                        vec![TypingPredicate {
+                            pat: p_inner,
+                            expr: expr.deref(ctx.arenas),
+                        }],
+                    )),
+                    (Mutable::No, Mutable::Yes) if ctx.options.allow_ref_pat_on_ref_mut => Ok((
+                        Rule::Deref,
+                        vec![TypingPredicate {
+                            pat: self.pat,
+                            expr: expr.cast_as_imm_ref(ctx.arenas),
+                        }],
+                    )),
+                    (Mutable::No, Mutable::Yes) | (Mutable::Yes, Mutable::No) => {
+                        Err(CantStep::NoApplicableRule(self.clone()))
+                    }
+                }
+            }
             (Pattern::Ref(..), _) => Err(CantStep::NoApplicableRule(self.clone())),
 
             // Binding rules

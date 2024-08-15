@@ -1,6 +1,6 @@
 ---
 source: tests/trace_solver.rs
-description: "RuleOptions { ref_on_ref: AllocTemporary, mut_on_ref: Keep, allow_ref_pat_on_ref_mut: true, simplify_expressions: true, eat_two_layers: false, eat_inherited_ref: true }"
+description: "RuleOptions { ref_on_ref: AllocTemporary, mut_on_ref: Keep, allow_ref_pat_on_ref_mut: true, simplify_expressions: true, eat_two_layers: false, eat_inherited_ref_alone: true }"
 ---
 Query: `[x]: &&mut [T]`
 

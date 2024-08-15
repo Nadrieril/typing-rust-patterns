@@ -94,6 +94,16 @@ fn test_solver_traces() -> anyhow::Result<()> {
             },
             &["mut x: &T", "[mut x]: &[T]", "[mut ref x]: &[T]"],
         ),
+        (
+            RuleOptions::STABLE_RUST,
+            &[
+                "[&x]: &[T]",
+                "[&x]: &[&T]",
+                "[&x]: &[&&T]",
+                "[&x]: &&[&&T]",
+                "&[&x]: &&[&&T]",
+            ],
+        ),
     ];
 
     for &(options, requests) in test_cases {
