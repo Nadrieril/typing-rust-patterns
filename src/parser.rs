@@ -46,22 +46,14 @@ fn parse_typing_request<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Ty
 where
     E: ParseError<&'i str>,
 {
-    parse_pattern_alloc(ctx)
+    parse_pattern(ctx)
         .followed_by(tag(":"))
         .followed_by(multispace0)
-        .and(parse_type_alloc(ctx))
-        .map(|(pat, ty)| TypingRequest { pat, ty })
-}
-
-fn parse_pattern_alloc<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, &'a Pattern<'a>, E>
-where
-    E: ParseError<&'i str>,
-{
-    move |i| {
-        parse_pattern(ctx)
-            .map(|pat| ctx.pat_arena.alloc(pat) as &_)
-            .parse(i)
-    }
+        .and(parse_type(ctx))
+        .map(|(pat, ty)| TypingRequest {
+            pat: pat.alloc(ctx),
+            ty: ty.alloc(ctx),
+        })
 }
 
 fn parse_pattern<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Pattern<'a>, E>
@@ -101,8 +93,8 @@ where
     tag("&")
         .followed_by(multispace0)
         .precedes(parse_mutability())
-        .and(parse_pattern_alloc(ctx))
-        .map(|(mutable, pat)| Pattern::Ref(mutable, pat))
+        .and(parse_pattern(ctx))
+        .map(|(mtbl, pat)| Pattern::Ref(mtbl, pat.alloc(ctx)))
 }
 
 fn parse_binding<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Pattern<'a>, E>
@@ -135,17 +127,6 @@ where
                 BindingMode::ByMove
             }
         })
-}
-
-fn parse_type_alloc<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, &'a Type<'a>, E>
-where
-    E: ParseError<&'i str>,
-{
-    move |i| {
-        parse_type(ctx)
-            .map(|pat| ctx.type_arena.alloc(pat) as &_)
-            .parse(i)
-    }
 }
 
 fn parse_type<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Type<'a>, E>
@@ -185,8 +166,8 @@ where
     tag("&")
         .followed_by(multispace0)
         .precedes(parse_mutability())
-        .and(parse_type_alloc(ctx))
-        .map(|(mutable, pat)| Type::Ref(mutable, pat))
+        .and(parse_type(ctx))
+        .map(|(mtbl, pat)| Type::Ref(mtbl, pat.alloc(ctx)))
 }
 
 fn parse_type_var<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Type<'a>, E>

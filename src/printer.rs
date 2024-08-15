@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use std::fmt::Display;
 
-use crate::ast::*;
+use crate::*;
 
 impl Display for Mutable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -69,5 +69,12 @@ impl Display for ExprKind<'_> {
 impl Display for TypingRequest<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}: {}", self.pat, self.ty)
+    }
+}
+
+impl Display for TypingPredicate<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // write!(f, "let {}: {} = {}", self.pat, self.expr.ty, self.expr)
+        write!(f, "{} @ {}: {}", self.pat, self.expr, self.expr.ty)
     }
 }
