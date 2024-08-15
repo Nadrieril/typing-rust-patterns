@@ -26,82 +26,80 @@ fn spanshot_request(request: &str, options: RuleOptions) -> anyhow::Result<()> {
 
 #[test]
 fn test_solver_traces() -> anyhow::Result<()> {
-    // The most permissive options.
-    let options = RuleOptions::PERMISSIVE;
-    let requests: &[&str] = &[
-        "&x: &T",
-        "&x: T",
-        "[x]: &&&[T]",
-        "[x]: &&mut [T]",
-        "[x]: &mut &[T]",
-        "[x]: &mut &mut [T]",
-        "ref x: T",
-        "ref mut x: T",
-        "mut ref mut x: T",
-        "[x]: &[T]",
-        "[x, y]: &[T, U]",
-        "[x, &y]: &[T, U]",
-        "[ref x]: &[T]",
-        "[ref mut x]: &[T]",
-        "[ref x]: &mut [T]",
-        "[ref mut x]: &mut [T]",
-        "[&x]: &[&T]",
-        "[&x]: &[&mut T]",
-        "[&&mut x]: &[&mut T]",
-        "[&mut x]: &mut [&T]",
-        "[&mut x]: &[&mut T]",
-        "&[[x]]: &[&mut [T]]",
-        "&[[&x]]: &[&mut [T]]",
-        "&[[&mut x]]: &[&mut [T]]",
-        "[&ref mut x]: &mut [T]",
+    let test_cases: &[(RuleOptions, &[_])] = &[
+        (
+            RuleOptions::PERMISSIVE,
+            &[
+                "&x: &T",
+                "&x: T",
+                "[x]: &&&[T]",
+                "[x]: &&mut [T]",
+                "[x]: &mut &[T]",
+                "[x]: &mut &mut [T]",
+                "ref x: T",
+                "ref mut x: T",
+                "mut ref mut x: T",
+                "[x]: &[T]",
+                "[x, y]: &[T, U]",
+                "[x, &y]: &[T, U]",
+                "[ref x]: &[T]",
+                "[ref mut x]: &[T]",
+                "[ref x]: &mut [T]",
+                "[ref mut x]: &mut [T]",
+                "[&x]: &[&T]",
+                "[&x]: &[&mut T]",
+                "[&&mut x]: &[&mut T]",
+                "[&mut x]: &mut [&T]",
+                "[&mut x]: &[&mut T]",
+                "&[[x]]: &[&mut [T]]",
+                "&[[&x]]: &[&mut [T]]",
+                "&[[&mut x]]: &[&mut [T]]",
+                "[&ref mut x]: &mut [T]",
+            ],
+        ),
+        (
+            RuleOptions {
+                allow_ref_pat_on_ref_mut: false,
+                ..RuleOptions::PERMISSIVE
+            },
+            &["&x: &mut T", "&[[&x]]: &[&mut [T]]"],
+        ),
+        (
+            RuleOptions {
+                simplify_expressions: false,
+                ..RuleOptions::PERMISSIVE
+            },
+            &[
+                "&[[&x]]: &[&mut [T]]",
+                "&[[&mut x]]: &[&mut [T]]",
+                "[&ref mut x]: &mut [T]",
+            ],
+        ),
+        (
+            RuleOptions {
+                ref_on_ref: RefOnRefBehavior::Skip,
+                ..RuleOptions::PERMISSIVE
+            },
+            &[
+                "[ref x]: &[T]",
+                "[ref mut x]: &[T]",
+                "[ref x]: &mut [T]",
+                "[ref mut x]: &mut [T]",
+            ],
+        ),
+        (
+            RuleOptions {
+                mut_on_ref: MutOnRefBehavior::ResetBindingMode,
+                ..RuleOptions::PERMISSIVE
+            },
+            &["mut x: &T", "[mut x]: &[T]", "[mut ref x]: &[T]"],
+        ),
     ];
-    for request in requests {
-        spanshot_request(request, options)?;
-    }
 
-    let options = RuleOptions {
-        allow_ref_pat_on_ref_mut: false,
-        ..RuleOptions::PERMISSIVE
-    };
-    let requests: &[&str] = &["&x: &mut T", "&[[&x]]: &[&mut [T]]"];
-    for request in requests {
-        spanshot_request(request, options)?;
-    }
-
-    let options = RuleOptions {
-        simplify_expressions: false,
-        ..RuleOptions::PERMISSIVE
-    };
-    let requests: &[&str] = &[
-        "&[[&x]]: &[&mut [T]]",
-        "&[[&mut x]]: &[&mut [T]]",
-        "[&ref mut x]: &mut [T]",
-    ];
-    for request in requests {
-        spanshot_request(request, options)?;
-    }
-
-    let options = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::Skip,
-        ..RuleOptions::PERMISSIVE
-    };
-    let requests: &[&str] = &[
-        "[ref x]: &[T]",
-        "[ref mut x]: &[T]",
-        "[ref x]: &mut [T]",
-        "[ref mut x]: &mut [T]",
-    ];
-    for request in requests {
-        spanshot_request(request, options)?;
-    }
-
-    let options = RuleOptions {
-        mut_on_ref: MutOnRefBehavior::ResetBindingMode,
-        ..RuleOptions::PERMISSIVE
-    };
-    let requests: &[&str] = &["mut x: &T", "[mut x]: &[T]", "[mut ref x]: &[T]"];
-    for request in requests {
-        spanshot_request(request, options)?;
+    for &(options, requests) in test_cases {
+        for request in requests {
+            spanshot_request(request, options)?;
+        }
     }
 
     Ok(())
