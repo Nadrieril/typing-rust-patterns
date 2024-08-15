@@ -41,6 +41,9 @@ fn test_solver_traces() {
         "[x, y]: &[T, U]",
         "[x, &y]: &[T, U]",
         "[ref x]: &[T]",
+        "[ref mut x]: &[T]",
+        "[ref x]: &mut [T]",
+        "[ref mut x]: &mut [T]",
         "[&x]: &[&T]",
         "[&x]: &[&mut T]",
         "[&&mut x]: &[&mut T]",
@@ -74,6 +77,21 @@ fn test_solver_traces() {
         "&[[&x]]: &[&mut [T]]",
         "&[[&mut x]]: &[&mut [T]]",
         "[&ref mut x]: &mut [T]",
+    ];
+    for request in requests {
+        spanshot_request(request, options);
+    }
+
+    let options = RuleOptions {
+        ref_on_expr: RefOnExprBehavior::ResetBindingMode,
+        allow_ref_pat_on_ref_mut: true,
+        simplify_expressions: true,
+    };
+    let requests: &[&str] = &[
+        "[ref x]: &[T]",
+        "[ref mut x]: &[T]",
+        "[ref x]: &mut [T]",
+        "[ref mut x]: &mut [T]",
     ];
     for request in requests {
         spanshot_request(request, options);

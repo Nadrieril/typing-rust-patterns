@@ -165,9 +165,14 @@ impl<'a> TypingPredicate<'a> {
                             expr: self.expr.borrow(ctx.arenas, by_ref_mtbl),
                         }],
                     )),
-                    (BindingMode::ByRef(_), RefOnExprBehavior::ResetBindingMode) => {
-                        todo!()
-                    }
+                    (BindingMode::ByRef(_), RefOnExprBehavior::ResetBindingMode) => Ok((
+                        Rule::Binding,
+                        vec![TypingPredicate {
+                            pat: Pattern::Binding(mtbl, BindingMode::ByMove, name)
+                                .alloc(ctx.arenas),
+                            expr: self.expr.remove_ref().borrow(ctx.arenas, by_ref_mtbl),
+                        }],
+                    )),
                     (BindingMode::ByRef(_), RefOnExprBehavior::Error) => {
                         Err(CantStep::NoApplicableRule(self.clone()))
                     }

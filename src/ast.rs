@@ -101,12 +101,21 @@ impl<'a> Expression<'a> {
     }
 
     /// An expression is either a place or a reference to a place. This corresponds to the "default
-    /// binding mode" of RFC??? match ergonomics.
+    /// binding mode" of RFC2005 aka "match ergonomics".
     pub fn binding_mode(&self) -> BindingMode {
         match self.kind {
             ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => BindingMode::ByMove,
             ExprKind::Ref(mtbl, _) => BindingMode::ByRef(mtbl),
             ExprKind::CastAsImmRef(_) => BindingMode::ByRef(Mutable::No),
+        }
+    }
+
+    /// Assuming that the expression is a reference, removes that reference.
+    pub fn remove_ref(&self) -> Self {
+        match self.kind {
+            ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => *self,
+            ExprKind::Ref(_, e) => *e,
+            ExprKind::CastAsImmRef(e) => e.remove_ref(),
         }
     }
 }
