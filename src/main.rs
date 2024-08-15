@@ -26,7 +26,9 @@ fn main() -> anyhow::Result<()> {
     };
     while let Some(request) = prompt(&history)? {
         if request == "?" || request == "help" {
-            println!("Commands: options, set");
+            println!("Commands: options, set, quit");
+        } else if request == "q" || request == "quit" {
+            break;
         } else if request == "options" || request == "option" {
             let options = serde_yaml::to_string(&options)?;
             print!("{options}");
