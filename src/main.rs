@@ -13,10 +13,7 @@ fn main() -> anyhow::Result<()> {
     );
     println!("");
 
-    let mut options = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::Skip,
-        ..RuleOptions::PERMISSIVE
-    };
+    let mut options = RuleOptions::NADRIS_PROPOSAL;
 
     let mut history = Vec::new();
     let prompt = |history: &[_]| {
