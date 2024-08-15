@@ -1,0 +1,11 @@
+---
+source: tests/trace_solver.rs
+---
+Query: `[x]: &[T]`
+
+[x] @ p: &[T]
+// Applying rule `ConstructorRef`
+x @ &(*p).0: &T
+
+// Successful:
+let x: &T = &(*p).0

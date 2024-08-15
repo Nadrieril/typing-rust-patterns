@@ -1,5 +1,5 @@
-use core::fmt;
 use std::collections::VecDeque;
+use std::fmt;
 
 use itertools::Itertools;
 
@@ -99,6 +99,7 @@ impl<'a> TypingPredicate<'a> {
 
                 _ => todo!("{self}"),
             },
+            (Pattern::Ref(..), _) => Err(CantStep::NoApplicableRule(self.clone())),
 
             // Binding rules
             (Pattern::Binding(mtbl, BindingMode::ByRef(by_ref_mtbl), name), _) => {
@@ -125,6 +126,11 @@ impl<'a> TypingPredicate<'a> {
 
             _ => todo!("{self}"),
         }
+    }
+
+    /// Whether this predicate is completed, i.e. is a simple binding pattern.
+    pub fn is_done(&self) -> bool {
+        matches!(self.pat, Pattern::Binding(_, BindingMode::ByMove, _))
     }
 }
 
@@ -168,57 +174,43 @@ impl<'a> TypingSolver<'a> {
     pub fn display_state(&self) -> impl fmt::Display + '_ {
         self.done_predicates
             .iter()
-            .chain(self.predicates.iter())
-            .format(", ")
+            .map(|p| p.display_done().to_string())
+            .chain(self.predicates.iter().map(|p| format!("{p}")))
+            .join("\n")
     }
 }
 
-#[test]
-fn test_step_solver() {
+/// Run the solver on this request and returns the trace as a string.
+pub fn trace_solver(request: &str, options: RuleOptions) -> String {
+    use std::fmt::Write;
     let arenas = &Arenas::default();
-    let test_steps: &[(&str, &[&str])] = &[
-        ("&x: &T", &["x @ *p: T"]),
-        ("ref x: T", &["x @ &p: &T"]),
-        ("ref mut x: T", &["x @ &mut p: &mut T"]),
-        ("mut ref mut x: T", &["mut x @ &mut p: &mut T"]),
-        ("[x]: &[T]", &["x @ &(*p).0: &T"]),
-        ("[x, y]: &[T, U]", &["x @ &(*p).0: &T, y @ &(*p).1: &U"]),
-        (
-            "[x, &y]: &[T, U]",
-            &[
-                "x @ &(*p).0: &T, &y @ &(*p).1: &U",
-                "x @ &(*p).0: &T, y @ *&(*p).1: U",
-            ],
-        ),
-        (
-            "[ref x]: &[T]",
-            &["ref x @ &(*p).0: &T", "x @ &&(*p).0: &&T"],
-        ),
-    ];
-    for (request, mut expected_steps) in test_steps {
-        let ctx = TypingCtx {
-            arenas,
-            options: RuleOptions {
-                ref_on_expr: RefOnExprBehavior::AllocTemporary,
-            },
-        };
-        let request = complete_parse_typing_request(&arenas, request)
-            .map_err(|e| e.to_string())
-            .unwrap();
-        let mut solver = TypingSolver::new(request);
-        loop {
-            match solver.step(ctx) {
-                Ok(_rule) => {
-                    let state_str = solver.display_state().to_string();
-                    let [this_step, rest @ ..] = expected_steps else {
-                        panic!("unexpected next step: {state_str}")
-                    };
-                    expected_steps = rest;
-                    assert_eq!(*this_step, state_str);
+    let ctx = TypingCtx { arenas, options };
+    let request = complete_parse_typing_request(&arenas, request)
+        .map_err(|e| e.to_string())
+        .unwrap();
+    let mut solver = TypingSolver::new(request);
+    let mut trace = String::new();
+    let _ = write!(&mut trace, "Query: `{request}`\n\n");
+    let _ = write!(&mut trace, "{}\n", solver.display_state());
+    loop {
+        match solver.step(ctx) {
+            Ok(rule) => {
+                let _ = write!(&mut trace, "// Applying rule `{rule:?}`\n");
+                let _ = write!(&mut trace, "{}\n", solver.display_state());
+            }
+            Err(e) => {
+                match e {
+                    CantStep::Done => {
+                        let _ = write!(&mut trace, "\n// Successful:\n");
+                        let _ = write!(&mut trace, "{}\n", solver.display_state());
+                    }
+                    CantStep::NoApplicableRule(pred) => {
+                        let _ = write!(&mut trace, "// ERROR: no rules applies to {pred}\n");
+                    }
                 }
-                Err(CantStep::Done) => break,
-                Err(CantStep::NoApplicableRule(pred)) => panic!("no rule applies to {pred}"),
+                break;
             }
         }
     }
+    trace
 }

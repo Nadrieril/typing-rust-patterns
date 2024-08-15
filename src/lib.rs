@@ -6,7 +6,3 @@ mod typing;
 pub use ast::*;
 pub use parser::*;
 pub use typing::*;
-
-fn main() {
-    println!("Hello, world!");
-}

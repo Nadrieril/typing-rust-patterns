@@ -1,0 +1,11 @@
+---
+source: tests/trace_solver.rs
+---
+Query: `&x: &T`
+
+&x @ p: &T
+// Applying rule `Deref`
+x @ *p: T
+
+// Successful:
+let x: T = *p

@@ -74,7 +74,17 @@ impl Display for TypingRequest<'_> {
 
 impl Display for TypingPredicate<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // write!(f, "let {}: {} = {}", self.pat, self.expr.ty, self.expr)
         write!(f, "{} @ {}: {}", self.pat, self.expr, self.expr.ty)
+    }
+}
+
+impl TypingPredicate<'_> {
+    /// Display as `let ...` if the predicate is done.
+    pub fn display_done(&self) -> impl Display + '_ {
+        if self.is_done() {
+            format!("let {}: {} = {}", self.pat, self.expr.ty, self.expr)
+        } else {
+            format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty)
+        }
     }
 }

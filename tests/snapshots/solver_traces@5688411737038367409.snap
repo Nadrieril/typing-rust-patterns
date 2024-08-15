@@ -1,0 +1,16 @@
+---
+source: tests/trace_solver.rs
+---
+Query: `[x, &y]: &[T, U]`
+
+[x, &y] @ p: &[T, U]
+// Applying rule `ConstructorRef`
+x @ &(*p).0: &T
+&y @ &(*p).1: &U
+// Applying rule `Deref`
+let x: &T = &(*p).0
+y @ *&(*p).1: U
+
+// Successful:
+let x: &T = &(*p).0
+let y: U = *&(*p).1

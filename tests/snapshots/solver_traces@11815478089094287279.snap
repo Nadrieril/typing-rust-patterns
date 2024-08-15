@@ -1,0 +1,11 @@
+---
+source: tests/trace_solver.rs
+---
+Query: `ref mut x: T`
+
+ref mut x @ p: T
+// Applying rule `Binding`
+x @ &mut p: &mut T
+
+// Successful:
+let x: &mut T = &mut p

@@ -1,0 +1,11 @@
+---
+source: tests/trace_solver.rs
+---
+Query: `ref x: T`
+
+ref x @ p: T
+// Applying rule `Binding`
+x @ &p: &T
+
+// Successful:
+let x: &T = &p
