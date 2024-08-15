@@ -38,6 +38,18 @@ pub enum Type<'a> {
     Var(&'a str),
 }
 
+impl<'a> Type<'a> {
+    /// Whether the type implements `Copy` (we assume type variables are `Copy`).
+    pub fn is_copy(&self) -> bool {
+        match self {
+            Type::Tuple(tys) => tys.iter().all(|ty| ty.is_copy()),
+            Type::Ref(Mutable::No, _) => true,
+            Type::Ref(Mutable::Yes, _) => false,
+            Type::Var(_) => true,
+        }
+    }
+}
+
 /// A scrutinee expression. As we type-check a pattern, we also construct a scrutinee expression
 /// that points to the place currently being matched on. At the end, each binding is given assigned
 /// to such an expression.
@@ -134,14 +146,13 @@ impl<'a> Expression<'a> {
                     e.borrow_check_inner(false)
                 }
             }
-            ExprKind::Deref(e) => {
-                if top_level && matches!(self.ty, Type::Ref(Mutable::Yes, _)) {
+            ExprKind::Deref(e) | ExprKind::Field(e, _) => {
+                if top_level && !self.ty.is_copy() {
                     Err(BorrowCheckError::CantCopyRefMut)
                 } else {
                     e.borrow_check_inner(false)
                 }
             }
-            ExprKind::Field(e, _) => e.borrow_check_inner(false),
             ExprKind::CastAsImmRef(e) => e.borrow_check_inner(false),
         }
     }
@@ -162,6 +173,49 @@ impl<'a> Expression<'a> {
             }
             ExprKind::Field(e, _) => e.scrutinee_access_level(),
             ExprKind::CastAsImmRef(_) => Mutable::No,
+        }
+    }
+
+    /// Simplify this expression without changing its semantics. In particular, this should not
+    /// change borrow-checking behavior.
+    pub fn simplify(&self, a: &'a Arenas<'a>) -> Self {
+        match self.kind {
+            ExprKind::Scrutinee => *self,
+            ExprKind::Ref(mtbl, e) => match e.kind {
+                // `&*p` with `p: &T` can be simplified, but `&mut *p` with `p: &mut T` is a
+                // re-borrow so it must stay.
+                ExprKind::Deref(inner)
+                    if mtbl == Mutable::No && matches!(inner.ty, Type::Ref(Mutable::No, _)) =>
+                {
+                    *inner
+                }
+                _ => Expression {
+                    ty: self.ty,
+                    kind: ExprKind::Ref(mtbl, e.simplify(a).alloc(a)),
+                },
+            },
+            ExprKind::Deref(e) => match e.kind {
+                ExprKind::Ref(mtbl, inner) if mtbl == inner.scrutinee_access_level() => *inner,
+                ExprKind::CastAsImmRef(inner) if inner.scrutinee_access_level() == Mutable::No => {
+                    Expression {
+                        ty: self.ty,
+                        kind: ExprKind::Deref(inner),
+                    }
+                    .simplify(a)
+                }
+                _ => Expression {
+                    ty: self.ty,
+                    kind: ExprKind::Deref(e.simplify(a).alloc(a)),
+                },
+            },
+            ExprKind::Field(e, n) => Expression {
+                ty: self.ty,
+                kind: ExprKind::Field(e.simplify(a).alloc(a), n),
+            },
+            ExprKind::CastAsImmRef(e) => Expression {
+                ty: self.ty,
+                kind: ExprKind::CastAsImmRef(e.simplify(a).alloc(a)),
+            },
         }
     }
 }

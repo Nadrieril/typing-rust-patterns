@@ -8,11 +8,13 @@ info:
     simplify_expressions: true
     eat_two_layers: false
     eat_inherited_ref_alone: true
-  request: "mut ref mut x: T"
+  request: "&mut ref mut x: &mut T"
 ---
-mut ref mut x @ p: T
+&mut ref mut x @ p: &mut T
+// Applying rule `Deref`
+ref mut x @ *p: T
 // Applying rule `Binding`
-mut x @ &mut p: &mut T
+x @ &mut *p: &mut T
 
 // Final bindings (simplified):
-let mut x: &mut T = &mut p
+let x: &mut T = &mut *p

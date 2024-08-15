@@ -16,5 +16,5 @@ info:
 // Applying rule `Deref`
 x @ *&(*p).0: &mut T
 
-// Final bindings:
-let x: &mut T = *&(*p).0 // Borrow-check error: CantCopyRefMut
+// Final bindings (simplified):
+let x: &mut T = (*p).0 // Borrow-check error: CantCopyRefMut

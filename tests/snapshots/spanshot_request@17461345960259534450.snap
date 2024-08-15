@@ -20,5 +20,5 @@ info:
 // Applying rule `Deref`
 x @ *&mut (*(*p).0).0: T
 
-// Final bindings:
+// Final bindings (simplified):
 let x: T = *&mut (*(*p).0).0 // Borrow-check error: MutBorrowBehindSharedBorrow

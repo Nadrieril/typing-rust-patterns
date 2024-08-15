@@ -205,6 +205,7 @@ fn test_roundtrip() {
         "mut x: T",
         "mut ref x: T",
         "mut ref mut x: T",
+        "&mut mut ref mut x: T",
         "&x: T",
         "&mut x: T",
         "&[x]: T",

@@ -16,5 +16,5 @@ info:
 // Applying rule `ConstructorRef`
 x @ &(**p).0: &T
 
-// Final bindings:
+// Final bindings (simplified):
 let x: &T = &(**p).0

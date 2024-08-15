@@ -14,5 +14,5 @@ info:
 // Applying rule `Deref`
 x @ *p: T
 
-// Final bindings:
+// Final bindings (simplified):
 let x: T = *p

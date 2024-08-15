@@ -304,6 +304,14 @@ impl<'a> TypingPredicate<'a> {
     pub fn is_done(&self) -> bool {
         matches!(self.pat, Pattern::Binding(_, BindingMode::ByMove, _))
     }
+
+    /// Simplify the expression in a semantics-preserving way.
+    pub fn simplify_expr(&self, a: &'a Arenas<'a>) -> Self {
+        Self {
+            pat: self.pat,
+            expr: self.expr.simplify(a),
+        }
+    }
 }
 
 /// The solver itself. It contains a set of predicates to satisfy
@@ -351,11 +359,12 @@ impl<'a> TypingSolver<'a> {
             .join("\n")
     }
 
-    pub fn display_final_state(&self) -> impl fmt::Display + '_ {
+    pub fn display_final_state(&self, ctx: TypingCtx<'a>) -> impl fmt::Display + '_ {
         assert!(self.predicates.is_empty());
         self.done_predicates
             .iter()
             .map(|p| {
+                let p = p.simplify_expr(ctx.arenas);
                 let bck = p.expr.borrow_check();
                 let bck = bck
                     .err()
@@ -386,8 +395,8 @@ pub fn trace_solver(request: &str, options: RuleOptions) -> anyhow::Result<Strin
             Err(e) => {
                 match e {
                     CantStep::Done => {
-                        let _ = write!(&mut trace, "\n// Final bindings:\n");
-                        let _ = write!(&mut trace, "{}\n", solver.display_final_state());
+                        let _ = write!(&mut trace, "\n// Final bindings (simplified):\n");
+                        let _ = write!(&mut trace, "{}\n", solver.display_final_state(ctx));
                     }
                     CantStep::NoApplicableRule(pred) => {
                         let _ = write!(&mut trace, "// ERROR: no rules applies to {pred}\n");

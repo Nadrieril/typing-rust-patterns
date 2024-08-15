@@ -12,5 +12,5 @@ info:
 ---
 mut x @ p: &T
 
-// Final bindings:
+// Final bindings (simplified):
 let mut x: &T = p
