@@ -1,7 +1,0 @@
----
-source: tests/trace_solver.rs
----
-Query: `&x: T`
-
-&x @ p: T
-// ERROR: no rules applies to &x @ p: T

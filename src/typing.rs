@@ -7,7 +7,7 @@ use crate::*;
 
 /// What to do to a `ref x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub enum RefOnExprBehavior {
     /// Borrow that expression, which requires allocating a temporary variable.
     AllocTemporary,
@@ -18,7 +18,7 @@ pub enum RefOnExprBehavior {
 }
 
 /// Choice of typing rules.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct RuleOptions {
     pub ref_on_expr: RefOnExprBehavior,
     pub allow_ref_pat_on_ref_mut: bool,
