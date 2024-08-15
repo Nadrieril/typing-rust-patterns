@@ -1,6 +1,6 @@
 use typing_rust_patterns::*;
 
-fn spanshot_request(request: &str, options: RuleOptions) {
+fn spanshot_request(request: &str, options: RuleOptions) -> anyhow::Result<()> {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
@@ -11,7 +11,8 @@ fn spanshot_request(request: &str, options: RuleOptions) {
         options.hash(&mut hasher);
         hasher.finish().to_string()
     };
-    let trace = trace_solver(request, options);
+    let trace = trace_solver(request, options)?;
+    let trace = format!("Query: `{request}`\n\n{trace}");
     insta::with_settings!({
         snapshot_suffix => req_hash,
         description => format!("{options:?}"),
@@ -20,10 +21,11 @@ fn spanshot_request(request: &str, options: RuleOptions) {
     }, {
         insta::assert_snapshot!(trace);
     });
+    Ok(())
 }
 
 #[test]
-fn test_solver_traces() {
+fn test_solver_traces() -> anyhow::Result<()> {
     let options = RuleOptions {
         ref_on_expr: RefOnExprBehavior::AllocTemporary,
         allow_ref_pat_on_ref_mut: true,
@@ -55,7 +57,7 @@ fn test_solver_traces() {
         "[&ref mut x]: &mut [T]",
     ];
     for request in requests {
-        spanshot_request(request, options);
+        spanshot_request(request, options)?;
     }
 
     let options = RuleOptions {
@@ -65,7 +67,7 @@ fn test_solver_traces() {
     };
     let requests: &[&str] = &["&x: &mut T", "&[[&x]]: &[&mut [T]]"];
     for request in requests {
-        spanshot_request(request, options);
+        spanshot_request(request, options)?;
     }
 
     let options = RuleOptions {
@@ -79,7 +81,7 @@ fn test_solver_traces() {
         "[&ref mut x]: &mut [T]",
     ];
     for request in requests {
-        spanshot_request(request, options);
+        spanshot_request(request, options)?;
     }
 
     let options = RuleOptions {
@@ -94,6 +96,8 @@ fn test_solver_traces() {
         "[ref mut x]: &mut [T]",
     ];
     for request in requests {
-        spanshot_request(request, options);
+        spanshot_request(request, options)?;
     }
+
+    Ok(())
 }

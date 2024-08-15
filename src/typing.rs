@@ -235,16 +235,13 @@ impl<'a> TypingSolver<'a> {
 }
 
 /// Run the solver on this request and returns the trace as a string.
-pub fn trace_solver(request: &str, options: RuleOptions) -> String {
+pub fn trace_solver(request: &str, options: RuleOptions) -> anyhow::Result<String> {
     use std::fmt::Write;
     let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
-    let request = complete_parse_typing_request(&arenas, request)
-        .map_err(|e| e.to_string())
-        .unwrap();
+    let request = complete_parse_typing_request(&arenas, request)?;
     let mut solver = TypingSolver::new(request);
     let mut trace = String::new();
-    let _ = write!(&mut trace, "Query: `{request}`\n\n");
     let _ = write!(&mut trace, "{}\n", solver.display_state());
     loop {
         match solver.step(ctx) {
@@ -266,5 +263,5 @@ pub fn trace_solver(request: &str, options: RuleOptions) -> String {
             }
         }
     }
-    trace
+    Ok(trace)
 }

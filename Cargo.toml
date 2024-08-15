@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.86"
+# Custom fork with https://github.com/mikaelmello/inquire/pull/229 rebased
+inquire = { git = "https://github.com/Nadrieril/inquire", branch = "history" }
 itertools = "0.13.0"
 nom = "7.1.3"
 nom-supreme = "0.8.0"
