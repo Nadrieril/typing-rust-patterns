@@ -110,12 +110,12 @@ impl<'a> Expression<'a> {
         }
     }
 
-    /// Assuming that the expression is a reference, removes that reference.
-    pub fn remove_ref(&self) -> Self {
+    /// Resets the binding mode to `move`.
+    pub fn reset_binding_mode(&self) -> Self {
         match self.kind {
             ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => *self,
             ExprKind::Ref(_, e) => *e,
-            ExprKind::CastAsImmRef(e) => e.remove_ref(),
+            ExprKind::CastAsImmRef(e) => e.reset_binding_mode(),
         }
     }
 }

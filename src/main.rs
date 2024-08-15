@@ -10,7 +10,8 @@ fn main() -> anyhow::Result<()> {
     println!("");
 
     let options = RuleOptions {
-        ref_on_expr: RefOnExprBehavior::ResetBindingMode,
+        ref_on_ref: RefOnRefBehavior::Skip,
+        mut_on_ref: MutOnRefBehavior::Keep,
         allow_ref_pat_on_ref_mut: true,
         simplify_expressions: true,
     };

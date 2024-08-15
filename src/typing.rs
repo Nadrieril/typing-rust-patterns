@@ -8,19 +8,33 @@ use crate::*;
 /// What to do to a `ref x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
 #[derive(Debug, Clone, Copy, Hash)]
-pub enum RefOnExprBehavior {
+pub enum RefOnRefBehavior {
     /// Borrow that expression, which requires allocating a temporary variable.
     AllocTemporary,
     /// Stable rust behavior: skip the borrow in the expression and re-borrow the inner.
+    Skip,
+    /// Treat this as an error.
+    Error,
+}
+
+/// What to do to a `mut x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
+/// of the scrutinee).
+#[derive(Debug, Clone, Copy, Hash)]
+pub enum MutOnRefBehavior {
+    /// Stable rust behavior: reset the binding mode.
     ResetBindingMode,
+    /// Declare the expected binding and make it mutable.
+    Keep,
     /// Treat this as an error.
     Error,
 }
 
 /// Choice of typing rules.
+// TODO: eat_two_layers
 #[derive(Debug, Clone, Copy, Hash)]
 pub struct RuleOptions {
-    pub ref_on_expr: RefOnExprBehavior,
+    pub ref_on_ref: RefOnRefBehavior,
+    pub mut_on_ref: MutOnRefBehavior,
     pub allow_ref_pat_on_ref_mut: bool,
     pub simplify_expressions: bool,
 }
@@ -44,6 +58,7 @@ pub struct TypingPredicate<'a> {
 pub enum Rule {
     Constructor,
     ConstructorRef,
+    ConstructorMultiRef,
     Deref,
     Binding,
     ExprSimplification,
@@ -128,6 +143,24 @@ impl<'a> TypingPredicate<'a> {
                     .collect();
                 Ok((Rule::ConstructorRef, preds))
             }
+            (Pattern::Tuple(_), Type::Ref(outer_mtbl, Type::Ref(inner_mtbl, _))) => {
+                let mtbl = match (outer_mtbl, inner_mtbl) {
+                    (Mutable::Yes, Mutable::Yes) => Mutable::Yes,
+                    _ => Mutable::No,
+                };
+                let mut expr = self.expr.deref(ctx.arenas);
+                if let Mutable::Yes = inner_mtbl {
+                    // Reborrow
+                    expr = expr.deref(ctx.arenas).borrow(ctx.arenas, mtbl)
+                }
+                Ok((
+                    Rule::ConstructorMultiRef,
+                    vec![TypingPredicate {
+                        pat: self.pat,
+                        expr,
+                    }],
+                ))
+            }
             (Pattern::Tuple(_), _) => Err(CantStep::NoApplicableRule(self.clone())),
 
             // Dereference rules
@@ -154,10 +187,10 @@ impl<'a> TypingPredicate<'a> {
 
             // Binding rules
             (Pattern::Binding(mtbl, BindingMode::ByRef(by_ref_mtbl), name), _) => {
-                // To replicate stable rust behavior, we must inspect the place so we don't
-                // re-borrow
-                match (self.expr.binding_mode(), ctx.options.ref_on_expr) {
-                    (BindingMode::ByMove, _) | (_, RefOnExprBehavior::AllocTemporary) => Ok((
+                match (self.expr.binding_mode(), ctx.options.ref_on_ref) {
+                    // Easy case: we borrow the expression as expected. We rely on rust's lifetime
+                    // extension of temporaries in expressions like `&&x`.
+                    (BindingMode::ByMove, _) | (_, RefOnRefBehavior::AllocTemporary) => Ok((
                         Rule::Binding,
                         vec![TypingPredicate {
                             pat: Pattern::Binding(mtbl, BindingMode::ByMove, name)
@@ -165,20 +198,43 @@ impl<'a> TypingPredicate<'a> {
                             expr: self.expr.borrow(ctx.arenas, by_ref_mtbl),
                         }],
                     )),
-                    (BindingMode::ByRef(_), RefOnExprBehavior::ResetBindingMode) => Ok((
+                    // To replicate stable rust behavior, we inspect the binding mode and skip it.
+                    // This amounts to getting ahold of the referenced place and re-borrowing it
+                    // with the requested mutability.
+                    (BindingMode::ByRef(_), RefOnRefBehavior::Skip) => Ok((
                         Rule::Binding,
                         vec![TypingPredicate {
                             pat: Pattern::Binding(mtbl, BindingMode::ByMove, name)
                                 .alloc(ctx.arenas),
-                            expr: self.expr.remove_ref().borrow(ctx.arenas, by_ref_mtbl),
+                            expr: self
+                                .expr
+                                .reset_binding_mode()
+                                .borrow(ctx.arenas, by_ref_mtbl),
                         }],
                     )),
-                    (BindingMode::ByRef(_), RefOnExprBehavior::Error) => {
+                    (BindingMode::ByRef(_), RefOnRefBehavior::Error) => {
                         Err(CantStep::NoApplicableRule(self.clone()))
                     }
                 }
             }
-            (Pattern::Binding(_, BindingMode::ByMove, _), _) => Err(CantStep::Done),
+            (Pattern::Binding(Mutable::Yes, BindingMode::ByMove, _), _) => {
+                match (self.expr.binding_mode(), ctx.options.mut_on_ref) {
+                    // Easy case: declare the binding as expected.
+                    (BindingMode::ByMove, _) | (_, MutOnRefBehavior::Keep) => Err(CantStep::Done),
+                    // To replicate stable rust behavior, we reset the binding mode.
+                    (BindingMode::ByRef(_), MutOnRefBehavior::ResetBindingMode) => Ok((
+                        Rule::Binding,
+                        vec![TypingPredicate {
+                            pat: self.pat,
+                            expr: self.expr.reset_binding_mode(),
+                        }],
+                    )),
+                    (BindingMode::ByRef(_), MutOnRefBehavior::Error) => {
+                        Err(CantStep::NoApplicableRule(self.clone()))
+                    }
+                }
+            }
+            (Pattern::Binding(Mutable::No, BindingMode::ByMove, _), _) => Err(CantStep::Done),
         }
     }
 

@@ -27,7 +27,8 @@ fn spanshot_request(request: &str, options: RuleOptions) -> anyhow::Result<()> {
 #[test]
 fn test_solver_traces() -> anyhow::Result<()> {
     let options = RuleOptions {
-        ref_on_expr: RefOnExprBehavior::AllocTemporary,
+        ref_on_ref: RefOnRefBehavior::AllocTemporary,
+        mut_on_ref: MutOnRefBehavior::Keep,
         allow_ref_pat_on_ref_mut: true,
         simplify_expressions: true,
     };
@@ -35,7 +36,10 @@ fn test_solver_traces() -> anyhow::Result<()> {
         "&x: &T",
         "&x: T",
         "ref x: T",
-        "&x: &T",
+        "[x]: &&&[T]",
+        "[x]: &&mut [T]",
+        "[x]: &mut &[T]",
+        "[x]: &mut &mut [T]",
         "ref x: T",
         "ref mut x: T",
         "mut ref mut x: T",
@@ -61,7 +65,8 @@ fn test_solver_traces() -> anyhow::Result<()> {
     }
 
     let options = RuleOptions {
-        ref_on_expr: RefOnExprBehavior::AllocTemporary,
+        ref_on_ref: RefOnRefBehavior::AllocTemporary,
+        mut_on_ref: MutOnRefBehavior::Keep,
         allow_ref_pat_on_ref_mut: false,
         simplify_expressions: true,
     };
@@ -71,7 +76,8 @@ fn test_solver_traces() -> anyhow::Result<()> {
     }
 
     let options = RuleOptions {
-        ref_on_expr: RefOnExprBehavior::AllocTemporary,
+        ref_on_ref: RefOnRefBehavior::AllocTemporary,
+        mut_on_ref: MutOnRefBehavior::Keep,
         allow_ref_pat_on_ref_mut: true,
         simplify_expressions: false,
     };
@@ -85,7 +91,8 @@ fn test_solver_traces() -> anyhow::Result<()> {
     }
 
     let options = RuleOptions {
-        ref_on_expr: RefOnExprBehavior::ResetBindingMode,
+        ref_on_ref: RefOnRefBehavior::Skip,
+        mut_on_ref: MutOnRefBehavior::Keep,
         allow_ref_pat_on_ref_mut: true,
         simplify_expressions: true,
     };
@@ -95,6 +102,17 @@ fn test_solver_traces() -> anyhow::Result<()> {
         "[ref x]: &mut [T]",
         "[ref mut x]: &mut [T]",
     ];
+    for request in requests {
+        spanshot_request(request, options)?;
+    }
+
+    let options = RuleOptions {
+        ref_on_ref: RefOnRefBehavior::AllocTemporary,
+        mut_on_ref: MutOnRefBehavior::ResetBindingMode,
+        allow_ref_pat_on_ref_mut: true,
+        simplify_expressions: true,
+    };
+    let requests: &[&str] = &["mut x: &T", "[mut x]: &[T]", "[mut ref x]: &[T]"];
     for request in requests {
         spanshot_request(request, options)?;
     }
