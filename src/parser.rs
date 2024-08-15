@@ -3,7 +3,7 @@
 //! Note: for consistent whitespace handling, each parser consumes trailing whitespace after it.
 use nom::{
     bytes::complete::{tag, take_while},
-    character::complete::{multispace0, multispace1},
+    character::complete::{multispace0, multispace1, one_of},
     error::ParseError,
     multi::separated_list0,
     Parser,
@@ -73,11 +73,11 @@ fn parse_tuple_pattern<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Pat
 where
     E: ParseError<&'i str>,
 {
-    tag("[")
+    one_of("[(")
         .followed_by(multispace0)
         .precedes(
             separated_list0(tag(",").followed_by(multispace1), parse_pattern(ctx))
-                .followed_by(tag("]"))
+                .followed_by(one_of("])"))
                 .cut(),
         )
         .followed_by(multispace0)
@@ -146,11 +146,11 @@ fn parse_tuple_type<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Type<'
 where
     E: ParseError<&'i str>,
 {
-    tag("[")
+    one_of("[(")
         .followed_by(multispace0)
         .precedes(
             separated_list0(tag(",").followed_by(multispace1), parse_type(ctx))
-                .followed_by(tag("]"))
+                .followed_by(one_of("])"))
                 .cut(),
         )
         .followed_by(multispace0)
@@ -214,10 +214,14 @@ fn test_roundtrip() {
         "x: [T, U, V]",
         "&[ref x, &mut mut ref mut y]: &[&mut [T], &U, V]",
     ];
-    let other_test_strings = [(
-        "&  [ ref  x  ,  mut  y ]  :  & [ & mut  T , [   U ] ]",
-        "&[ref x, mut y]: &[&mut T, [U]]",
-    )];
+    let other_test_strings = [
+        (
+            "&  [ ref  x  ,  mut  y ]  :  & [ & mut  T , [   U ] ]",
+            "&[ref x, mut y]: &[&mut T, [U]]",
+        ),
+        ("(x, y): (T, U)", "[x, y]: [T, U]"),
+        ("[x, y): (T, U]", "[x, y]: [T, U]"),
+    ];
 
     let test_strings = idempotent_test_strings
         .into_iter()
