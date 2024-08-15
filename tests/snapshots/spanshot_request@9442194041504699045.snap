@@ -17,4 +17,4 @@ info:
 x @ *&(*p).0: &mut T
 
 // Final bindings:
-let x: &mut T = *&(*p).0
+let x: &mut T = *&(*p).0 // Borrow-check error: CantCopyRefMut

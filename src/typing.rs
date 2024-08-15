@@ -350,6 +350,22 @@ impl<'a> TypingSolver<'a> {
             .chain(self.predicates.iter().map(|p| format!("{p}")))
             .join("\n")
     }
+
+    pub fn display_final_state(&self) -> impl fmt::Display + '_ {
+        assert!(self.predicates.is_empty());
+        self.done_predicates
+            .iter()
+            .map(|p| {
+                let bck = p.expr.borrow_check();
+                let bck = bck
+                    .err()
+                    .map(|err| format!(" // Borrow-check error: {err:?}"))
+                    .unwrap_or_default();
+                let p = p.display_done();
+                format!("{p}{bck}")
+            })
+            .join("\n")
+    }
 }
 
 /// Run the solver on this request and returns the trace as a string.
@@ -371,7 +387,7 @@ pub fn trace_solver(request: &str, options: RuleOptions) -> anyhow::Result<Strin
                 match e {
                     CantStep::Done => {
                         let _ = write!(&mut trace, "\n// Final bindings:\n");
-                        let _ = write!(&mut trace, "{}\n", solver.display_state());
+                        let _ = write!(&mut trace, "{}\n", solver.display_final_state());
                     }
                     CantStep::NoApplicableRule(pred) => {
                         let _ = write!(&mut trace, "// ERROR: no rules applies to {pred}\n");

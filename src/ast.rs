@@ -118,6 +118,58 @@ impl<'a> Expression<'a> {
             ExprKind::CastAsImmRef(e) => e.reset_binding_mode(),
         }
     }
+
+    /// Borrow-check the expression.
+    pub fn borrow_check(&self) -> Result<(), BorrowCheckError> {
+        self.borrow_check_inner(true)
+    }
+
+    fn borrow_check_inner(&self, top_level: bool) -> Result<(), BorrowCheckError> {
+        match self.kind {
+            ExprKind::Scrutinee => Ok(()),
+            ExprKind::Ref(mtbl, e) => {
+                if mtbl == Mutable::Yes && e.scrutinee_access_level() == Mutable::No {
+                    Err(BorrowCheckError::MutBorrowBehindSharedBorrow)
+                } else {
+                    e.borrow_check_inner(false)
+                }
+            }
+            ExprKind::Deref(e) => {
+                if top_level && matches!(self.ty, Type::Ref(Mutable::Yes, _)) {
+                    Err(BorrowCheckError::CantCopyRefMut)
+                } else {
+                    e.borrow_check_inner(false)
+                }
+            }
+            ExprKind::Field(e, _) => e.borrow_check_inner(false),
+            ExprKind::CastAsImmRef(e) => e.borrow_check_inner(false),
+        }
+    }
+
+    /// Computes what access we have to the scrutinee. By default we assume mutable, but if we went
+    /// under a shared reference we only have shared access.
+    fn scrutinee_access_level(&self) -> Mutable {
+        match self.kind {
+            ExprKind::Scrutinee => Mutable::Yes,
+            ExprKind::Ref(Mutable::No, _) => Mutable::No,
+            ExprKind::Ref(Mutable::Yes, e) => e.scrutinee_access_level(),
+            ExprKind::Deref(e) => {
+                if matches!(e.ty, Type::Ref(Mutable::No, _)) {
+                    Mutable::No
+                } else {
+                    e.scrutinee_access_level()
+                }
+            }
+            ExprKind::Field(e, _) => e.scrutinee_access_level(),
+            ExprKind::CastAsImmRef(_) => Mutable::No,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum BorrowCheckError {
+    CantCopyRefMut,
+    MutBorrowBehindSharedBorrow,
 }
 
 #[derive(Default)]

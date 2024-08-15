@@ -21,4 +21,4 @@ ref mut x @ *(&mut (*p).0 as &_): T
 x @ &mut *(&mut (*p).0 as &_): &mut T
 
 // Final bindings:
-let x: &mut T = &mut *(&mut (*p).0 as &_)
+let x: &mut T = &mut *(&mut (*p).0 as &_) // Borrow-check error: MutBorrowBehindSharedBorrow

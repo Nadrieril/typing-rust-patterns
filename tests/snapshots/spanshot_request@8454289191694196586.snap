@@ -23,4 +23,4 @@ info:
 x @ *(&mut (*(*p).0).0 as &_): T
 
 // Final bindings:
-let x: T = *(&mut (*(*p).0).0 as &_)
+let x: T = *(&mut (*(*p).0).0 as &_) // Borrow-check error: MutBorrowBehindSharedBorrow
