@@ -1,0 +1,10 @@
+[package]
+name = "typing-rust-patterns"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+itertools = "0.13.0"
+nom = "7.1.3"
+nom-supreme = "0.8.0"
+typed-arena = "2.0.2"
