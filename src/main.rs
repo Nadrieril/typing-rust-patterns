@@ -74,14 +74,8 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Horrible hack to get the enum variant from its variant name x)
 fn from_str<T: for<'de> Deserialize<'de>>(s: &str) -> Option<T> {
-    #[derive(Deserialize)]
-    struct Helper<T> {
-        field: T,
-    }
-    let s = format!("field: {s}");
-    serde_yaml::from_str(&s).ok().map(|h: Helper<T>| h.field)
+    serde_yaml::from_str(&s).ok()
 }
 
 fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> Option<()> {
