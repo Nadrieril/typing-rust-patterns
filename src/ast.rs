@@ -159,7 +159,7 @@ impl<'a> Expression<'a> {
 
     /// Computes what access we have to the scrutinee. By default we assume mutable, but if we went
     /// under a shared reference we only have shared access.
-    fn scrutinee_access_level(&self) -> Mutable {
+    pub fn scrutinee_access_level(&self) -> Mutable {
         match self.kind {
             ExprKind::Scrutinee => Mutable::Mutable,
             ExprKind::Ref(Mutable::Shared, _) => Mutable::Shared,

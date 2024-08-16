@@ -43,6 +43,9 @@ pub struct RuleOptions {
     /// If false, a `&p` pattern is not allowed on a `&T` if the reference is inherited (except in
     /// the case above i.e. if `T` itself it some `&U`).
     pub eat_inherited_ref_alone: bool,
+    /// If we've dereferenced a shared reference, any subsequent `&mut` inherited reference becomes
+    /// `&`. This is RFC3627 rule 3.
+    pub downgrade_shared_inside_shared: bool,
 }
 
 impl RuleOptions {
@@ -54,6 +57,30 @@ impl RuleOptions {
         simplify_expressions: false,
         eat_two_layers: true,
         eat_inherited_ref_alone: false,
+        downgrade_shared_inside_shared: false,
+    };
+
+    /// Reproduces RFC3627 (match ergonomics 2024) behavior
+    // TODO:
+    // Rule 2: When a reference pattern matches against a reference, do not update the DBM.
+    // Rule 4:
+    //     if (pat, ty) =
+    //       (&p, &T) => no
+    //       (&p, &mut T) => no
+    //       (&p, T) => yes
+    //       (&mut p, &T) => yes
+    //       (&mut p, &mut T) => no
+    //       (&mut p, T) => yes
+    //       _ => no
+    //     and if the DBM is ref or ref mut, match the pattern against the DBM as though it were a type.
+    pub const ERGO2024: Self = RuleOptions {
+        ref_on_ref: RefOnRefBehavior::Skip,
+        mut_on_ref: MutOnRefBehavior::Error,
+        allow_ref_pat_on_ref_mut: true,
+        simplify_expressions: true,
+        eat_two_layers: false,
+        eat_inherited_ref_alone: true,
+        downgrade_shared_inside_shared: true,
     };
 
     /// A fairly permissive proposal.
@@ -64,6 +91,7 @@ impl RuleOptions {
         simplify_expressions: true,
         eat_two_layers: false,
         eat_inherited_ref_alone: true,
+        downgrade_shared_inside_shared: false,
     };
 
     /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
@@ -155,22 +183,30 @@ impl<'a> TypingPredicate<'a> {
                     .collect();
                 Ok((Rule::Constructor, preds))
             }
-            (P::Tuple(pats), T::Ref(t_mtbl, T::Tuple(tys))) if pats.len() == tys.len() => {
+            (P::Tuple(pats), T::Ref(mtbl, T::Tuple(tys))) if pats.len() == tys.len() => {
                 let preds = pats
                     .iter()
                     .enumerate()
                     .map(|(i, pat)| {
-                        let expr = self.expr.deref(a).field(a, i).borrow(a, t_mtbl);
+                        let mut mtbl = mtbl;
+                        if ctx.options.downgrade_shared_inside_shared {
+                            mtbl = min(mtbl, self.expr.scrutinee_access_level());
+                        }
+                        let expr = self.expr.deref(a).field(a, i).borrow(a, mtbl);
                         Self { pat, expr }
                     })
                     .collect();
                 Ok((Rule::ConstructorRef, preds))
             }
             (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
-                let mtbl = min(outer_mtbl, inner_mtbl);
+                let mut mtbl = min(outer_mtbl, inner_mtbl);
                 let mut expr = self.expr.deref(a);
                 if let Mutable = inner_mtbl {
                     // Reborrow
+                    if ctx.options.downgrade_shared_inside_shared {
+                        mtbl = min(mtbl, self.expr.scrutinee_access_level());
+                    }
+                    // TODO downgrade if `downgrade_shared_inside_shared`
                     expr = expr.deref(a).borrow(a, mtbl)
                 }
                 Ok((
