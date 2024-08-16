@@ -134,7 +134,7 @@ impl<'a> TypingPredicate<'a> {
     }
 
     /// Apply one step of rule to this predicate.
-    pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), CantStep<'a>> {
+    pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), TypeError> {
         if ctx.options.simplify_expressions {
             // Expression simplification rules.
             match self.expr.kind {
@@ -211,10 +211,7 @@ impl<'a> TypingPredicate<'a> {
                     }],
                 ))
             }
-            (Pattern::Tuple(_), _) => Err(CantStep::NoApplicableRule(
-                self.clone(),
-                TypeError::TypeMismatch,
-            )),
+            (Pattern::Tuple(_), _) => Err(TypeError::TypeMismatch),
 
             // Dereference rules
             (Pattern::Ref(p_mtbl, p_inner), Type::Ref(mut t_mtbl, _)) => {
@@ -227,10 +224,7 @@ impl<'a> TypingPredicate<'a> {
                 {
                     // The underlying place is not a reference, so we can't eat the inherited
                     // reference.
-                    return Err(CantStep::NoApplicableRule(
-                        self.clone(),
-                        TypeError::TypeMismatch,
-                    ));
+                    return Err(TypeError::TypeMismatch);
                 }
                 if ctx.options.eat_two_layers
                     && let Type::Ref(inner_mtbl, _) = type_of_underlying_place
@@ -254,15 +248,12 @@ impl<'a> TypingPredicate<'a> {
                             expr: expr.cast_as_imm_ref(ctx.arenas),
                         }],
                     )),
-                    (Mutable::No, Mutable::Yes) | (Mutable::Yes, Mutable::No) => Err(
-                        CantStep::NoApplicableRule(self.clone(), TypeError::MutabilityMismatch),
-                    ),
+                    (Mutable::No, Mutable::Yes) | (Mutable::Yes, Mutable::No) => {
+                        Err(TypeError::MutabilityMismatch)
+                    }
                 }
             }
-            (Pattern::Ref(..), _) => Err(CantStep::NoApplicableRule(
-                self.clone(),
-                TypeError::TypeMismatch,
-            )),
+            (Pattern::Ref(..), _) => Err(TypeError::TypeMismatch),
 
             // Binding rules
             (Pattern::Binding(mtbl, BindingMode::ByRef(by_ref_mtbl), name), _) => {
@@ -291,15 +282,15 @@ impl<'a> TypingPredicate<'a> {
                                 .borrow(ctx.arenas, by_ref_mtbl),
                         }],
                     )),
-                    (BindingMode::ByRef(_), RefOnRefBehavior::Error) => Err(
-                        CantStep::NoApplicableRule(self.clone(), TypeError::RefOnRef),
-                    ),
+                    (BindingMode::ByRef(_), RefOnRefBehavior::Error) => Err(TypeError::RefOnRef),
                 }
             }
             (Pattern::Binding(Mutable::Yes, BindingMode::ByMove, _), _) => {
                 match (self.expr.binding_mode(), ctx.options.mut_on_ref) {
                     // Easy case: declare the binding as expected.
-                    (BindingMode::ByMove, _) | (_, MutOnRefBehavior::Keep) => Err(CantStep::Done),
+                    (BindingMode::ByMove, _) | (_, MutOnRefBehavior::Keep) => {
+                        Ok((Rule::Binding, vec![]))
+                    }
                     // To replicate stable rust behavior, we reset the binding mode.
                     (BindingMode::ByRef(_), MutOnRefBehavior::ResetBindingMode) => Ok((
                         Rule::Binding,
@@ -308,12 +299,12 @@ impl<'a> TypingPredicate<'a> {
                             expr: self.expr.reset_binding_mode(),
                         }],
                     )),
-                    (BindingMode::ByRef(_), MutOnRefBehavior::Error) => Err(
-                        CantStep::NoApplicableRule(self.clone(), TypeError::RefOnRef),
-                    ),
+                    (BindingMode::ByRef(_), MutOnRefBehavior::Error) => Err(TypeError::RefOnRef),
                 }
             }
-            (Pattern::Binding(Mutable::No, BindingMode::ByMove, _), _) => Err(CantStep::Done),
+            (Pattern::Binding(Mutable::No, BindingMode::ByMove, _), _) => {
+                Ok((Rule::Binding, vec![]))
+            }
         }
     }
 
@@ -355,18 +346,17 @@ impl<'a> TypingSolver<'a> {
         };
         match first_pred.step(ctx) {
             Ok((rule, new_preds)) => {
-                for p in new_preds.into_iter().rev() {
-                    self.predicates.push_front(p);
+                if new_preds.is_empty() {
+                    self.done_predicates.push(first_pred);
+                    self.step(ctx)
+                } else {
+                    for p in new_preds.into_iter().rev() {
+                        self.predicates.push_front(p);
+                    }
+                    Ok(rule)
                 }
-                Ok(rule)
             }
-            Err(CantStep::Done) => {
-                self.done_predicates.push(first_pred);
-                self.step(ctx)
-            }
-            Err(CantStep::NoApplicableRule(pred, err)) => {
-                Err(CantStep::NoApplicableRule(pred, err))
-            }
+            Err(err) => Err(CantStep::NoApplicableRule(first_pred, err)),
         }
     }
 
