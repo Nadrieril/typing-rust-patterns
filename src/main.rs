@@ -1,3 +1,5 @@
+use std::io::IsTerminal;
+
 use inquire::{history::SimpleHistory, Text};
 use serde::Deserialize;
 
@@ -5,21 +7,35 @@ use itertools::Itertools;
 use typing_rust_patterns::*;
 
 fn main() -> anyhow::Result<()> {
-    println!("Welcome to the interactive pattern typer!");
-    println!("Write `pattern: type` on the prompt line and I will attempt to type it.");
-    println!("Example: `&[ref x]: &[T]`");
-    println!(
+    let is_interactive = std::io::stdin().is_terminal();
+
+    if is_interactive {
+        println!("Welcome to the interactive pattern typer!");
+        println!("Write `pattern: type` on the prompt line and I will attempt to type it.");
+        println!("Example: `&[ref x]: &[T]`");
+        println!(
         "Type `help` for a list of available commands. Type the command for usage instructions."
     );
-    println!("");
+        println!("");
+    }
 
     let mut options = RuleOptions::NADRIS_PROPOSAL;
 
     let mut history = Vec::new();
     let prompt = |history: &[_]| {
-        Text::new("")
-            .with_history(SimpleHistory::new(history.iter().rev().cloned().collect()))
-            .prompt_skippable()
+        if is_interactive {
+            Text::new("")
+                .with_history(SimpleHistory::new(history.iter().rev().cloned().collect()))
+                .prompt_skippable()
+        } else {
+            let mut buffer = String::new();
+            std::io::stdin().read_line(&mut buffer)?;
+            Ok(if buffer.is_empty() {
+                None
+            } else {
+                Some(buffer)
+            })
+        }
     };
     while let Some(request) = prompt(&history)? {
         if request == "?" || request == "help" {
