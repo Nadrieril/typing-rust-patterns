@@ -56,13 +56,15 @@ fn main() -> anyhow::Result<()> {
                     - stable_rust: emulates the behavior of current stable rust"
                 )
             } else {
-                // Use yaml to show a nice diff of the options.
-                let old_options = serde_yaml::to_string(&old_options)?;
-                let new_options = serde_yaml::to_string(&options)?;
-                let diff = similar::TextDiff::from_lines(&old_options, &new_options);
-                for hunk in diff.unified_diff().context_radius(0).iter_hunks() {
-                    for change in hunk.iter_changes() {
-                        print!("{}{}", change.tag(), change);
+                // Display what changed.
+                let old_options = serde_json::to_value(&old_options)?;
+                let old_options = old_options.as_object().unwrap();
+                let new_options = serde_json::to_value(&options)?;
+                let new_options = new_options.as_object().unwrap();
+                for (k, v) in old_options {
+                    let new_v = &new_options[k];
+                    if v != new_v {
+                        println!("{k}: {v} -> {new_v}");
                     }
                 }
             }
