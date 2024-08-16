@@ -135,23 +135,29 @@ impl<'a> TypingPredicate<'a> {
 
     /// Apply one step of rule to this predicate.
     pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), TypeError> {
+        use BindingMode::*;
+        use ExprKind as E;
+        use Mutable::*;
+        use Pattern as P;
+        use Type as T;
+
         if ctx.options.simplify_expressions {
             // Expression simplification rules.
             match self.expr.kind {
-                ExprKind::CastAsImmRef(Expression {
-                    kind: ExprKind::Ref(Mutable::Yes, e),
+                E::CastAsImmRef(Expression {
+                    kind: E::Ref(Yes, e),
                     ..
                 }) => {
                     return Ok((
                         Rule::ExprSimplification,
                         vec![TypingPredicate {
                             pat: self.pat,
-                            expr: e.borrow(ctx.arenas, Mutable::No),
+                            expr: e.borrow(ctx.arenas, No),
                         }],
                     ))
                 }
-                ExprKind::Deref(Expression {
-                    kind: ExprKind::Ref(Mutable::Yes, e),
+                E::Deref(Expression {
+                    kind: E::Ref(Yes, e),
                     ..
                 }) => {
                     return Ok((
@@ -168,7 +174,7 @@ impl<'a> TypingPredicate<'a> {
 
         match (*self.pat, *self.expr.ty) {
             // Constructor rules
-            (Pattern::Tuple(pats), Type::Tuple(tys)) if pats.len() == tys.len() => {
+            (P::Tuple(pats), T::Tuple(tys)) if pats.len() == tys.len() => {
                 let preds = pats
                     .iter()
                     .enumerate()
@@ -179,9 +185,7 @@ impl<'a> TypingPredicate<'a> {
                     .collect();
                 Ok((Rule::Constructor, preds))
             }
-            (Pattern::Tuple(pats), Type::Ref(t_mtbl, Type::Tuple(tys)))
-                if pats.len() == tys.len() =>
-            {
+            (P::Tuple(pats), T::Ref(t_mtbl, T::Tuple(tys))) if pats.len() == tys.len() => {
                 let preds = pats
                     .iter()
                     .enumerate()
@@ -196,10 +200,10 @@ impl<'a> TypingPredicate<'a> {
                     .collect();
                 Ok((Rule::ConstructorRef, preds))
             }
-            (Pattern::Tuple(_), Type::Ref(outer_mtbl, &Type::Ref(inner_mtbl, _))) => {
+            (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
                 let mtbl = min(outer_mtbl, inner_mtbl);
                 let mut expr = self.expr.deref(ctx.arenas);
-                if let Mutable::Yes = inner_mtbl {
+                if let Yes = inner_mtbl {
                     // Reborrow
                     expr = expr.deref(ctx.arenas).borrow(ctx.arenas, mtbl)
                 }
@@ -211,100 +215,92 @@ impl<'a> TypingPredicate<'a> {
                     }],
                 ))
             }
-            (Pattern::Tuple(_), _) => Err(TypeError::TypeMismatch),
+            (P::Tuple(_), _) => Err(TypeError::TypeMismatch),
 
             // Dereference rules
-            (Pattern::Ref(p_mtbl, p_inner), Type::Ref(mut t_mtbl, _)) => {
+            (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
                 let mut expr = self.expr;
                 // To reproduce stable rust behavior, we need to inspect the type of the place
                 // currently being matched on..
                 let type_of_underlying_place = expr.reset_binding_mode().ty;
                 if !ctx.options.eat_inherited_ref_alone
-                    && !matches!(type_of_underlying_place, Type::Ref(..))
+                    && !matches!(type_of_underlying_place, T::Ref(..))
                 {
                     // The underlying place is not a reference, so we can't eat the inherited
                     // reference.
                     return Err(TypeError::TypeMismatch);
                 }
                 if ctx.options.eat_two_layers
-                    && let Type::Ref(inner_mtbl, _) = type_of_underlying_place
-                    && matches!(expr.binding_mode(), BindingMode::ByRef(..))
+                    && let T::Ref(inner_mtbl, _) = type_of_underlying_place
+                    && matches!(expr.binding_mode(), ByRef(..))
                 {
                     expr = expr.reset_binding_mode();
                     t_mtbl = *inner_mtbl;
                 }
                 match (p_mtbl, t_mtbl) {
-                    (Mutable::No, Mutable::No) | (Mutable::Yes, Mutable::Yes) => Ok((
+                    (No, No) | (Yes, Yes) => Ok((
                         Rule::Deref,
                         vec![TypingPredicate {
                             pat: p_inner,
                             expr: expr.deref(ctx.arenas),
                         }],
                     )),
-                    (Mutable::No, Mutable::Yes) if ctx.options.allow_ref_pat_on_ref_mut => Ok((
+                    (No, Yes) if ctx.options.allow_ref_pat_on_ref_mut => Ok((
                         Rule::Deref,
                         vec![TypingPredicate {
                             pat: self.pat,
                             expr: expr.cast_as_imm_ref(ctx.arenas),
                         }],
                     )),
-                    (Mutable::No, Mutable::Yes) | (Mutable::Yes, Mutable::No) => {
-                        Err(TypeError::MutabilityMismatch)
-                    }
+                    (No, Yes) | (Yes, No) => Err(TypeError::MutabilityMismatch),
                 }
             }
-            (Pattern::Ref(..), _) => Err(TypeError::TypeMismatch),
+            (P::Ref(..), _) => Err(TypeError::TypeMismatch),
 
             // Binding rules
-            (Pattern::Binding(mtbl, BindingMode::ByRef(by_ref_mtbl), name), _) => {
+            (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _) => {
                 match (self.expr.binding_mode(), ctx.options.ref_on_ref) {
                     // Easy case: we borrow the expression as expected. We rely on rust's lifetime
                     // extension of temporaries in expressions like `&&x`.
-                    (BindingMode::ByMove, _) | (_, RefOnRefBehavior::AllocTemporary) => Ok((
+                    (ByMove, _) | (_, RefOnRefBehavior::AllocTemporary) => Ok((
                         Rule::Binding,
                         vec![TypingPredicate {
-                            pat: Pattern::Binding(mtbl, BindingMode::ByMove, name)
-                                .alloc(ctx.arenas),
+                            pat: P::Binding(mtbl, ByMove, name).alloc(ctx.arenas),
                             expr: self.expr.borrow(ctx.arenas, by_ref_mtbl),
                         }],
                     )),
                     // To replicate stable rust behavior, we inspect the binding mode and skip it.
                     // This amounts to getting ahold of the referenced place and re-borrowing it
                     // with the requested mutability.
-                    (BindingMode::ByRef(_), RefOnRefBehavior::Skip) => Ok((
+                    (ByRef(_), RefOnRefBehavior::Skip) => Ok((
                         Rule::Binding,
                         vec![TypingPredicate {
-                            pat: Pattern::Binding(mtbl, BindingMode::ByMove, name)
-                                .alloc(ctx.arenas),
+                            pat: P::Binding(mtbl, ByMove, name).alloc(ctx.arenas),
                             expr: self
                                 .expr
                                 .reset_binding_mode()
                                 .borrow(ctx.arenas, by_ref_mtbl),
                         }],
                     )),
-                    (BindingMode::ByRef(_), RefOnRefBehavior::Error) => Err(TypeError::RefOnRef),
+                    (ByRef(_), RefOnRefBehavior::Error) => Err(TypeError::RefOnRef),
                 }
             }
-            (Pattern::Binding(Mutable::Yes, BindingMode::ByMove, _), _) => {
+            (P::Binding(Yes, ByMove, _), _) => {
                 match (self.expr.binding_mode(), ctx.options.mut_on_ref) {
                     // Easy case: declare the binding as expected.
-                    (BindingMode::ByMove, _) | (_, MutOnRefBehavior::Keep) => {
-                        Ok((Rule::Binding, vec![]))
-                    }
+                    (ByMove, _) | (_, MutOnRefBehavior::Keep) => Ok((Rule::Binding, vec![])),
                     // To replicate stable rust behavior, we reset the binding mode.
-                    (BindingMode::ByRef(_), MutOnRefBehavior::ResetBindingMode) => Ok((
+                    (ByRef(_), MutOnRefBehavior::ResetBindingMode) => Ok((
                         Rule::Binding,
                         vec![TypingPredicate {
                             pat: self.pat,
                             expr: self.expr.reset_binding_mode(),
                         }],
                     )),
-                    (BindingMode::ByRef(_), MutOnRefBehavior::Error) => Err(TypeError::RefOnRef),
+                    (ByRef(_), MutOnRefBehavior::Error) => Err(TypeError::RefOnRef),
                 }
             }
-            (Pattern::Binding(Mutable::No, BindingMode::ByMove, _), _) => {
-                Ok((Rule::Binding, vec![]))
-            }
+            (P::Binding(No, ByMove, _), _) => Ok((Rule::Binding, vec![])),
         }
     }
 
