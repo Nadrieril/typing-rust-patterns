@@ -30,6 +30,7 @@ fn main() -> anyhow::Result<()> {
             let options = serde_yaml::to_string(&options)?;
             print!("{options}");
         } else if let Some(cmd) = request.strip_prefix("set") {
+            let old_options = options;
             if parse_set_cmd(cmd, &mut options).is_none() {
                 println!(
                     "Couldn't parse `set` command.\n\n\
@@ -46,8 +47,24 @@ fn main() -> anyhow::Result<()> {
                     - eat_two_layers: bool\n    \
                         whether `&p: &&T` eats both references when the outer one is inherited\n\
                     - eat_inherited_ref_alone: bool\n    \
-                        whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`"
+                        whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`\n\
+                    \n\
+                    There also exist some predefined option-bundles. Activate one with `set bundle`\n\
+                    - default: the default settings\n\
+                    - permissive: an even more permissive proposal than the default\n\
+                    - stateless: a proposal that tracks no hidden state; purely type-based\n\
+                    - stable_rust: emulates the behavior of current stable rust"
                 )
+            } else {
+                // Use yaml to show a nice diff of the options.
+                let old_options = serde_yaml::to_string(&old_options)?;
+                let new_options = serde_yaml::to_string(&options)?;
+                let diff = similar::TextDiff::from_lines(&old_options, &new_options);
+                for hunk in diff.unified_diff().context_radius(0).iter_hunks() {
+                    for change in hunk.iter_changes() {
+                        print!("{}{}", change.tag(), change);
+                    }
+                }
             }
         } else {
             history.push(request.clone());
@@ -79,6 +96,25 @@ fn from_str<T: for<'de> Deserialize<'de>>(s: &str) -> Option<T> {
 
 fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> Option<()> {
     let cmd = cmd.trim();
+    match cmd {
+        "default" => {
+            *options = RuleOptions::NADRIS_PROPOSAL;
+            return Some(());
+        }
+        "permissive" => {
+            *options = RuleOptions::PERMISSIVE;
+            return Some(());
+        }
+        "stateless" => {
+            *options = RuleOptions::STATELESS;
+            return Some(());
+        }
+        "stable_rust" => {
+            *options = RuleOptions::STABLE_RUST;
+            return Some(());
+        }
+        _ => {}
+    }
     let cmd = cmd.split(" ").collect_vec();
     let ([opt, val] | [opt, "=", val]) = cmd.as_slice() else {
         return None;

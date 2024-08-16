@@ -476,6 +476,7 @@ dependencies = [
  "nom-supreme",
  "serde",
  "serde_yaml",
+ "similar",
  "typed-arena",
 ]
 
