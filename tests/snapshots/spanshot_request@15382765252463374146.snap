@@ -11,4 +11,4 @@ info:
   request: "&x: T"
 ---
 &x @ p: T
-// ERROR: no rules applies to &x @ p: T
+// Type error for `&x @ p: T`: TypeMismatch

@@ -11,4 +11,4 @@ info:
   request: "&x: &mut T"
 ---
 &x @ p: &mut T
-// ERROR: no rules applies to &x @ p: &mut T
+// Type error for `&x @ p: &mut T`: MutabilityMismatch

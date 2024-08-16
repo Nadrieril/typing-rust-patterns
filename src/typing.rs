@@ -111,7 +111,15 @@ pub enum Rule {
 
 pub enum CantStep<'a> {
     Done,
-    NoApplicableRule(TypingPredicate<'a>),
+    NoApplicableRule(TypingPredicate<'a>, TypeError),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum TypeError {
+    TypeMismatch,
+    MutabilityMismatch,
+    RefOnRef,
+    MutOnRef,
 }
 
 impl<'a> TypingPredicate<'a> {
@@ -203,7 +211,10 @@ impl<'a> TypingPredicate<'a> {
                     }],
                 ))
             }
-            (Pattern::Tuple(_), _) => Err(CantStep::NoApplicableRule(self.clone())),
+            (Pattern::Tuple(_), _) => Err(CantStep::NoApplicableRule(
+                self.clone(),
+                TypeError::TypeMismatch,
+            )),
 
             // Dereference rules
             (Pattern::Ref(p_mtbl, p_inner), Type::Ref(mut t_mtbl, _)) => {
@@ -216,7 +227,10 @@ impl<'a> TypingPredicate<'a> {
                 {
                     // The underlying place is not a reference, so we can't eat the inherited
                     // reference.
-                    return Err(CantStep::NoApplicableRule(self.clone()));
+                    return Err(CantStep::NoApplicableRule(
+                        self.clone(),
+                        TypeError::TypeMismatch,
+                    ));
                 }
                 if ctx.options.eat_two_layers
                     && let Type::Ref(inner_mtbl, _) = type_of_underlying_place
@@ -240,12 +254,15 @@ impl<'a> TypingPredicate<'a> {
                             expr: expr.cast_as_imm_ref(ctx.arenas),
                         }],
                     )),
-                    (Mutable::No, Mutable::Yes) | (Mutable::Yes, Mutable::No) => {
-                        Err(CantStep::NoApplicableRule(self.clone()))
-                    }
+                    (Mutable::No, Mutable::Yes) | (Mutable::Yes, Mutable::No) => Err(
+                        CantStep::NoApplicableRule(self.clone(), TypeError::MutabilityMismatch),
+                    ),
                 }
             }
-            (Pattern::Ref(..), _) => Err(CantStep::NoApplicableRule(self.clone())),
+            (Pattern::Ref(..), _) => Err(CantStep::NoApplicableRule(
+                self.clone(),
+                TypeError::TypeMismatch,
+            )),
 
             // Binding rules
             (Pattern::Binding(mtbl, BindingMode::ByRef(by_ref_mtbl), name), _) => {
@@ -274,9 +291,9 @@ impl<'a> TypingPredicate<'a> {
                                 .borrow(ctx.arenas, by_ref_mtbl),
                         }],
                     )),
-                    (BindingMode::ByRef(_), RefOnRefBehavior::Error) => {
-                        Err(CantStep::NoApplicableRule(self.clone()))
-                    }
+                    (BindingMode::ByRef(_), RefOnRefBehavior::Error) => Err(
+                        CantStep::NoApplicableRule(self.clone(), TypeError::RefOnRef),
+                    ),
                 }
             }
             (Pattern::Binding(Mutable::Yes, BindingMode::ByMove, _), _) => {
@@ -291,9 +308,9 @@ impl<'a> TypingPredicate<'a> {
                             expr: self.expr.reset_binding_mode(),
                         }],
                     )),
-                    (BindingMode::ByRef(_), MutOnRefBehavior::Error) => {
-                        Err(CantStep::NoApplicableRule(self.clone()))
-                    }
+                    (BindingMode::ByRef(_), MutOnRefBehavior::Error) => Err(
+                        CantStep::NoApplicableRule(self.clone(), TypeError::RefOnRef),
+                    ),
                 }
             }
             (Pattern::Binding(Mutable::No, BindingMode::ByMove, _), _) => Err(CantStep::Done),
@@ -347,7 +364,9 @@ impl<'a> TypingSolver<'a> {
                 self.done_predicates.push(first_pred);
                 self.step(ctx)
             }
-            Err(CantStep::NoApplicableRule(pred)) => Err(CantStep::NoApplicableRule(pred)),
+            Err(CantStep::NoApplicableRule(pred, err)) => {
+                Err(CantStep::NoApplicableRule(pred, err))
+            }
         }
     }
 
@@ -398,8 +417,8 @@ pub fn trace_solver(request: &str, options: RuleOptions) -> anyhow::Result<Strin
                         let _ = write!(&mut trace, "\n// Final bindings (simplified):\n");
                         let _ = write!(&mut trace, "{}\n", solver.display_final_state(ctx));
                     }
-                    CantStep::NoApplicableRule(pred) => {
-                        let _ = write!(&mut trace, "// ERROR: no rules applies to {pred}\n");
+                    CantStep::NoApplicableRule(pred, err) => {
+                        let _ = write!(&mut trace, "// Type error for `{pred}`: {err:?}\n");
                     }
                 }
                 break;

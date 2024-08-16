@@ -13,4 +13,4 @@ info:
 [&x] @ p: &[T]
 // Applying rule `ConstructorRef`
 &x @ &(*p).0: &T
-// ERROR: no rules applies to &x @ &(*p).0: &T
+// Type error for `&x @ &(*p).0: &T`: TypeMismatch

@@ -13,4 +13,4 @@ info:
 [&mut x] @ p: &[&mut T]
 // Applying rule `ConstructorRef`
 &mut x @ &(*p).0: &&mut T
-// ERROR: no rules applies to &mut x @ &(*p).0: &&mut T
+// Type error for `&mut x @ &(*p).0: &&mut T`: MutabilityMismatch
