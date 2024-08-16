@@ -5,7 +5,7 @@ use crate::*;
 
 /// What to do to a `ref x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
-#[derive(Debug, Clone, Copy, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum RefOnRefBehavior {
     /// Borrow that expression, which requires allocating a temporary variable.
     AllocTemporary,
@@ -17,7 +17,7 @@ pub enum RefOnRefBehavior {
 
 /// What to do to a `mut x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
-#[derive(Debug, Clone, Copy, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MutOnRefBehavior {
     /// Stable rust behavior: reset the binding mode.
     ResetBindingMode,
@@ -28,7 +28,7 @@ pub enum MutOnRefBehavior {
 }
 
 /// Choice of typing rules.
-#[derive(Debug, Clone, Copy, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RuleOptions {
     pub ref_on_ref: RefOnRefBehavior,
     pub mut_on_ref: MutOnRefBehavior,

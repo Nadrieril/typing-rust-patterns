@@ -5,7 +5,19 @@ use typing_rust_patterns::*;
 #[derive(Hash, Serialize)]
 struct TestCase<'a> {
     options: RuleOptions,
+    bundle_name: Option<&'static str>,
     request: &'a str,
+}
+
+impl<'a> TestCase<'a> {
+    fn new(request: &'a str, options: RuleOptions) -> Self {
+        let bundle_name = get_bundle_name(options);
+        Self {
+            options,
+            bundle_name,
+            request,
+        }
+    }
 }
 
 fn spanshot_request(test_case: TestCase<'_>) -> anyhow::Result<()> {
@@ -29,6 +41,19 @@ fn spanshot_request(test_case: TestCase<'_>) -> anyhow::Result<()> {
         insta::assert_snapshot!(trace);
     });
     Ok(())
+}
+
+static KNOWN_OPTION_BUNDLES: &[(&str, RuleOptions)] = &[
+    ("permissive", RuleOptions::PERMISSIVE),
+    ("stable_rust", RuleOptions::STABLE_RUST),
+    ("ergo2024", RuleOptions::ERGO2024),
+];
+
+fn get_bundle_name(opt: RuleOptions) -> Option<&'static str> {
+    KNOWN_OPTION_BUNDLES
+        .iter()
+        .find(|(_, bundle)| *bundle == opt)
+        .map(|(name, _)| *name)
 }
 
 #[test]
@@ -127,7 +152,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
 
     for &(options, requests) in test_cases {
         for request in requests {
-            let test_case = TestCase { request, options };
+            let test_case = TestCase::new(request, options);
             spanshot_request(test_case)?;
         }
     }

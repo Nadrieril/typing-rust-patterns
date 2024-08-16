@@ -1,0 +1,28 @@
+---
+source: tests/trace_solver.rs
+info:
+  options:
+    ref_on_ref: AllocTemporary
+    mut_on_ref: Keep
+    allow_ref_pat_on_ref_mut: true
+    simplify_expressions: true
+    eat_two_layers: false
+    eat_inherited_ref_alone: true
+    downgrade_shared_inside_shared: false
+  bundle_name: permissive
+  request: "[&ref mut x]: &mut [T]"
+---
+[&ref mut x] @ p: &mut [T]
+// Applying rule `ConstructorRef`
+&ref mut x @ &mut (*p).0: &mut T
+// Applying rule `Deref`
+&ref mut x @ (&mut (*p).0 as &_): &T
+// Applying rule `ExprSimplification`
+&ref mut x @ &(*p).0: &T
+// Applying rule `Deref`
+ref mut x @ *&(*p).0: T
+// Applying rule `Binding`
+x @ &mut *&(*p).0: &mut T
+
+// Final bindings (simplified):
+let x: &mut T = &mut *&(*p).0 // Borrow-check error: MutBorrowBehindSharedBorrow
