@@ -130,7 +130,12 @@ fn test_solver_traces() -> anyhow::Result<()> {
         ),
         (
             RuleOptions::ERGO2024,
-            &["&[x]: &&mut [T]", "&[x]: &[&mut T]", "[&x]: &mut [&T]"],
+            &[
+                "&[x]: &&mut [T]",
+                "&[x]: &[&mut T]",
+                "[&x]: &mut [&T]",
+                "[mut x]: &[T]",
+            ],
         ),
     ];
 

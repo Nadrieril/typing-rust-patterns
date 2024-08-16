@@ -23,7 +23,7 @@ pub enum MutOnRefBehavior {
     ResetBindingMode,
     /// Declare the expected binding and make it mutable.
     Keep,
-    /// Treat this as an error.
+    /// Treat this as an error. This is RFC3627 rule 1.
     Error,
 }
 
@@ -32,7 +32,7 @@ pub enum MutOnRefBehavior {
 pub struct RuleOptions {
     pub ref_on_ref: RefOnRefBehavior,
     pub mut_on_ref: MutOnRefBehavior,
-    /// Whether a `&p` pattern is allowed on `&mut T`.
+    /// Whether a `&p` pattern is allowed on `&mut T`. This is RFC3627 rule 5.
     pub allow_ref_pat_on_ref_mut: bool,
     /// Whether to simplify some expressions, which removes some borrow errors involving mixes of
     /// `&mut` and `&`.
@@ -40,8 +40,8 @@ pub struct RuleOptions {
     /// Stable rust behavior: when a `&p` pattern applies to `&&T` where the outer `&` is an
     /// inherited reference, the `&` pattern consumes both layers of reference type.
     pub eat_two_layers: bool,
-    /// If false, a `&p` pattern is not allowed on a `&T` if the reference is inherited (except in
-    /// the case above i.e. if `T` itself it some `&U`).
+    /// If false, a reference pattern is only allowed if the _underlying place_ has a compatible
+    /// reference type. This is RFC3627 rule 4.
     pub eat_inherited_ref_alone: bool,
     /// If we've dereferenced a shared reference, any subsequent `&mut` inherited reference becomes
     /// `&`. This is RFC3627 rule 3.
@@ -63,16 +63,6 @@ impl RuleOptions {
     /// Reproduces RFC3627 (match ergonomics 2024) behavior
     // TODO:
     // Rule 2: When a reference pattern matches against a reference, do not update the DBM.
-    // Rule 4:
-    //     if (pat, ty) =
-    //       (&p, &T) => no
-    //       (&p, &mut T) => no
-    //       (&p, T) => yes
-    //       (&mut p, &T) => yes
-    //       (&mut p, &mut T) => no
-    //       (&mut p, T) => yes
-    //       _ => no
-    //     and if the DBM is ref or ref mut, match the pattern against the DBM as though it were a type.
     pub const ERGO2024: Self = RuleOptions {
         ref_on_ref: RefOnRefBehavior::Skip,
         mut_on_ref: MutOnRefBehavior::Error,
@@ -240,7 +230,6 @@ impl<'a> TypingPredicate<'a> {
                     if ctx.options.downgrade_shared_inside_shared {
                         mtbl = min(mtbl, self.expr.scrutinee_access_level());
                     }
-                    // TODO downgrade if `downgrade_shared_inside_shared`
                     expr = expr.deref(a).borrow(a, mtbl)
                 }
                 Ok((
@@ -327,7 +316,7 @@ impl<'a> TypingPredicate<'a> {
                             expr: self.expr.reset_binding_mode(),
                         }],
                     )),
-                    (ByRef(_), MutOnRefBehavior::Error) => Err(TypeError::RefOnRef),
+                    (ByRef(_), MutOnRefBehavior::Error) => Err(TypeError::MutOnRef),
                 }
             }
             (P::Binding(Shared, ByMove, _), _) => Ok((Rule::Binding, vec![])),

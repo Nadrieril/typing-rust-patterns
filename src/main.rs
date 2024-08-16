@@ -64,6 +64,8 @@ fn main() -> anyhow::Result<()> {
                         whether `&p: &&T` eats both references when the outer one is inherited\n\
                     - eat_inherited_ref_alone: bool\n    \
                         whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`\n\
+                    - downgrade_shared_inside_shared: bool\n    \
+                        RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref\n\
                     \n\
                     There also exist some predefined option-bundles. Activate one with `set bundle`\n\
                     {}",

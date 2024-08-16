@@ -1,0 +1,18 @@
+---
+source: tests/trace_solver.rs
+info:
+  options:
+    ref_on_ref: Skip
+    mut_on_ref: Error
+    allow_ref_pat_on_ref_mut: true
+    simplify_expressions: true
+    eat_two_layers: false
+    eat_inherited_ref_alone: true
+    downgrade_shared_inside_shared: true
+  bundle_name: ergo2024
+  request: "[mut x]: &[T]"
+---
+[mut x] @ p: &[T]
+// Applying rule `ConstructorRef`
+mut x @ &(*p).0: &T
+// Type error for `mut x @ &(*p).0: &T`: MutOnRef
