@@ -140,6 +140,7 @@ impl<'a> TypingPredicate<'a> {
         use ExprKind as E;
         use Pattern as P;
         use Type as T;
+        let a = ctx.arenas;
 
         if ctx.options.simplify_expressions {
             // Expression simplification rules.
@@ -152,19 +153,19 @@ impl<'a> TypingPredicate<'a> {
                         Rule::ExprSimplification,
                         vec![TypingPredicate {
                             pat: self.pat,
-                            expr: e.borrow(ctx.arenas, Shared),
+                            expr: e.borrow(a, Shared),
                         }],
                     ))
                 }
                 E::Deref(Expression {
-                    kind: E::Ref(Mutable, e),
+                    kind: E::Ref(Mutable, &e),
                     ..
                 }) => {
                     return Ok((
                         Rule::ExprSimplification,
                         vec![TypingPredicate {
                             pat: self.pat,
-                            expr: **e,
+                            expr: e,
                         }],
                     ))
                 }
@@ -179,7 +180,7 @@ impl<'a> TypingPredicate<'a> {
                     .iter()
                     .enumerate()
                     .map(|(i, pat)| {
-                        let expr = self.expr.field(ctx.arenas, i);
+                        let expr = self.expr.field(a, i);
                         TypingPredicate { pat, expr }
                     })
                     .collect();
@@ -190,11 +191,7 @@ impl<'a> TypingPredicate<'a> {
                     .iter()
                     .enumerate()
                     .map(|(i, pat)| {
-                        let expr = self
-                            .expr
-                            .deref(ctx.arenas)
-                            .field(ctx.arenas, i)
-                            .borrow(ctx.arenas, t_mtbl);
+                        let expr = self.expr.deref(a).field(a, i).borrow(a, t_mtbl);
                         TypingPredicate { pat, expr }
                     })
                     .collect();
@@ -202,10 +199,10 @@ impl<'a> TypingPredicate<'a> {
             }
             (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
                 let mtbl = min(outer_mtbl, inner_mtbl);
-                let mut expr = self.expr.deref(ctx.arenas);
+                let mut expr = self.expr.deref(a);
                 if let Mutable = inner_mtbl {
                     // Reborrow
-                    expr = expr.deref(ctx.arenas).borrow(ctx.arenas, mtbl)
+                    expr = expr.deref(a).borrow(a, mtbl)
                 }
                 Ok((
                     Rule::ConstructorMultiRef,
@@ -242,14 +239,14 @@ impl<'a> TypingPredicate<'a> {
                         Rule::Deref,
                         vec![TypingPredicate {
                             pat: p_inner,
-                            expr: expr.deref(ctx.arenas),
+                            expr: expr.deref(a),
                         }],
                     )),
                     (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => Ok((
                         Rule::Deref,
                         vec![TypingPredicate {
                             pat: self.pat,
-                            expr: expr.cast_as_imm_ref(ctx.arenas),
+                            expr: expr.cast_as_imm_ref(a),
                         }],
                     )),
                     (Shared, Mutable) | (Mutable, Shared) => Err(TypeError::MutabilityMismatch),
@@ -265,8 +262,8 @@ impl<'a> TypingPredicate<'a> {
                     (ByMove, _) | (_, RefOnRefBehavior::AllocTemporary) => Ok((
                         Rule::Binding,
                         vec![TypingPredicate {
-                            pat: P::Binding(mtbl, ByMove, name).alloc(ctx.arenas),
-                            expr: self.expr.borrow(ctx.arenas, by_ref_mtbl),
+                            pat: P::Binding(mtbl, ByMove, name).alloc(a),
+                            expr: self.expr.borrow(a, by_ref_mtbl),
                         }],
                     )),
                     // To replicate stable rust behavior, we inspect the binding mode and skip it.
@@ -275,11 +272,8 @@ impl<'a> TypingPredicate<'a> {
                     (ByRef(_), RefOnRefBehavior::Skip) => Ok((
                         Rule::Binding,
                         vec![TypingPredicate {
-                            pat: P::Binding(mtbl, ByMove, name).alloc(ctx.arenas),
-                            expr: self
-                                .expr
-                                .reset_binding_mode()
-                                .borrow(ctx.arenas, by_ref_mtbl),
+                            pat: P::Binding(mtbl, ByMove, name).alloc(a),
+                            expr: self.expr.reset_binding_mode().borrow(a, by_ref_mtbl),
                         }],
                     )),
                     (ByRef(_), RefOnRefBehavior::Error) => Err(TypeError::RefOnRef),
