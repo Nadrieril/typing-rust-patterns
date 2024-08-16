@@ -66,10 +66,8 @@ fn main() -> anyhow::Result<()> {
                         whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`\n\
                     \n\
                     There also exist some predefined option-bundles. Activate one with `set bundle`\n\
-                    - default: the default settings\n\
-                    - permissive: an even more permissive proposal than the default\n\
-                    - stateless: a proposal that tracks no hidden state; purely type-based\n\
-                    - stable_rust: emulates the behavior of current stable rust"
+                    {}",
+                    RuleOptions::KNOWN_OPTION_BUNDLES.iter().map(|(name, _, descr)| format!("- {name}: {descr}")).format("\n")
                 )
             } else {
                 // Display what changed.
@@ -114,24 +112,9 @@ fn from_str<T: for<'de> Deserialize<'de>>(s: &str) -> Option<T> {
 
 fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> Option<()> {
     let cmd = cmd.trim();
-    match cmd {
-        "default" => {
-            *options = RuleOptions::NADRIS_PROPOSAL;
-            return Some(());
-        }
-        "permissive" => {
-            *options = RuleOptions::PERMISSIVE;
-            return Some(());
-        }
-        "stateless" => {
-            *options = RuleOptions::STATELESS;
-            return Some(());
-        }
-        "stable_rust" => {
-            *options = RuleOptions::STABLE_RUST;
-            return Some(());
-        }
-        _ => {}
+    if let Some(opt) = RuleOptions::from_bundle_name(cmd) {
+        *options = opt;
+        return Some(());
     }
     let cmd = cmd.split(" ").collect_vec();
     let ([opt, val] | [opt, "=", val]) = cmd.as_slice() else {

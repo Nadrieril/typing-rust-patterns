@@ -9,7 +9,7 @@ info:
     eat_two_layers: false
     eat_inherited_ref_alone: true
     downgrade_shared_inside_shared: false
-  bundle_name: ~
+  bundle_name: stateless
   request: "[&ref mut x]: &mut [T]"
 ---
 [&ref mut x] @ p: &mut [T]

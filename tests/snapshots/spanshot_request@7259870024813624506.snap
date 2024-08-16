@@ -9,20 +9,18 @@ info:
     eat_two_layers: false
     eat_inherited_ref_alone: true
     downgrade_shared_inside_shared: false
-  bundle_name: ~
-  request: "&[[&x]]: &[&mut [T]]"
+  bundle_name: stateless
+  request: "&[[&mut x]]: &[&mut [T]]"
 ---
-&[[&x]] @ p: &[&mut [T]]
+&[[&mut x]] @ p: &[&mut [T]]
 // Applying rule `Deref`
-[[&x]] @ *p: [&mut [T]]
+[[&mut x]] @ *p: [&mut [T]]
 // Applying rule `Constructor`
-[&x] @ (*p).0: &mut [T]
+[&mut x] @ (*p).0: &mut [T]
 // Applying rule `ConstructorRef`
-&x @ &mut (*(*p).0).0: &mut T
+&mut x @ &mut (*(*p).0).0: &mut T
 // Applying rule `Deref`
-&x @ (&mut (*(*p).0).0 as &_): &T
-// Applying rule `Deref`
-x @ *(&mut (*(*p).0).0 as &_): T
+x @ *&mut (*(*p).0).0: T
 
 // Final bindings (simplified):
 let x: T = *&mut (*(*p).0).0 // Borrow-check error: MutBorrowBehindSharedBorrow

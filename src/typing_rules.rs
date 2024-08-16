@@ -106,6 +106,40 @@ impl RuleOptions {
         ref_on_ref: RefOnRefBehavior::Error,
         ..Self::PERMISSIVE
     };
+
+    /// The known bundles, with a short explanation.
+    pub const KNOWN_OPTION_BUNDLES: &[(&str, Self, &str)] = &[
+        ("default", Self::NADRIS_PROPOSAL, "the default settings"),
+        (
+            "permissive",
+            Self::PERMISSIVE,
+            "an even more permissive proposal than the default",
+        ),
+        (
+            "stateless",
+            Self::STATELESS,
+            "a proposal that tracks no hidden state; purely type-based",
+        ),
+        ("ergo2024", Self::ERGO2024, "wip emulation of RFC3627 rules"),
+        (
+            "stable_rust",
+            Self::STABLE_RUST,
+            "emulates the behavior of current stable rust",
+        ),
+    ];
+
+    pub fn get_bundle_name(self) -> Option<&'static str> {
+        Self::KNOWN_OPTION_BUNDLES
+            .iter()
+            .find(|(_, bundle, _)| *bundle == self)
+            .map(|(name, _, _)| *name)
+    }
+    pub fn from_bundle_name(name: &str) -> Option<Self> {
+        Self::KNOWN_OPTION_BUNDLES
+            .iter()
+            .find(|(n, _, _)| *n == name)
+            .map(|(_, bundle, _)| *bundle)
+    }
 }
 
 /// The various typing rules we can apply.

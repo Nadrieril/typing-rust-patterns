@@ -11,7 +11,7 @@ struct TestCase<'a> {
 
 impl<'a> TestCase<'a> {
     fn new(request: &'a str, options: RuleOptions) -> Self {
-        let bundle_name = get_bundle_name(options);
+        let bundle_name = options.get_bundle_name();
         Self {
             options,
             bundle_name,
@@ -41,19 +41,6 @@ fn spanshot_request(test_case: TestCase<'_>) -> anyhow::Result<()> {
         insta::assert_snapshot!(trace);
     });
     Ok(())
-}
-
-static KNOWN_OPTION_BUNDLES: &[(&str, RuleOptions)] = &[
-    ("permissive", RuleOptions::PERMISSIVE),
-    ("stable_rust", RuleOptions::STABLE_RUST),
-    ("ergo2024", RuleOptions::ERGO2024),
-];
-
-fn get_bundle_name(opt: RuleOptions) -> Option<&'static str> {
-    KNOWN_OPTION_BUNDLES
-        .iter()
-        .find(|(_, bundle)| *bundle == opt)
-        .map(|(name, _)| *name)
 }
 
 #[test]
@@ -105,10 +92,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
             &["&x: &mut T", "&[[&x]]: &[&mut [T]]"],
         ),
         (
-            RuleOptions {
-                simplify_expressions: false,
-                ..RuleOptions::PERMISSIVE
-            },
+            RuleOptions::STATELESS,
             &[
                 "&[[&x]]: &[&mut [T]]",
                 "&[[&mut x]]: &[&mut [T]]",
