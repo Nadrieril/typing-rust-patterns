@@ -101,7 +101,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
         ),
         (
             RuleOptions {
-                ref_on_ref: RefOnRefBehavior::Skip,
+                ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
                 ..RuleOptions::PERMISSIVE
             },
             &[
@@ -113,7 +113,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
         ),
         (
             RuleOptions {
-                mut_on_ref: MutOnRefBehavior::ResetBindingMode,
+                mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
                 ..RuleOptions::PERMISSIVE
             },
             &["mut x: &T", "[mut x]: &[T]", "[mut ref x]: &[T]"],
@@ -135,6 +135,8 @@ fn test_solver_traces() -> anyhow::Result<()> {
                 "&[x]: &[&mut T]",
                 "[&x]: &mut [&T]",
                 "[mut x]: &[T]",
+                "[&mut x]: &[&mut T]",
+                "[&mut &x]: &[&mut T]",
             ],
         ),
     ];

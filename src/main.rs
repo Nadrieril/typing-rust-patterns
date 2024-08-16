@@ -52,10 +52,12 @@ fn main() -> anyhow::Result<()> {
                     "Couldn't parse `set` command.\n\n\
                     Syntax is `set option value`.\n\
                     Options are:\n\
-                    - ref_on_ref: AllocTemporary | Skip | Error\n    \
+                    - ref_binding_on_inherited: AllocTemporary | Skip | Error\n    \
                         how to handle a `ref x` binding on an inherited reference\n\
-                    - mut_on_ref: ResetBindingMode | Keep | Error\n    \
+                    - mut_binding_on_inherited: ResetBindingMode | Keep | Error\n    \
                         how to handle a `mut x` binding on an inherited reference\n\
+                    - inherited_ref_on_ref: EatOuter | EatInner | EatBoth\n    \
+                        how to handle a reference pattern on a double reference when the outer one is inherited\n\
                     - allow_ref_pat_on_ref_mut: bool\n    \
                         whether to allow `&p: &mut T`\n\
                     - simplify_expressions: bool\n    \
@@ -123,11 +125,11 @@ fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> Option<()> {
         return None;
     };
     match *opt {
-        "ref_on_ref" => options.ref_on_ref = from_str(val)?,
-        "mut_on_ref" => options.mut_on_ref = from_str(val)?,
+        "ref_binding_on_inherited" => options.ref_binding_on_inherited = from_str(val)?,
+        "mut_binding_on_inherited" => options.mut_binding_on_inherited = from_str(val)?,
+        "inherited_ref_on_ref" => options.inherited_ref_on_ref = from_str(val)?,
         "allow_ref_pat_on_ref_mut" => options.allow_ref_pat_on_ref_mut = from_str(val)?,
         "simplify_expressions" => options.simplify_expressions = from_str(val)?,
-        "eat_two_layers" => options.eat_two_layers = from_str(val)?,
         "eat_inherited_ref_alone" => options.eat_inherited_ref_alone = from_str(val)?,
         _ => return None,
     }

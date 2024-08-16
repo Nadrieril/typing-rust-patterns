@@ -6,7 +6,7 @@ use crate::*;
 /// What to do to a `ref x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum RefOnRefBehavior {
+pub enum RefBindingOnInheritedBehavior {
     /// Borrow that expression, which requires allocating a temporary variable.
     AllocTemporary,
     /// Stable rust behavior: skip the borrow in the expression and re-borrow the inner.
@@ -18,7 +18,7 @@ pub enum RefOnRefBehavior {
 /// What to do to a `mut x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum MutOnRefBehavior {
+pub enum MutBindingOnInheritedBehavior {
     /// Stable rust behavior: reset the binding mode.
     ResetBindingMode,
     /// Declare the expected binding and make it mutable.
@@ -27,19 +27,29 @@ pub enum MutOnRefBehavior {
     Error,
 }
 
+/// What to do when a reference pattern encounters a double-reference type where the outer one is
+/// inherited.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum InheritedRefOnRefBehavior {
+    /// Eat only the outer one.
+    EatOuter,
+    // /// Eat the inner one, keeping the outer one (aka binding mode). This is RFC3627 rule 2.
+    // EatInner,
+    /// Stable rust behavior: the ref pattern consumes both layers of reference type.
+    EatBoth,
+}
+
 /// Choice of typing rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RuleOptions {
-    pub ref_on_ref: RefOnRefBehavior,
-    pub mut_on_ref: MutOnRefBehavior,
+    pub ref_binding_on_inherited: RefBindingOnInheritedBehavior,
+    pub mut_binding_on_inherited: MutBindingOnInheritedBehavior,
+    pub inherited_ref_on_ref: InheritedRefOnRefBehavior,
     /// Whether a `&p` pattern is allowed on `&mut T`. This is RFC3627 rule 5.
     pub allow_ref_pat_on_ref_mut: bool,
     /// Whether to simplify some expressions, which removes some borrow errors involving mixes of
     /// `&mut` and `&`.
     pub simplify_expressions: bool,
-    /// Stable rust behavior: when a `&p` pattern applies to `&&T` where the outer `&` is an
-    /// inherited reference, the `&` pattern consumes both layers of reference type.
-    pub eat_two_layers: bool,
     /// If false, a reference pattern is only allowed if the _underlying place_ has a compatible
     /// reference type. This is RFC3627 rule 4.
     pub eat_inherited_ref_alone: bool,
@@ -51,35 +61,34 @@ pub struct RuleOptions {
 impl RuleOptions {
     /// Reproduces stable rust behavior.
     pub const STABLE_RUST: Self = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::Skip,
-        mut_on_ref: MutOnRefBehavior::ResetBindingMode,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
+        mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
+        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
         allow_ref_pat_on_ref_mut: false,
         simplify_expressions: false,
-        eat_two_layers: true,
         eat_inherited_ref_alone: false,
         downgrade_shared_inside_shared: false,
     };
 
     /// Reproduces RFC3627 (match ergonomics 2024) behavior
-    // TODO:
-    // Rule 2: When a reference pattern matches against a reference, do not update the DBM.
     pub const ERGO2024: Self = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::Skip,
-        mut_on_ref: MutOnRefBehavior::Error,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
+        mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+        // TODO: rule 2
+        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: true,
         simplify_expressions: true,
-        eat_two_layers: false,
         eat_inherited_ref_alone: true,
         downgrade_shared_inside_shared: true,
     };
 
     /// A fairly permissive proposal.
     pub const PERMISSIVE: Self = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::AllocTemporary,
-        mut_on_ref: MutOnRefBehavior::Keep,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::AllocTemporary,
+        mut_binding_on_inherited: MutBindingOnInheritedBehavior::Keep,
+        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: true,
         simplify_expressions: true,
-        eat_two_layers: false,
         eat_inherited_ref_alone: true,
         downgrade_shared_inside_shared: false,
     };
@@ -93,7 +102,7 @@ impl RuleOptions {
 
     /// My favored proposal.
     pub const NADRIS_PROPOSAL: Self = RuleOptions {
-        ref_on_ref: RefOnRefBehavior::Error,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
         ..Self::PERMISSIVE
     };
 
@@ -252,7 +261,7 @@ impl<'a> TypingPredicate<'a> {
                     // reference.
                     return Err(TypeError::TypeMismatch);
                 }
-                if ctx.options.eat_two_layers
+                if ctx.options.inherited_ref_on_ref == InheritedRefOnRefBehavior::EatBoth
                     && let T::Ref(inner_mtbl, _) = type_of_underlying_place
                     && matches!(bm, ByRef(..))
                 {
@@ -281,10 +290,10 @@ impl<'a> TypingPredicate<'a> {
 
             // Binding rules
             (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _) => {
-                match (bm, ctx.options.ref_on_ref) {
+                match (bm, ctx.options.ref_binding_on_inherited) {
                     // Easy case: we borrow the expression as expected. We rely on rust's lifetime
                     // extension of temporaries in expressions like `&&x`.
-                    (ByMove, _) | (_, RefOnRefBehavior::AllocTemporary) => Ok((
+                    (ByMove, _) | (_, RefBindingOnInheritedBehavior::AllocTemporary) => Ok((
                         Rule::Binding,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
@@ -294,29 +303,31 @@ impl<'a> TypingPredicate<'a> {
                     // To replicate stable rust behavior, we inspect the binding mode and skip it.
                     // This amounts to getting ahold of the referenced place and re-borrowing it
                     // with the requested mutability.
-                    (ByRef(_), RefOnRefBehavior::Skip) => Ok((
+                    (ByRef(_), RefBindingOnInheritedBehavior::Skip) => Ok((
                         Rule::Binding,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
                             expr: self.expr.reset_binding_mode().borrow(a, by_ref_mtbl),
                         }],
                     )),
-                    (ByRef(_), RefOnRefBehavior::Error) => Err(TypeError::RefOnRef),
+                    (ByRef(_), RefBindingOnInheritedBehavior::Error) => Err(TypeError::RefOnRef),
                 }
             }
             (P::Binding(Mutable, ByMove, _), _) => {
-                match (bm, ctx.options.mut_on_ref) {
+                match (bm, ctx.options.mut_binding_on_inherited) {
                     // Easy case: declare the binding as expected.
-                    (ByMove, _) | (_, MutOnRefBehavior::Keep) => Ok((Rule::Binding, vec![])),
+                    (ByMove, _) | (_, MutBindingOnInheritedBehavior::Keep) => {
+                        Ok((Rule::Binding, vec![]))
+                    }
                     // To replicate stable rust behavior, we reset the binding mode.
-                    (ByRef(_), MutOnRefBehavior::ResetBindingMode) => Ok((
+                    (ByRef(_), MutBindingOnInheritedBehavior::ResetBindingMode) => Ok((
                         Rule::Binding,
                         vec![Self {
                             pat: self.pat,
                             expr: self.expr.reset_binding_mode(),
                         }],
                     )),
-                    (ByRef(_), MutOnRefBehavior::Error) => Err(TypeError::MutOnRef),
+                    (ByRef(_), MutBindingOnInheritedBehavior::Error) => Err(TypeError::MutOnRef),
                 }
             }
             (P::Binding(Shared, ByMove, _), _) => Ok((Rule::Binding, vec![])),
