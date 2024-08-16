@@ -4,8 +4,8 @@
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Mutable {
-    No,
-    Yes,
+    Shared,
+    Mutable,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -43,8 +43,8 @@ impl<'a> Type<'a> {
     pub fn is_copy(&self) -> bool {
         match self {
             Type::Tuple(tys) => tys.iter().all(|ty| ty.is_copy()),
-            Type::Ref(Mutable::No, _) => true,
-            Type::Ref(Mutable::Yes, _) => false,
+            Type::Ref(Mutable::Shared, _) => true,
+            Type::Ref(Mutable::Mutable, _) => false,
             Type::Var(_) => true,
         }
     }
@@ -107,7 +107,7 @@ impl<'a> Expression<'a> {
             panic!("type error")
         };
         Expression {
-            ty: Type::Ref(Mutable::No, ty).alloc(arenas),
+            ty: Type::Ref(Mutable::Shared, ty).alloc(arenas),
             kind: ExprKind::CastAsImmRef(self.alloc(arenas)),
         }
     }
@@ -118,7 +118,7 @@ impl<'a> Expression<'a> {
         match self.kind {
             ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => BindingMode::ByMove,
             ExprKind::Ref(mtbl, _) => BindingMode::ByRef(mtbl),
-            ExprKind::CastAsImmRef(_) => BindingMode::ByRef(Mutable::No),
+            ExprKind::CastAsImmRef(_) => BindingMode::ByRef(Mutable::Shared),
         }
     }
 
@@ -140,7 +140,7 @@ impl<'a> Expression<'a> {
         match self.kind {
             ExprKind::Scrutinee => Ok(()),
             ExprKind::Ref(mtbl, e) => {
-                if mtbl == Mutable::Yes && e.scrutinee_access_level() == Mutable::No {
+                if mtbl == Mutable::Mutable && e.scrutinee_access_level() == Mutable::Shared {
                     Err(BorrowCheckError::MutBorrowBehindSharedBorrow)
                 } else {
                     e.borrow_check_inner(false)
@@ -161,18 +161,18 @@ impl<'a> Expression<'a> {
     /// under a shared reference we only have shared access.
     fn scrutinee_access_level(&self) -> Mutable {
         match self.kind {
-            ExprKind::Scrutinee => Mutable::Yes,
-            ExprKind::Ref(Mutable::No, _) => Mutable::No,
-            ExprKind::Ref(Mutable::Yes, e) => e.scrutinee_access_level(),
+            ExprKind::Scrutinee => Mutable::Mutable,
+            ExprKind::Ref(Mutable::Shared, _) => Mutable::Shared,
+            ExprKind::Ref(Mutable::Mutable, e) => e.scrutinee_access_level(),
             ExprKind::Deref(e) => {
-                if matches!(e.ty, Type::Ref(Mutable::No, _)) {
-                    Mutable::No
+                if matches!(e.ty, Type::Ref(Mutable::Shared, _)) {
+                    Mutable::Shared
                 } else {
                     e.scrutinee_access_level()
                 }
             }
             ExprKind::Field(e, _) => e.scrutinee_access_level(),
-            ExprKind::CastAsImmRef(_) => Mutable::No,
+            ExprKind::CastAsImmRef(_) => Mutable::Shared,
         }
     }
 
@@ -185,7 +185,8 @@ impl<'a> Expression<'a> {
                 // `&*p` with `p: &T` can be simplified, but `&mut *p` with `p: &mut T` is a
                 // re-borrow so it must stay.
                 ExprKind::Deref(inner)
-                    if mtbl == Mutable::No && matches!(inner.ty, Type::Ref(Mutable::No, _)) =>
+                    if mtbl == Mutable::Shared
+                        && matches!(inner.ty, Type::Ref(Mutable::Shared, _)) =>
                 {
                     *inner
                 }
@@ -196,7 +197,9 @@ impl<'a> Expression<'a> {
             },
             ExprKind::Deref(e) => match e.kind {
                 ExprKind::Ref(mtbl, inner) if mtbl == inner.scrutinee_access_level() => *inner,
-                ExprKind::CastAsImmRef(inner) if inner.scrutinee_access_level() == Mutable::No => {
+                ExprKind::CastAsImmRef(inner)
+                    if inner.scrutinee_access_level() == Mutable::Shared =>
+                {
                     Expression {
                         ty: self.ty,
                         kind: ExprKind::Deref(inner),

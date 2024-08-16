@@ -188,9 +188,9 @@ where
 {
     tag("mut ").followed_by(multispace0).opt().map(|x| {
         if x.is_some() {
-            Mutable::Yes
+            Mutable::Mutable
         } else {
-            Mutable::No
+            Mutable::Shared
         }
     })
 }

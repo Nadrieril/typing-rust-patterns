@@ -135,9 +135,9 @@ impl<'a> TypingPredicate<'a> {
 
     /// Apply one step of rule to this predicate.
     pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), TypeError> {
+        use crate::Mutable::*;
         use BindingMode::*;
         use ExprKind as E;
-        use Mutable::*;
         use Pattern as P;
         use Type as T;
 
@@ -145,19 +145,19 @@ impl<'a> TypingPredicate<'a> {
             // Expression simplification rules.
             match self.expr.kind {
                 E::CastAsImmRef(Expression {
-                    kind: E::Ref(Yes, e),
+                    kind: E::Ref(Mutable, e),
                     ..
                 }) => {
                     return Ok((
                         Rule::ExprSimplification,
                         vec![TypingPredicate {
                             pat: self.pat,
-                            expr: e.borrow(ctx.arenas, No),
+                            expr: e.borrow(ctx.arenas, Shared),
                         }],
                     ))
                 }
                 E::Deref(Expression {
-                    kind: E::Ref(Yes, e),
+                    kind: E::Ref(Mutable, e),
                     ..
                 }) => {
                     return Ok((
@@ -203,7 +203,7 @@ impl<'a> TypingPredicate<'a> {
             (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
                 let mtbl = min(outer_mtbl, inner_mtbl);
                 let mut expr = self.expr.deref(ctx.arenas);
-                if let Yes = inner_mtbl {
+                if let Mutable = inner_mtbl {
                     // Reborrow
                     expr = expr.deref(ctx.arenas).borrow(ctx.arenas, mtbl)
                 }
@@ -238,21 +238,21 @@ impl<'a> TypingPredicate<'a> {
                     t_mtbl = *inner_mtbl;
                 }
                 match (p_mtbl, t_mtbl) {
-                    (No, No) | (Yes, Yes) => Ok((
+                    (Shared, Shared) | (Mutable, Mutable) => Ok((
                         Rule::Deref,
                         vec![TypingPredicate {
                             pat: p_inner,
                             expr: expr.deref(ctx.arenas),
                         }],
                     )),
-                    (No, Yes) if ctx.options.allow_ref_pat_on_ref_mut => Ok((
+                    (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => Ok((
                         Rule::Deref,
                         vec![TypingPredicate {
                             pat: self.pat,
                             expr: expr.cast_as_imm_ref(ctx.arenas),
                         }],
                     )),
-                    (No, Yes) | (Yes, No) => Err(TypeError::MutabilityMismatch),
+                    (Shared, Mutable) | (Mutable, Shared) => Err(TypeError::MutabilityMismatch),
                 }
             }
             (P::Ref(..), _) => Err(TypeError::TypeMismatch),
@@ -285,7 +285,7 @@ impl<'a> TypingPredicate<'a> {
                     (ByRef(_), RefOnRefBehavior::Error) => Err(TypeError::RefOnRef),
                 }
             }
-            (P::Binding(Yes, ByMove, _), _) => {
+            (P::Binding(Mutable, ByMove, _), _) => {
                 match (self.expr.binding_mode(), ctx.options.mut_on_ref) {
                     // Easy case: declare the binding as expected.
                     (ByMove, _) | (_, MutOnRefBehavior::Keep) => Ok((Rule::Binding, vec![])),
@@ -300,7 +300,7 @@ impl<'a> TypingPredicate<'a> {
                     (ByRef(_), MutOnRefBehavior::Error) => Err(TypeError::RefOnRef),
                 }
             }
-            (P::Binding(No, ByMove, _), _) => Ok((Rule::Binding, vec![])),
+            (P::Binding(Shared, ByMove, _), _) => Ok((Rule::Binding, vec![])),
         }
     }
 

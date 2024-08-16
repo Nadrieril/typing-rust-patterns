@@ -6,8 +6,8 @@ use crate::*;
 impl Display for Mutable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Yes => f.write_str("mut "),
-            Self::No => Ok(()),
+            Self::Mutable => f.write_str("mut "),
+            Self::Shared => Ok(()),
         }
     }
 }
