@@ -179,6 +179,10 @@ impl<'a> Expression<'a> {
     /// Simplify this expression without changing its semantics. In particular, this should not
     /// change borrow-checking behavior.
     pub fn simplify(&self, a: &'a Arenas<'a>) -> Self {
+        self.simplify_inner(a, true)
+    }
+
+    fn simplify_inner(&self, a: &'a Arenas<'a>, top_level: bool) -> Self {
         match self.kind {
             ExprKind::Scrutinee => *self,
             ExprKind::Ref(mtbl, e) => match e.kind {
@@ -192,11 +196,16 @@ impl<'a> Expression<'a> {
                 }
                 _ => Expression {
                     ty: self.ty,
-                    kind: ExprKind::Ref(mtbl, e.simplify(a).alloc(a)),
+                    kind: ExprKind::Ref(mtbl, e.simplify_inner(a, false).alloc(a)),
                 },
             },
             ExprKind::Deref(e) => match e.kind {
                 ExprKind::Ref(mtbl, inner) if mtbl == inner.scrutinee_access_level() => *inner,
+                ExprKind::Ref(mtbl, inner)
+                    if top_level && mtbl == Mutable::Shared && self.ty.is_copy() =>
+                {
+                    *inner
+                }
                 ExprKind::CastAsImmRef(inner)
                     if inner.scrutinee_access_level() == Mutable::Shared =>
                 {
@@ -204,20 +213,20 @@ impl<'a> Expression<'a> {
                         ty: self.ty,
                         kind: ExprKind::Deref(inner),
                     }
-                    .simplify(a)
+                    .simplify_inner(a, top_level)
                 }
                 _ => Expression {
                     ty: self.ty,
-                    kind: ExprKind::Deref(e.simplify(a).alloc(a)),
+                    kind: ExprKind::Deref(e.simplify_inner(a, false).alloc(a)),
                 },
             },
             ExprKind::Field(e, n) => Expression {
                 ty: self.ty,
-                kind: ExprKind::Field(e.simplify(a).alloc(a), n),
+                kind: ExprKind::Field(e.simplify_inner(a, false).alloc(a), n),
             },
             ExprKind::CastAsImmRef(e) => Expression {
                 ty: self.ty,
-                kind: ExprKind::CastAsImmRef(e.simplify(a).alloc(a)),
+                kind: ExprKind::CastAsImmRef(e.simplify_inner(a, false).alloc(a)),
             },
         }
     }

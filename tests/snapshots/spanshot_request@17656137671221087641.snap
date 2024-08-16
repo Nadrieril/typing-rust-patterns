@@ -23,4 +23,4 @@ info:
 x @ *&(*p).0: &T
 
 // Final bindings (simplified):
-let x: &T = *&(*p).0
+let x: &T = (*p).0
