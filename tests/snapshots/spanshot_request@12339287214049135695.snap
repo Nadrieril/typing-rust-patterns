@@ -4,15 +4,19 @@ info:
   options:
     ref_binding_on_inherited: Skip
     mut_binding_on_inherited: Error
-    inherited_ref_on_ref: EatOuter
+    inherited_ref_on_ref: EatInner
     allow_ref_pat_on_ref_mut: true
     simplify_expressions: true
     eat_inherited_ref_alone: true
     downgrade_shared_inside_shared: true
   bundle_name: ergo2024
-  request: "[mut x]: &[T]"
+  request: "&[x]: &&mut [T]"
 ---
-[mut x] @ p: &[T]
+&[x] @ p: &&mut [T]
+// Applying rule `Deref`
+[x] @ *p: &mut [T]
 // Applying rule `ConstructorRef`
-mut x @ &(*p).0: &T
-// Type error for `mut x @ &(*p).0: &T`: MutOnRef
+x @ &(**p).0: &T
+
+// Final bindings (simplified):
+let x: &T = &(**p).0

@@ -33,8 +33,8 @@ pub enum MutBindingOnInheritedBehavior {
 pub enum InheritedRefOnRefBehavior {
     /// Eat only the outer one.
     EatOuter,
-    // /// Eat the inner one, keeping the outer one (aka binding mode). This is RFC3627 rule 2.
-    // EatInner,
+    /// Eat the inner one, keeping the outer one (aka binding mode). This is RFC3627 rule 2.
+    EatInner,
     /// Stable rust behavior: the ref pattern consumes both layers of reference type.
     EatBoth,
 }
@@ -74,8 +74,7 @@ impl RuleOptions {
     pub const ERGO2024: Self = RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
-        // TODO: rule 2
-        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
+        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
         allow_ref_pat_on_ref_mut: true,
         simplify_expressions: true,
         eat_inherited_ref_alone: true,
@@ -268,23 +267,38 @@ impl<'a> TypingPredicate<'a> {
                     expr = expr.reset_binding_mode();
                     t_mtbl = *inner_mtbl;
                 }
-                match (p_mtbl, t_mtbl) {
-                    (Shared, Shared) | (Mutable, Mutable) => Ok((
-                        Rule::Deref,
-                        vec![Self {
-                            pat: p_inner,
-                            expr: expr.deref(a),
-                        }],
-                    )),
-                    (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => Ok((
-                        Rule::Deref,
-                        vec![Self {
-                            pat: self.pat,
-                            expr: expr.cast_as_imm_ref(a),
-                        }],
-                    )),
-                    (Shared, Mutable) | (Mutable, Shared) => Err(TypeError::MutabilityMismatch),
+                let mut reborrow_after = None;
+                if ctx.options.inherited_ref_on_ref == InheritedRefOnRefBehavior::EatInner
+                    && let T::Ref(inner_mtbl, _) = type_of_underlying_place
+                    && matches!(bm, ByRef(..))
+                {
+                    expr = expr.reset_binding_mode();
+                    reborrow_after = Some(t_mtbl);
+                    t_mtbl = *inner_mtbl;
                 }
+                let mut pred = match (p_mtbl, t_mtbl) {
+                    (Shared, Shared) | (Mutable, Mutable) => Self {
+                        pat: p_inner,
+                        expr: expr.deref(a),
+                    },
+                    (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => Self {
+                        pat: self.pat,
+                        expr: expr.cast_as_imm_ref(a),
+                    },
+                    (Shared, Mutable) | (Mutable, Shared) => {
+                        return Err(TypeError::MutabilityMismatch)
+                    }
+                };
+                if let Some(mut mtbl) = reborrow_after {
+                    if ctx.options.downgrade_shared_inside_shared {
+                        mtbl = min(mtbl, pred.expr.scrutinee_access_level());
+                    }
+                    pred = Self {
+                        pat: pred.pat,
+                        expr: pred.expr.borrow(a, mtbl),
+                    }
+                }
+                Ok((Rule::Deref, vec![pred]))
             }
             (P::Ref(..), _) => Err(TypeError::TypeMismatch),
 
