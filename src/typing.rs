@@ -173,6 +173,8 @@ impl<'a> TypingPredicate<'a> {
             }
         }
 
+        let bm = self.expr.binding_mode();
+        let type_of_underlying_place = self.expr.reset_binding_mode().ty;
         match (*self.pat, *self.expr.ty) {
             // Constructor rules
             (P::Tuple(pats), T::Tuple(tys)) if pats.len() == tys.len() => {
@@ -217,9 +219,6 @@ impl<'a> TypingPredicate<'a> {
             // Dereference rules
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
                 let mut expr = self.expr;
-                // To reproduce stable rust behavior, we need to inspect the type of the place
-                // currently being matched on..
-                let type_of_underlying_place = expr.reset_binding_mode().ty;
                 if !ctx.options.eat_inherited_ref_alone
                     && !matches!(type_of_underlying_place, T::Ref(..))
                 {
@@ -229,7 +228,7 @@ impl<'a> TypingPredicate<'a> {
                 }
                 if ctx.options.eat_two_layers
                     && let T::Ref(inner_mtbl, _) = type_of_underlying_place
-                    && matches!(expr.binding_mode(), ByRef(..))
+                    && matches!(bm, ByRef(..))
                 {
                     expr = expr.reset_binding_mode();
                     t_mtbl = *inner_mtbl;
@@ -256,7 +255,7 @@ impl<'a> TypingPredicate<'a> {
 
             // Binding rules
             (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _) => {
-                match (self.expr.binding_mode(), ctx.options.ref_on_ref) {
+                match (bm, ctx.options.ref_on_ref) {
                     // Easy case: we borrow the expression as expected. We rely on rust's lifetime
                     // extension of temporaries in expressions like `&&x`.
                     (ByMove, _) | (_, RefOnRefBehavior::AllocTemporary) => Ok((
@@ -280,7 +279,7 @@ impl<'a> TypingPredicate<'a> {
                 }
             }
             (P::Binding(Mutable, ByMove, _), _) => {
-                match (self.expr.binding_mode(), ctx.options.mut_on_ref) {
+                match (bm, ctx.options.mut_on_ref) {
                     // Easy case: declare the binding as expected.
                     (ByMove, _) | (_, MutOnRefBehavior::Keep) => Ok((Rule::Binding, vec![])),
                     // To replicate stable rust behavior, we reset the binding mode.
