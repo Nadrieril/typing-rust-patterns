@@ -211,7 +211,9 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
         let new_preds = match pred.typing_rule(ctx) {
             Ok(rule) => {
                 if TRACE {
-                    println!("Pushing rule:\n{rule}");
+                    let rule_str = rule.to_string();
+                    let rule_str = rule_str.replace("\n", "\n    ");
+                    println!("  Pushing rule:\n    {rule_str}");
                 }
                 rules.push(rule);
                 vec![]
@@ -235,12 +237,17 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
                 .into_iter()
                 .map(|expr| TypingPredicate { expr, ..pred })
                 .collect_vec(),
-            Err(_) => vec![],
+            Err(err) => {
+                if TRACE {
+                    println!("  Type error: {err:?}");
+                }
+                vec![]
+            }
         };
-        if TRACE {
+        if TRACE && !new_preds.is_empty() {
             print!(
-                "Pushing new preds:\n{}",
-                new_preds.iter().map(|p| format!("  {p}\n")).format("")
+                "  Pushing new preds:\n{}",
+                new_preds.iter().map(|p| format!("    {p}\n")).format("")
             );
         }
         predicates.extend(new_preds);

@@ -286,16 +286,16 @@ impl<'a> TypingPredicate<'a> {
                                     }
                                 }
                             }
+                            T::Var(_) => {
+                                return Err(TypeError::OverlyGeneralType);
+                            }
                             // The underlying place is not a reference, so we can't eat the inherited
                             // reference.
                             T::Tuple(_) if !ctx.options.eat_inherited_ref_alone => {
                                 return Err(TypeError::TypeMismatch);
                             }
-                            T::Var(_) if !ctx.options.eat_inherited_ref_alone => {
-                                return Err(TypeError::OverlyGeneralType);
-                            }
                             // Continue
-                            _ => {}
+                            T::Tuple(_) => {}
                         }
                     }
                 }
