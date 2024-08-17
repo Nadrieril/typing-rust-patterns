@@ -15,4 +15,4 @@ info:
 [&x] @ p: &[T]
 // Applying rule `ConstructorRef`
 &x @ &(*p).0: &T
-// Type error for `&x @ &(*p).0: &T`: TypeMismatch
+// Type error for `&x @ &(*p).0: &T`: OverlyGeneralType

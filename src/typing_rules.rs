@@ -147,6 +147,7 @@ pub enum Rule {
 #[derive(Debug, Clone, Copy)]
 pub enum TypeError {
     TypeMismatch,
+    OverlyGeneralType,
     MutabilityMismatch,
     RefOnRef,
     MutOnRef,
@@ -216,6 +217,7 @@ impl<'a> TypingPredicate<'a> {
                     .collect();
                 Ok((Rule::Constructor, preds))
             }
+            (P::Tuple(_), T::Tuple(_)) => Err(TypeError::TypeMismatch),
             (P::Tuple(pats), T::Ref(mtbl, T::Tuple(tys))) if pats.len() == tys.len() => {
                 let preds = pats
                     .iter()
@@ -231,6 +233,7 @@ impl<'a> TypingPredicate<'a> {
                     .collect();
                 Ok((Rule::ConstructorRef, preds))
             }
+            (P::Tuple(_), T::Ref(_, T::Tuple(_))) => Err(TypeError::TypeMismatch),
             (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
                 let mtbl = min(outer_mtbl, inner_mtbl);
                 let mut expr = self.expr.deref(a);
@@ -248,7 +251,8 @@ impl<'a> TypingPredicate<'a> {
                     }],
                 ))
             }
-            (P::Tuple(_), _) => Err(TypeError::TypeMismatch),
+            (P::Tuple(_), T::Ref(_, T::Var(_))) => Err(TypeError::OverlyGeneralType),
+            (P::Tuple(_), T::Var(_)) => Err(TypeError::OverlyGeneralType),
 
             // Dereference rules
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
@@ -256,24 +260,32 @@ impl<'a> TypingPredicate<'a> {
                 let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
                 let mut reborrow_after = None;
                 if matches!(bm, ByRef(..)) {
-                    if let T::Ref(inner_mtbl, _) = type_of_underlying_place {
-                        rule_variant = ctx.options.inherited_ref_on_ref;
-                        match ctx.options.inherited_ref_on_ref {
-                            InheritedRefOnRefBehavior::EatOuter => {}
-                            InheritedRefOnRefBehavior::EatInner => {
-                                reborrow_after = Some(t_mtbl);
-                                expr = expr.reset_binding_mode();
-                                t_mtbl = *inner_mtbl;
-                            }
-                            InheritedRefOnRefBehavior::EatBoth => {
-                                expr = expr.reset_binding_mode();
-                                t_mtbl = *inner_mtbl;
+                    match type_of_underlying_place {
+                        T::Ref(inner_mtbl, _) => {
+                            rule_variant = ctx.options.inherited_ref_on_ref;
+                            match ctx.options.inherited_ref_on_ref {
+                                InheritedRefOnRefBehavior::EatOuter => {}
+                                InheritedRefOnRefBehavior::EatInner => {
+                                    reborrow_after = Some(t_mtbl);
+                                    expr = expr.reset_binding_mode();
+                                    t_mtbl = *inner_mtbl;
+                                }
+                                InheritedRefOnRefBehavior::EatBoth => {
+                                    expr = expr.reset_binding_mode();
+                                    t_mtbl = *inner_mtbl;
+                                }
                             }
                         }
-                    } else if !ctx.options.eat_inherited_ref_alone {
                         // The underlying place is not a reference, so we can't eat the inherited
                         // reference.
-                        return Err(TypeError::TypeMismatch);
+                        T::Tuple(_) if !ctx.options.eat_inherited_ref_alone => {
+                            return Err(TypeError::TypeMismatch);
+                        }
+                        T::Var(_) if !ctx.options.eat_inherited_ref_alone => {
+                            return Err(TypeError::OverlyGeneralType);
+                        }
+                        // Continue
+                        _ => {}
                     }
                 }
                 let (rule, mut pred) = match (p_mtbl, t_mtbl) {
@@ -306,7 +318,8 @@ impl<'a> TypingPredicate<'a> {
                 }
                 Ok((rule, vec![pred]))
             }
-            (P::Ref(..), _) => Err(TypeError::TypeMismatch),
+            (P::Ref(..), T::Tuple(..)) => Err(TypeError::TypeMismatch),
+            (P::Ref(..), T::Var(..)) => Err(TypeError::OverlyGeneralType),
 
             // Binding rules
             (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _) => {

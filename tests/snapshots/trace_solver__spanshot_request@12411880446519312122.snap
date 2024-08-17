@@ -13,4 +13,4 @@ info:
   request: "&x: T"
 ---
 &x @ p: T
-// Type error for `&x @ p: T`: TypeMismatch
+// Type error for `&x @ p: T`: OverlyGeneralType
