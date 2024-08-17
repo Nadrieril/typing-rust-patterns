@@ -34,41 +34,41 @@ p @ *q: T
 ---------------------------------- "Deref(EatOuter)"
 &p @ q: &T, binding_mode(q) = move
 
-p @ *&q: T
------------ "Deref(EatOuter)"
-&p @ &q: &T
+p @ *q: T
+--------------------------------- "Deref(EatOuter)"
+&p @ q: &T, binding_mode(q) = ref
 
 p @ *q: T
 ------------------------------------------ "Deref(EatOuter)"
 &mut p @ q: &mut T, binding_mode(q) = move
 
-p @ *&mut q: T
------------------------ "Deref(EatOuter)"
-&mut p @ &mut q: &mut T
+p @ *q: T
+--------------------------------------------- "Deref(EatOuter)"
+&mut p @ q: &mut T, binding_mode(q) = ref mut
 
 &p @ &*q: &T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ q: &mut T, binding_mode(q) = move
 
-&p @ &q: &T
-------------------- "DerefMutWithShared(EatOuter)"
-&p @ &mut q: &mut T
+&p @ q: &T
+----------------------------------------- "DerefMutWithShared(EatOuter)"
+&p @ q: &mut T, binding_mode(q) = ref mut
 
-x @ &q: &T
--------------- "BindingOverrideBorrow"
-ref x @ &q: &T
+x @ q: &T
+------------------------------------ "BindingOverrideBorrow"
+ref x @ q: &T, binding_mode(q) = ref
 
-x @ &q: &T
----------------------- "BindingOverrideBorrow"
-ref x @ &mut q: &mut T
+x @ q: &T
+-------------------------------------------- "BindingOverrideBorrow"
+ref x @ q: &mut T, binding_mode(q) = ref mut
 
-x @ &mut q: &mut T
------------------- "BindingOverrideBorrow"
-ref mut x @ &q: &T
+x @ q: &mut T
+---------------------------------------- "BindingOverrideBorrow"
+ref mut x @ q: &T, binding_mode(q) = ref
 
-x @ &mut q: &mut T
--------------------------- "BindingOverrideBorrow"
-ref mut x @ &mut q: &mut T
+x @ q: &mut T
+------------------------------------------------ "BindingOverrideBorrow"
+ref mut x @ q: &mut T, binding_mode(q) = ref mut
 
 x @ &q: &T
 ------------------------------------ "BindingBorrow"

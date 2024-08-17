@@ -278,40 +278,92 @@ pub struct TypingRule<'a> {
     pub postcondition: TypingPredicate<'a>,
 }
 
-fn requires_by_move(e: &Expression<'_>) -> bool {
-    match e.kind {
-        ExprKind::Scrutinee => false,
-        ExprKind::Abstract { not_a_ref } => not_a_ref,
-        ExprKind::Ref(_, e) | ExprKind::Deref(e) | ExprKind::Field(e, _) => requires_by_move(e),
+impl<'a> Expression<'a> {
+    /// If the tail of this expression is `Abstract`, removes the binding mode on that variable and
+    /// returns it. Beware: this changes the type of the variable. We must apply the same
+    /// transformation to the preconditions.
+    fn extract_abstract_bm(&self, a: &'a Arenas<'a>) -> (Option<BindingMode>, Expression<'a>) {
+        match self.kind {
+            ExprKind::Scrutinee => (None, *self),
+            ExprKind::Abstract { not_a_ref: false } => (None, *self),
+            ExprKind::Abstract { not_a_ref: true } => (
+                Some(ByMove),
+                Expression {
+                    ty: self.ty,
+                    kind: ExprKind::Abstract { not_a_ref: false },
+                },
+            ),
+            ExprKind::Ref(
+                mtbl,
+                Expression {
+                    kind: ExprKind::Abstract { not_a_ref: false },
+                    ..
+                },
+            ) => (
+                Some(ByRef(mtbl)),
+                Expression {
+                    ty: self.ty,
+                    kind: ExprKind::Abstract { not_a_ref: false },
+                },
+            ),
+            ExprKind::Ref(mtbl, e) => {
+                let (bm, e) = e.extract_abstract_bm(a);
+                (bm, e.borrow(a, mtbl))
+            }
+            ExprKind::Deref(e) => {
+                let (bm, e) = e.extract_abstract_bm(a);
+                (bm, e.deref(a))
+            }
+            ExprKind::Field(e, n) => {
+                let (bm, e) = e.extract_abstract_bm(a);
+                (bm, e.field(a, n))
+            }
+        }
     }
 }
 
 impl<'a> Display for TypingRule<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let Self {
-            name,
-            preconditions,
-            postcondition,
-        } = self;
-        let preconditions_str = if preconditions.is_empty() {
-            postcondition.display_as_let()
-        } else {
-            preconditions.iter().format(", ").to_string()
-        };
-        let mut postcondition_str = postcondition.to_string();
-        if requires_by_move(&postcondition.expr) {
+        let a = &Arenas::default();
+
+        // Extract the bm of the expression variable and show it on the side.
+        let mut pred = self.postcondition.clone();
+        let (bm, expr) = pred.expr.extract_abstract_bm(a);
+        pred.expr = expr;
+        let mut preconditions = self.preconditions.clone();
+        // If we changed the type of `q` above; we must change it here too.
+        if let Some(ByRef(..)) = bm {
+            for pred in &mut preconditions {
+                let (_, expr) = pred.expr.extract_abstract_bm(a);
+                pred.expr = expr;
+            }
+        }
+
+        let mut postconditions_str = pred.to_string();
+        if let Some(bm) = bm {
+            let bm = match bm {
+                ByRef(mtbl) => &format!("ref {mtbl}"),
+                ByMove => "move",
+            };
+            let bm = bm.trim();
             let _ = write!(
-                &mut postcondition_str,
-                ", binding_mode({}) = move",
+                &mut postconditions_str,
+                ", binding_mode({}) = {bm}",
                 ExprKind::Abstract { not_a_ref: true }
             );
         }
 
-        let len = max(preconditions_str.len(), postcondition_str.len());
+        let preconditions_str = if preconditions.is_empty() {
+            pred.display_as_let()
+        } else {
+            preconditions.iter().format(", ").to_string()
+        };
+
+        let len = max(preconditions_str.len(), postconditions_str.len());
         let bar = "-".repeat(len);
         write!(f, "{preconditions_str}\n")?;
-        write!(f, "{bar} \"{name:?}\"\n")?;
-        write!(f, "{postcondition_str}")?;
+        write!(f, "{bar} \"{:?}\"\n", self.name)?;
+        write!(f, "{postconditions_str}")?;
         Ok(())
     }
 }
