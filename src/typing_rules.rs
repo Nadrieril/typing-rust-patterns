@@ -181,27 +181,8 @@ impl<'a> TypingPredicate<'a> {
         let a = ctx.arenas;
 
         if ctx.options.simplify_expressions {
-            // Expression simplification rules. We match on `*&mut e` and `&*&mut e`.
+            // Expression simplification rule. We match on `*&mut e`.
             match self.expr.kind {
-                E::Ref(
-                    Shared,
-                    Expression {
-                        kind:
-                            E::Deref(Expression {
-                                kind: E::Ref(Mutable, &e),
-                                ..
-                            }),
-                        ..
-                    },
-                ) => {
-                    return Ok((
-                        Rule::ExprSimplification,
-                        vec![Self {
-                            pat: self.pat,
-                            expr: e.borrow(a, Shared),
-                        }],
-                    ))
-                }
                 E::Deref(Expression {
                     kind: E::Ref(Mutable, &e),
                     ..
@@ -278,6 +259,7 @@ impl<'a> TypingPredicate<'a> {
                 let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
                 let mut reborrow_after = None;
                 let bm = self.expr.binding_mode()?;
+                let mut did_reset_bm = false;
                 if matches!(bm, ByRef(..)) {
                     let type_of_underlying_place = self.expr.reset_binding_mode()?.ty;
                     match type_of_underlying_place {
@@ -288,10 +270,12 @@ impl<'a> TypingPredicate<'a> {
                                 InheritedRefOnRefBehavior::EatInner => {
                                     reborrow_after = Some(t_mtbl);
                                     expr = expr.reset_binding_mode()?;
+                                    did_reset_bm = true;
                                     t_mtbl = *inner_mtbl;
                                 }
                                 InheritedRefOnRefBehavior::EatBoth => {
                                     expr = expr.reset_binding_mode()?;
+                                    did_reset_bm = true;
                                     t_mtbl = *inner_mtbl;
                                 }
                             }
@@ -318,11 +302,19 @@ impl<'a> TypingPredicate<'a> {
                     ),
                     (Shared, Mutable) => {
                         if ctx.options.allow_ref_pat_on_ref_mut {
+                            let expr = if ctx.options.simplify_expressions
+                                && !did_reset_bm
+                                && bm == ByRef(Mutable)
+                            {
+                                expr.reset_binding_mode()?
+                            } else {
+                                expr.deref(a)
+                            };
                             (
                                 Rule::DerefMutWithShared(rule_variant),
                                 Self {
                                     pat: self.pat,
-                                    expr: expr.deref(a).borrow(a, Shared),
+                                    expr: expr.borrow(a, Shared),
                                 },
                             )
                         } else {

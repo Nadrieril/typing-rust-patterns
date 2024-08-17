@@ -168,22 +168,16 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
         },
     }];
 
-    // Add the special expression simplification predicates because we won't explore them since
-    // they don't trigger `OverlyGeneralExpr` errors.
+    // Add the special expression simplification predicate because we won't explore it since it
+    // doesn't trigger `OverlyGeneralExpr` errors.
     if ctx.options.simplify_expressions {
-        let req = TypingRequest::parse(a, "p: T").unwrap();
-        let mut_borrow = &Expression {
+        let e = &Expression {
             kind: ExprKind::Scrutinee,
-            ty: req.ty,
-        }
-        .borrow(a, Mutable);
+            ty: &Type::Var("T"),
+        };
         predicates.push(TypingPredicate {
-            pat: req.pat,
-            expr: mut_borrow.deref(a).borrow(a, Shared),
-        });
-        predicates.push(TypingPredicate {
-            pat: req.pat,
-            expr: mut_borrow.deref(a),
+            pat: &Pattern::Abstract("p"),
+            expr: e.borrow(a, Mutable).deref(a),
         });
     }
 
