@@ -180,7 +180,7 @@ impl<'a> TypingPredicate<'a> {
                         Rule::ExprSimplification,
                         vec![Self {
                             pat: self.pat,
-                            expr: e.borrow(a, Shared),
+                            expr: e.borrow(a, Shared, false),
                         }],
                     ))
                 }
@@ -220,25 +220,24 @@ impl<'a> TypingPredicate<'a> {
                     .iter()
                     .enumerate()
                     .map(|(i, pat)| {
-                        let mut mtbl = mtbl;
-                        if ctx.options.downgrade_shared_inside_shared {
-                            mtbl = min(mtbl, self.expr.scrutinee_access_level());
-                        }
-                        let expr = self.expr.deref(a).field(a, i).borrow(a, mtbl);
+                        let expr = self.expr.deref(a).field(a, i).borrow(
+                            a,
+                            mtbl,
+                            ctx.options.downgrade_shared_inside_shared,
+                        );
                         Self { pat, expr }
                     })
                     .collect();
                 Ok((Rule::ConstructorRef, preds))
             }
             (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
-                let mut mtbl = min(outer_mtbl, inner_mtbl);
+                let mtbl = min(outer_mtbl, inner_mtbl);
                 let mut expr = self.expr.deref(a);
                 if let Mutable = inner_mtbl {
                     // Reborrow
-                    if ctx.options.downgrade_shared_inside_shared {
-                        mtbl = min(mtbl, self.expr.scrutinee_access_level());
-                    }
-                    expr = expr.deref(a).borrow(a, mtbl)
+                    expr = expr
+                        .deref(a)
+                        .borrow(a, mtbl, ctx.options.downgrade_shared_inside_shared)
                 }
                 Ok((
                     Rule::ConstructorMultiRef,
@@ -289,13 +288,12 @@ impl<'a> TypingPredicate<'a> {
                         return Err(TypeError::MutabilityMismatch)
                     }
                 };
-                if let Some(mut mtbl) = reborrow_after {
-                    if ctx.options.downgrade_shared_inside_shared {
-                        mtbl = min(mtbl, pred.expr.scrutinee_access_level());
-                    }
+                if let Some(mtbl) = reborrow_after {
                     pred = Self {
                         pat: pred.pat,
-                        expr: pred.expr.borrow(a, mtbl),
+                        expr: pred
+                            .expr
+                            .borrow(a, mtbl, ctx.options.downgrade_shared_inside_shared),
                     }
                 }
                 Ok((Rule::Deref, vec![pred]))
@@ -311,7 +309,7 @@ impl<'a> TypingPredicate<'a> {
                         Rule::Binding,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
-                            expr: self.expr.borrow(a, by_ref_mtbl),
+                            expr: self.expr.borrow(a, by_ref_mtbl, false),
                         }],
                     )),
                     // To replicate stable rust behavior, we inspect the binding mode and skip it.
@@ -321,7 +319,7 @@ impl<'a> TypingPredicate<'a> {
                         Rule::Binding,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
-                            expr: self.expr.reset_binding_mode().borrow(a, by_ref_mtbl),
+                            expr: self.expr.reset_binding_mode().borrow(a, by_ref_mtbl, false),
                         }],
                     )),
                     (ByRef(_), RefBindingOnInheritedBehavior::Error) => Err(TypeError::RefOnRef),

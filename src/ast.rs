@@ -2,6 +2,10 @@
 //!
 //! Note: we arena-allocate everything to make pattern-matching easy.
 
+use std::cmp::min;
+
+use BindingMode::*;
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Mutable {
     Shared,
@@ -10,8 +14,8 @@ pub enum Mutable {
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BindingMode {
-    ByMove,
     ByRef(Mutable),
+    ByMove,
 }
 
 /// A pattern.
@@ -85,7 +89,12 @@ impl<'a> Expression<'a> {
         }
     }
 
-    pub fn borrow(&self, arenas: &'a Arenas<'a>, mtbl: Mutable) -> Self {
+    /// Borrow the expression. If `cap_mutability` is set, we will downgrade `&mut` to `&` if we
+    /// only have shared access to the scrutinee.
+    pub fn borrow(&self, arenas: &'a Arenas<'a>, mut mtbl: Mutable, cap_mutability: bool) -> Self {
+        if cap_mutability && let ByRef(cap) = self.scrutinee_access_level() {
+            mtbl = min(mtbl, cap);
+        }
         Expression {
             ty: Type::Ref(mtbl, self.ty).alloc(arenas),
             kind: ExprKind::Ref(mtbl, self.alloc(arenas)),
@@ -116,9 +125,9 @@ impl<'a> Expression<'a> {
     /// binding mode" of RFC2005 aka "match ergonomics".
     pub fn binding_mode(&self) -> BindingMode {
         match self.kind {
-            ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => BindingMode::ByMove,
-            ExprKind::Ref(mtbl, _) => BindingMode::ByRef(mtbl),
-            ExprKind::CastAsImmRef(_) => BindingMode::ByRef(Mutable::Shared),
+            ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => ByMove,
+            ExprKind::Ref(mtbl, _) => ByRef(mtbl),
+            ExprKind::CastAsImmRef(_) => ByRef(Mutable::Shared),
         }
     }
 
@@ -140,7 +149,8 @@ impl<'a> Expression<'a> {
         match self.kind {
             ExprKind::Scrutinee => Ok(()),
             ExprKind::Ref(mtbl, e) => {
-                if mtbl == Mutable::Mutable && e.scrutinee_access_level() == Mutable::Shared {
+                if mtbl == Mutable::Mutable && e.scrutinee_access_level() == ByRef(Mutable::Shared)
+                {
                     Err(BorrowCheckError::MutBorrowBehindSharedBorrow)
                 } else {
                     e.borrow_check_inner(false)
@@ -157,22 +167,24 @@ impl<'a> Expression<'a> {
         }
     }
 
-    /// Computes what access we have to the scrutinee. By default we assume mutable, but if we went
-    /// under a shared reference we only have shared access.
-    pub fn scrutinee_access_level(&self) -> Mutable {
+    /// Computes what access we have to the scrutinee. By default we have move access, and if we go
+    /// under references we get by-reference binding mode of the least permissive reference
+    /// encountered.
+    pub fn scrutinee_access_level(&self) -> BindingMode {
+        use crate::Mutable::*;
         match self.kind {
-            ExprKind::Scrutinee => Mutable::Mutable,
-            ExprKind::Ref(Mutable::Shared, _) => Mutable::Shared,
-            ExprKind::Ref(Mutable::Mutable, e) => e.scrutinee_access_level(),
+            ExprKind::Scrutinee => ByMove,
+            ExprKind::Ref(mtbl, e) => min(ByRef(mtbl), e.scrutinee_access_level()),
             ExprKind::Deref(e) => {
-                if matches!(e.ty, Type::Ref(Mutable::Shared, _)) {
-                    Mutable::Shared
+                let bm = if let Type::Ref(mtbl, _) = *e.ty {
+                    ByRef(mtbl)
                 } else {
-                    e.scrutinee_access_level()
-                }
+                    ByMove
+                };
+                min(bm, e.scrutinee_access_level())
             }
             ExprKind::Field(e, _) => e.scrutinee_access_level(),
-            ExprKind::CastAsImmRef(_) => Mutable::Shared,
+            ExprKind::CastAsImmRef(_) => ByRef(Shared),
         }
     }
 
@@ -200,14 +212,16 @@ impl<'a> Expression<'a> {
                 },
             },
             ExprKind::Deref(e) => match e.kind {
-                ExprKind::Ref(mtbl, inner) if mtbl == inner.scrutinee_access_level() => *inner,
+                ExprKind::Ref(mtbl, inner) if inner.scrutinee_access_level() == ByRef(mtbl) => {
+                    *inner
+                }
                 ExprKind::Ref(mtbl, inner)
                     if top_level && mtbl == Mutable::Shared && self.ty.is_copy() =>
                 {
                     *inner
                 }
                 ExprKind::CastAsImmRef(inner)
-                    if inner.scrutinee_access_level() == Mutable::Shared =>
+                    if inner.scrutinee_access_level() == ByRef(Mutable::Shared) =>
                 {
                     Expression {
                         ty: self.ty,

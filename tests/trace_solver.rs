@@ -49,6 +49,9 @@ fn test_solver_traces() -> anyhow::Result<()> {
         (
             RuleOptions::PERMISSIVE,
             &[
+                "x: T",
+                "x: &T",
+                "x: &mut T",
                 "&x: &T",
                 "&x: T",
                 "[x]: &&&[T]",
@@ -82,6 +85,10 @@ fn test_solver_traces() -> anyhow::Result<()> {
                 "&[x]: &&mut [T]",
                 "&[x]: &[&mut T]",
                 "[&x]: &mut [&T]",
+                // Borrow checking
+                "[x]: [&mut T]",
+                "&mut x: &mut &mut T",
+                "&x: &&mut T",
             ],
         ),
         (
