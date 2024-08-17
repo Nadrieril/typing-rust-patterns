@@ -102,7 +102,7 @@ fn parse_binding<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Pattern<'
 where
     E: ParseError<&'i str>,
 {
-    let ident = take_while(|c: char| c.is_alphabetic() || c == '_');
+    let ident = take_while(|c: char| c.is_alphanumeric() || c == '_');
     parse_mutability()
         .and(parse_binding_mode())
         .and(ident)
@@ -175,7 +175,7 @@ fn parse_type_var<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Type<'a>
 where
     E: ParseError<&'i str>,
 {
-    let ident = take_while(|c: char| c.is_alphabetic() || c == '_');
+    let ident = take_while(|c: char| c.is_alphanumeric() || c == '_');
     ident.followed_by(multispace0).map(|name| {
         let name = ctx.str_arena.alloc_str(name);
         Type::Var(name)
