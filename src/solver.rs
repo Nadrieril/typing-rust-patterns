@@ -62,11 +62,11 @@ impl<'a> TypingSolver<'a> {
         }
     }
 
-    pub fn display_state(&self, ctx: TypingCtx<'a>) -> impl fmt::Display + '_ {
+    pub fn display_state(&self) -> impl fmt::Display + '_ {
         self.done_predicates
             .iter()
-            .map(|p| p.display_done(ctx).to_string())
-            .chain(self.predicates.iter().map(|p| format!("{p}")))
+            .map(|p| p.display_as_let())
+            .chain(self.predicates.iter().map(|p| p.to_string()))
             .join("\n")
     }
 
@@ -81,7 +81,7 @@ impl<'a> TypingSolver<'a> {
                     .err()
                     .map(|err| format!(" // Borrow-check error: {err:?}"))
                     .unwrap_or_default();
-                let p = p.display_done(ctx);
+                let p = p.display_as_let();
                 format!("{p}{bck}")
             })
             .join("\n")
@@ -96,13 +96,13 @@ pub fn trace_solver(request: &str, options: RuleOptions) -> anyhow::Result<Strin
     let request = complete_parse_typing_request(&arenas, request)?;
     let mut solver = TypingSolver::new(request);
     let mut trace = String::new();
-    let _ = write!(&mut trace, "{}\n", solver.display_state(ctx));
+    let _ = write!(&mut trace, "{}\n", solver.display_state());
     loop {
         match solver.step(ctx) {
             Ok(rule) => {
                 let _ = write!(&mut trace, "// Applying rule `{rule:?}`\n");
-                eprintln!("{}\n", solver.display_state(ctx));
-                let _ = write!(&mut trace, "{}\n", solver.display_state(ctx));
+                eprintln!("{}\n", solver.display_state());
+                let _ = write!(&mut trace, "{}\n", solver.display_state());
             }
             Err(e) => {
                 match e {

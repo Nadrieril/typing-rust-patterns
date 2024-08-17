@@ -355,9 +355,4 @@ impl<'a> TypingPredicate<'a> {
             (P::Binding(Shared, ByMove, _), _) => Ok((Rule::Binding, vec![])),
         }
     }
-
-    /// Whether this predicate is completed, i.e. is a simple binding pattern.
-    pub fn is_done(&self, ctx: TypingCtx<'a>) -> bool {
-        self.step(ctx).is_ok_and(|(_, preds)| preds.is_empty())
-    }
 }
