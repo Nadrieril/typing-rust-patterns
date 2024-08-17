@@ -36,7 +36,7 @@ fn spanshot_request(test_case: TestCase<'_>) -> anyhow::Result<()> {
         snapshot_suffix => req_hash,
         info => &test_case,
         omit_expression => true,
-        prepend_module_to_snapshot => false,
+        prepend_module_to_snapshot => true,
     }, {
         insta::assert_snapshot!(trace);
     });
