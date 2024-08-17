@@ -23,13 +23,13 @@ p0 @ &mut (*p).0: &mut T0, p1 @ &mut (*p).1: &mut T1
 ----------------- "ConstructorMultiRef"
 [p0, p1] @ p: &&T
 
-[p0, p1] @ *p: &T
---------------------- "ConstructorMultiRef"
-[p0, p1] @ p: &mut &T
-
 [p0, p1] @ &**p: &T
 --------------------- "ConstructorMultiRef"
 [p0, p1] @ p: &&mut T
+
+[p0, p1] @ *p: &T
+--------------------- "ConstructorMultiRef"
+[p0, p1] @ p: &mut &T
 
 [p0, p1] @ &mut **p: &mut T
 --------------------------- "ConstructorMultiRef"
@@ -96,16 +96,8 @@ x @ &mut p: &mut T
 ref mut x @ p: T, binding_mode(p) = move
 
 let x: T = p
--------------------------------- "Binding"
-x @ p: T, binding_mode(p) = move
-
-let x: &mut T = &mut p
----------------------- "Binding"
-x @ &mut p: &mut T
-
-let x: &T = &p
--------------- "Binding"
-x @ &p: &T
+------------ "Binding"
+x @ p: T
 
 let mut x: T = p
 ------------------------------------ "Binding"
