@@ -31,7 +31,7 @@ pub enum MutBindingOnInheritedBehavior {
 
 /// What to do when a reference pattern encounters a double-reference type where the outer one is
 /// inherited.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum InheritedRefOnRefBehavior {
     /// Eat only the outer one.
     EatOuter,
@@ -130,17 +130,17 @@ impl RuleOptions {
 }
 
 /// The various typing rules we can apply.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rule {
     Constructor,
     ConstructorRef,
     ConstructorMultiRef,
     Deref(InheritedRefOnRefBehavior),
     DerefMutWithShared(InheritedRefOnRefBehavior),
-    Binding,
     BindingOverrideBorrow,
-    BindingBorrow,
     BindingResetBindingMode,
+    BindingBorrow,
+    Binding,
     ExprSimplification,
 }
 
@@ -165,6 +165,13 @@ impl<'a> TypingPredicate<'a> {
     }
 
     /// Apply one step of rule to this predicate.
+    /// Note: The expression simplification rules and the `downgrade_shared_inside_shared` option
+    /// are special: they inspect `self.expr` in non-trivial ways.
+    /// All the other rules inspect exclusively: `self.pat`, `self.expr.ty`, `self.expr.binding_mode()`.
+    /// To be even more precise, they inspect:
+    /// - `self.pat` at depth <= 1;
+    /// - `self.expr.ty` at depth <= 2;
+    /// - `self.expr.binding_mode()`.
     pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), TypeError> {
         use ExprKind as E;
         use Pattern as P;

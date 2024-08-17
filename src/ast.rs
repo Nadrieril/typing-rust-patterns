@@ -19,6 +19,10 @@ pub enum BindingMode {
     ByMove,
 }
 
+impl BindingMode {
+    pub const ALL: [Self; 3] = [ByMove, ByRef(Mutable), ByRef(Shared)];
+}
+
 /// A pattern.
 #[derive(Clone, Copy)]
 pub enum Pattern<'a> {
@@ -41,6 +45,19 @@ pub enum Type<'a> {
     Ref(Mutability, &'a Self),
     /// Type variable, representing an unknown and irrelevant type.
     Var(&'a str),
+}
+
+impl<'a> Type<'a> {
+    pub fn borrow(&'a self, mtbl: Mutability) -> Self {
+        Type::Ref(mtbl, self)
+    }
+
+    pub fn deref(&self) -> &'a Self {
+        let Type::Ref(_, ty) = self else {
+            panic!("type error")
+        };
+        ty
+    }
 }
 
 /// A scrutinee expression. As we type-check a pattern, we also construct a scrutinee expression
@@ -69,11 +86,8 @@ pub enum ExprKind<'a> {
 
 impl<'a> Expression<'a> {
     pub fn deref(&self, arenas: &'a Arenas<'a>) -> Self {
-        let Type::Ref(_, ty) = self.ty else {
-            panic!("type error")
-        };
         Expression {
-            ty,
+            ty: self.ty.deref(),
             kind: ExprKind::Deref(self.alloc(arenas)),
         }
     }
@@ -90,7 +104,7 @@ impl<'a> Expression<'a> {
             mtbl = min(mtbl, cap);
         }
         Expression {
-            ty: Type::Ref(mtbl, self.ty).alloc(arenas),
+            ty: self.ty.borrow(mtbl).alloc(arenas),
             kind: ExprKind::Ref(mtbl, self.alloc(arenas)),
         }
     }
@@ -106,11 +120,8 @@ impl<'a> Expression<'a> {
     }
 
     pub fn cast_as_imm_ref(&self, arenas: &'a Arenas<'a>) -> Self {
-        let Type::Ref(_, ty) = self.ty else {
-            panic!("type error")
-        };
         Expression {
-            ty: Type::Ref(Shared, ty).alloc(arenas),
+            ty: self.ty.deref().borrow(Shared).alloc(arenas),
             kind: ExprKind::CastAsImmRef(self.alloc(arenas)),
         }
     }

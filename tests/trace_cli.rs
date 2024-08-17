@@ -5,9 +5,9 @@ use std::hash::{Hash, Hasher};
 #[test]
 fn trace_cli() -> anyhow::Result<()> {
     let test_cases = &[
+        "quit",
         "help",
         "options",
-        "quit",
         "set",
         "set mistyped",
         "set mistyped val",
@@ -17,6 +17,10 @@ fn trace_cli() -> anyhow::Result<()> {
         "set ergo2024\noptions",
         "&x: &mut T",
         "set allow_ref_pat_on_ref_mut false\n&x: &mut T",
+        "rules",
+        "set stable_rust\nrules",
+        "set stateless\nrules",
+        "set ergo2024\nrules",
     ];
     for &test_case in test_cases {
         let success = Command::cargo_bin("typing-rust-patterns")?

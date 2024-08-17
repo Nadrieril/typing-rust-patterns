@@ -35,12 +35,18 @@ where
 
 type ParseCtx<'a> = &'a Arenas<'a>;
 
-pub fn complete_parse_typing_request<'a, 'i>(
-    ctx: &'a Arenas<'a>,
+fn parse_complete<'i, T>(
+    parser: impl Parser<&'i str, T, ErrorTree<&'i str>>,
     i: &'i str,
-) -> Result<TypingRequest<'a>, ErrorTree<String>> {
-    nom_supreme::final_parser::final_parser(parse_typing_request::<ErrorTree<&str>>(ctx))(i)
+) -> Result<T, ErrorTree<String>> {
+    nom_supreme::final_parser::final_parser(parser)(i)
         .map_err(|e: ErrorTree<_>| e.map_locations(|s: &str| s.to_string()))
+}
+
+impl<'a> TypingRequest<'a> {
+    pub fn parse(ctx: &'a Arenas<'a>, i: &str) -> Result<Self, ErrorTree<String>> {
+        parse_complete(parse_typing_request(ctx), i)
+    }
 }
 
 fn parse_typing_request<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, TypingRequest<'a>, E>
@@ -229,7 +235,7 @@ fn test_roundtrip() {
         .map(|s| (s, s))
         .chain(other_test_strings);
     for (input, expected) in test_strings {
-        let pat = complete_parse_typing_request(&arenas, input)
+        let pat = TypingRequest::parse(&arenas, input)
             .map_err(|e| e.to_string())
             .unwrap();
         assert_eq!(pat.to_string(), expected);

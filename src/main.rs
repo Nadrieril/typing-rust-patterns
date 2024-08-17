@@ -38,13 +38,16 @@ fn main() -> anyhow::Result<()> {
         }
     };
     while let Some(request) = prompt(&history)? {
+        let request = request.trim();
         if request == "?" || request == "help" {
-            println!("Commands: options, set, quit");
+            println!("Commands: options, set, rules, quit");
         } else if request == "q" || request == "quit" {
             break;
-        } else if request == "options" || request == "option" {
+        } else if request == "options" {
             let options = serde_yaml::to_string(&options)?;
             print!("{options}");
+        } else if request == "rules" {
+            display_rules(options)
         } else if let Some(cmd) = request.strip_prefix("set") {
             let old_options = options;
             if let Err(err) = parse_set_cmd(cmd, &mut options) {
@@ -69,7 +72,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         } else {
-            history.push(request.clone());
+            history.push(request.to_string());
             match trace_solver(&request, options) {
                 Ok(trace) => println!("{trace}"),
                 Err(err) => {

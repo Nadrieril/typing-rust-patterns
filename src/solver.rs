@@ -13,7 +13,7 @@ pub struct TypingCtx<'a> {
 
 /// The inner state of our solver: the typing of `let pat: type = expr`. We write it `pat @ expr :
 /// type`.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct TypingPredicate<'a> {
     pub pat: &'a Pattern<'a>,
     pub expr: Expression<'a>,
@@ -92,7 +92,7 @@ pub fn trace_solver(request: &str, options: RuleOptions) -> anyhow::Result<Strin
     use std::fmt::Write;
     let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
-    let request = complete_parse_typing_request(&arenas, request)?;
+    let request = TypingRequest::parse(&arenas, request)?;
     let mut solver = TypingSolver::new(request);
     let mut trace = String::new();
     let _ = write!(&mut trace, "{}\n", solver.display_state());
