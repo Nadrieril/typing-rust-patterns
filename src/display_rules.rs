@@ -157,7 +157,7 @@ impl<'a> Expression<'a> {
 /// (enough to be disjoint, this would entail specializing every single rule for all possible
 /// expressions until depth 2 :')). For `downgrade_shared_inside_shared`, it's not possible to
 /// describe it as a rule without tracking aditional state.
-fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
+pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     let a = ctx.arenas;
     let mut predicates = vec![TypingPredicate {
         pat: &Pattern::Abstract("p"),
@@ -241,10 +241,10 @@ pub fn display_rules(options: RuleOptions) {
     }
 }
 
-struct TypingRule<'a> {
-    name: Rule,
-    preconditions: Vec<TypingPredicate<'a>>,
-    postcondition: TypingPredicate<'a>,
+pub struct TypingRule<'a> {
+    pub name: Rule,
+    pub preconditions: Vec<TypingPredicate<'a>>,
+    pub postcondition: TypingPredicate<'a>,
 }
 
 fn requires_by_move(e: &Expression<'_>) -> bool {

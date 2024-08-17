@@ -1,14 +1,7 @@
 ---
-source: tests/trace_cli.rs
-info: "set ergo2024\nrules"
+source: tests/compute_rules.rs
+info: permissive
 ---
-downgrade_shared_inside_shared: false -> true
-inherited_ref_on_ref: "EatOuter" -> "EatInner"
-mut_binding_on_inherited: "Keep" -> "Error"
-ref_binding_on_inherited: "Error" -> "Skip"
-The current options can be fully described as the following set of rules.
-Warning: option `downgrade_shared_inside_shared` is not represented in the rules
-
 p0 @ p.0: T0, p1 @ p.1: T1
 -------------------------- "Constructor"
 [p0, p1] @ p: [T0, T1]
@@ -41,61 +34,61 @@ p @ *p: T
 ---------------------------------- "Deref(EatOuter)"
 &p @ p: &T, binding_mode(p) = move
 
+p @ *&p: &T
+------------ "Deref(EatOuter)"
+&p @ &p: &&T
+
+p @ *&p: &mut T
+---------------- "Deref(EatOuter)"
+&p @ &p: &&mut T
+
+p @ *&mut p: &T
+------------------------ "Deref(EatOuter)"
+&mut p @ &mut p: &mut &T
+
 p @ *p: T
 ------------------------------------------ "Deref(EatOuter)"
 &mut p @ p: &mut T, binding_mode(p) = move
 
-p @ &*p: &T
------------- "Deref(EatInner)"
-&p @ &p: &&T
-
-p @ &*p: &T
--------------------- "Deref(EatInner)"
-&p @ &mut p: &mut &T
-
-p @ &*p: &T
--------------------- "Deref(EatInner)"
-&mut p @ &p: &&mut T
-
-p @ &mut *p: &mut T
----------------------------- "Deref(EatInner)"
+p @ *&mut p: &mut T
+---------------------------- "Deref(EatOuter)"
 &mut p @ &mut p: &mut &mut T
+
+&p @ &*&mut p: &&T
+-------------------- "DerefMutWithShared(EatOuter)"
+&p @ &mut p: &mut &T
 
 &p @ &*p: &T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ p: &mut T, binding_mode(p) = move
 
-&p @ &&*p: &&T
----------------- "DerefMutWithShared(EatInner)"
-&p @ &p: &&mut T
-
-&p @ &&*p: &&T
------------------------- "DerefMutWithShared(EatInner)"
+&p @ &*&mut p: &&mut T
+------------------------ "DerefMutWithShared(EatOuter)"
 &p @ &mut p: &mut &mut T
-
-x @ &p: &T
--------------- "BindingOverrideBorrow"
-ref x @ &p: &T
-
-x @ &p: &T
----------------------- "BindingOverrideBorrow"
-ref x @ &mut p: &mut T
-
-x @ &mut p: &mut T
------------------- "BindingOverrideBorrow"
-ref mut x @ &p: &T
-
-x @ &mut p: &mut T
--------------------------- "BindingOverrideBorrow"
-ref mut x @ &mut p: &mut T
 
 x @ &p: &T
 ------------------------------------ "BindingBorrow"
 ref x @ p: T, binding_mode(p) = move
 
+x @ &&p: &&T
+-------------- "BindingBorrow"
+ref x @ &p: &T
+
+x @ &&mut p: &&mut T
+---------------------- "BindingBorrow"
+ref x @ &mut p: &mut T
+
 x @ &mut p: &mut T
 ---------------------------------------- "BindingBorrow"
 ref mut x @ p: T, binding_mode(p) = move
+
+x @ &mut &p: &mut &T
+-------------------- "BindingBorrow"
+ref mut x @ &p: &T
+
+x @ &mut &mut p: &mut &mut T
+---------------------------- "BindingBorrow"
+ref mut x @ &mut p: &mut T
 
 let x: T = p
 ------------ "Binding"
@@ -104,6 +97,14 @@ x @ p: T
 let mut x: T = p
 ------------------------------------ "Binding"
 mut x @ p: T, binding_mode(p) = move
+
+let mut x: &T = &p
+------------------ "Binding"
+mut x @ &p: &T
+
+let mut x: &mut T = &mut p
+-------------------------- "Binding"
+mut x @ &mut p: &mut T
 
 p @ &p: &T
 ---------------- "ExprSimplification"
