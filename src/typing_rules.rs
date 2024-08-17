@@ -258,38 +258,45 @@ impl<'a> TypingPredicate<'a> {
                 let mut expr = self.expr;
                 let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
                 let mut reborrow_after = None;
-                let bm = self.expr.binding_mode()?;
                 let mut did_reset_bm = false;
-                if matches!(bm, ByRef(..)) {
-                    let type_of_underlying_place = self.expr.reset_binding_mode()?.ty;
-                    match type_of_underlying_place {
-                        T::Ref(inner_mtbl, _) => {
-                            rule_variant = ctx.options.inherited_ref_on_ref;
-                            match ctx.options.inherited_ref_on_ref {
-                                InheritedRefOnRefBehavior::EatOuter => {}
-                                InheritedRefOnRefBehavior::EatInner => {
-                                    reborrow_after = Some(t_mtbl);
-                                    expr = expr.reset_binding_mode()?;
-                                    did_reset_bm = true;
-                                    t_mtbl = *inner_mtbl;
-                                }
-                                InheritedRefOnRefBehavior::EatBoth => {
-                                    expr = expr.reset_binding_mode()?;
-                                    did_reset_bm = true;
-                                    t_mtbl = *inner_mtbl;
+                // Only inspect the binding mode if there are options that need it.
+                if !matches!(
+                    ctx.options.inherited_ref_on_ref,
+                    InheritedRefOnRefBehavior::EatOuter
+                ) || !ctx.options.eat_inherited_ref_alone
+                {
+                    let bm = self.expr.binding_mode()?;
+                    if matches!(bm, ByRef(..)) {
+                        let type_of_underlying_place = self.expr.reset_binding_mode()?.ty;
+                        match type_of_underlying_place {
+                            T::Ref(inner_mtbl, _) => {
+                                rule_variant = ctx.options.inherited_ref_on_ref;
+                                match ctx.options.inherited_ref_on_ref {
+                                    InheritedRefOnRefBehavior::EatOuter => {}
+                                    InheritedRefOnRefBehavior::EatInner => {
+                                        expr = expr.reset_binding_mode()?;
+                                        did_reset_bm = true;
+                                        reborrow_after = Some(t_mtbl);
+                                        t_mtbl = *inner_mtbl;
+                                    }
+                                    InheritedRefOnRefBehavior::EatBoth => {
+                                        expr = expr.reset_binding_mode()?;
+                                        did_reset_bm = true;
+                                        t_mtbl = *inner_mtbl;
+                                    }
                                 }
                             }
+                            // The underlying place is not a reference, so we can't eat the inherited
+                            // reference.
+                            T::Tuple(_) if !ctx.options.eat_inherited_ref_alone => {
+                                return Err(TypeError::TypeMismatch);
+                            }
+                            T::Var(_) if !ctx.options.eat_inherited_ref_alone => {
+                                return Err(TypeError::OverlyGeneralType);
+                            }
+                            // Continue
+                            _ => {}
                         }
-                        // The underlying place is not a reference, so we can't eat the inherited
-                        // reference.
-                        T::Tuple(_) if !ctx.options.eat_inherited_ref_alone => {
-                            return Err(TypeError::TypeMismatch);
-                        }
-                        T::Var(_) if !ctx.options.eat_inherited_ref_alone => {
-                            return Err(TypeError::OverlyGeneralType);
-                        }
-                        // Continue
-                        _ => {}
                     }
                 }
                 let (rule, mut pred) = match (p_mtbl, t_mtbl) {
@@ -304,7 +311,7 @@ impl<'a> TypingPredicate<'a> {
                         if ctx.options.allow_ref_pat_on_ref_mut {
                             let expr = if ctx.options.simplify_expressions
                                 && !did_reset_bm
-                                && bm == ByRef(Mutable)
+                                && self.expr.binding_mode()? == ByRef(Mutable)
                             {
                                 expr.reset_binding_mode()?
                             } else {
@@ -336,47 +343,77 @@ impl<'a> TypingPredicate<'a> {
             (P::Ref(..), T::Var(..)) => Err(TypeError::OverlyGeneralType),
 
             // Binding rules
+            (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _)
+                if matches!(
+                    ctx.options.ref_binding_on_inherited,
+                    RefBindingOnInheritedBehavior::AllocTemporary
+                ) =>
+            {
+                // Easy case: we borrow the expression as expected. We rely on rust's lifetime
+                // extension of temporaries in expressions like `&&x`.
+                Ok((
+                    Rule::BindingBorrow,
+                    vec![Self {
+                        pat: P::Binding(mtbl, ByMove, name).alloc(a),
+                        expr: self.expr.borrow(a, by_ref_mtbl),
+                    }],
+                ))
+            }
             (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _) => {
-                let bm = self.expr.binding_mode()?;
-                match (bm, ctx.options.ref_binding_on_inherited) {
-                    // Easy case: we borrow the expression as expected. We rely on rust's lifetime
-                    // extension of temporaries in expressions like `&&x`.
-                    (ByMove, _) | (_, RefBindingOnInheritedBehavior::AllocTemporary) => Ok((
+                match self.expr.binding_mode()? {
+                    // Easy case: we borrow the expression as expected.
+                    ByMove => Ok((
                         Rule::BindingBorrow,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
                             expr: self.expr.borrow(a, by_ref_mtbl),
                         }],
                     )),
-                    // To replicate stable rust behavior, we inspect the binding mode and skip it.
-                    // This amounts to getting ahold of the referenced place and re-borrowing it
-                    // with the requested mutability.
-                    (ByRef(_), RefBindingOnInheritedBehavior::Skip) => Ok((
-                        Rule::BindingOverrideBorrow,
-                        vec![Self {
-                            pat: P::Binding(mtbl, ByMove, name).alloc(a),
-                            expr: self.expr.reset_binding_mode()?.borrow(a, by_ref_mtbl),
-                        }],
-                    )),
-                    (ByRef(_), RefBindingOnInheritedBehavior::Error) => Err(TypeError::RefOnRef),
+                    ByRef(_) => {
+                        match ctx.options.ref_binding_on_inherited {
+                            // To replicate stable rust behavior, we inspect the binding mode and skip it.
+                            // This amounts to getting ahold of the referenced place and re-borrowing it
+                            // with the requested mutability.
+                            RefBindingOnInheritedBehavior::Skip => Ok((
+                                Rule::BindingOverrideBorrow,
+                                vec![Self {
+                                    pat: P::Binding(mtbl, ByMove, name).alloc(a),
+                                    expr: self.expr.reset_binding_mode()?.borrow(a, by_ref_mtbl),
+                                }],
+                            )),
+                            RefBindingOnInheritedBehavior::Error => Err(TypeError::RefOnRef),
+                            RefBindingOnInheritedBehavior::AllocTemporary => unreachable!(),
+                        }
+                    }
                 }
             }
+            (P::Binding(Mutable, ByMove, _), _)
+                if matches!(
+                    ctx.options.mut_binding_on_inherited,
+                    MutBindingOnInheritedBehavior::Keep
+                ) =>
+            {
+                // Easy case: declare the binding as expected.
+                Ok((Rule::Binding, vec![]))
+            }
             (P::Binding(Mutable, ByMove, _), _) => {
-                let bm = self.expr.binding_mode()?;
-                match (bm, ctx.options.mut_binding_on_inherited) {
+                match self.expr.binding_mode()? {
                     // Easy case: declare the binding as expected.
-                    (ByMove, _) | (_, MutBindingOnInheritedBehavior::Keep) => {
-                        Ok((Rule::Binding, vec![]))
+                    ByMove => Ok((Rule::Binding, vec![])),
+                    ByRef(_) => {
+                        match ctx.options.mut_binding_on_inherited {
+                            // To replicate stable rust behavior, we reset the binding mode.
+                            MutBindingOnInheritedBehavior::ResetBindingMode => Ok((
+                                Rule::BindingResetBindingMode,
+                                vec![Self {
+                                    pat: self.pat,
+                                    expr: self.expr.reset_binding_mode()?,
+                                }],
+                            )),
+                            MutBindingOnInheritedBehavior::Error => Err(TypeError::MutOnRef),
+                            MutBindingOnInheritedBehavior::Keep => unreachable!(),
+                        }
                     }
-                    // To replicate stable rust behavior, we reset the binding mode.
-                    (ByRef(_), MutBindingOnInheritedBehavior::ResetBindingMode) => Ok((
-                        Rule::BindingResetBindingMode,
-                        vec![Self {
-                            pat: self.pat,
-                            expr: self.expr.reset_binding_mode()?,
-                        }],
-                    )),
-                    (ByRef(_), MutBindingOnInheritedBehavior::Error) => Err(TypeError::MutOnRef),
                 }
             }
             (P::Binding(Shared, ByMove, _), _) => Ok((Rule::Binding, vec![])),

@@ -148,6 +148,8 @@ impl<'a> Expression<'a> {
     }
 }
 
+const TRACE: bool = false;
+
 /// Compute all the rules that describe the behavior of the solver with the given options. We start
 /// with a dummy predicate with abstract pattern, expression and type, and recursively refine it as
 /// long as we get `OverlyGeneral` errors. This ensures we explore all possible cases.
@@ -183,30 +185,45 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
 
     let mut rules = Vec::new();
     while let Some(pred) = predicates.pop() {
-        match pred.typing_rule(ctx) {
-            Ok(rule) => rules.push(rule),
-            // TODO: try substituting
-            Err(TypeError::OverlyGeneralPattern) => predicates.extend(
-                pred.pat
-                    .deepen(a)
-                    .into_iter()
-                    .map(|pat| pat.alloc(a))
-                    .map(|pat| TypingPredicate { pat, ..pred }),
-            ),
-            Err(TypeError::OverlyGeneralExpr) => predicates.extend(
-                pred.expr
-                    .deepen(a)
-                    .into_iter()
-                    .map(|expr| TypingPredicate { expr, ..pred }),
-            ),
-            Err(TypeError::OverlyGeneralType) => predicates.extend(
-                pred.expr
-                    .deepen_ty(a)
-                    .into_iter()
-                    .map(|expr| TypingPredicate { expr, ..pred }),
-            ),
-            Err(_) => {}
+        if TRACE {
+            println!("Analyzing pred: {pred}");
         }
+        let new_preds = match pred.typing_rule(ctx) {
+            Ok(rule) => {
+                if TRACE {
+                    println!("Pushing rule:\n{rule}");
+                }
+                rules.push(rule);
+                vec![]
+            }
+            Err(TypeError::OverlyGeneralPattern) => pred
+                .pat
+                .deepen(a)
+                .into_iter()
+                .map(|pat| pat.alloc(a))
+                .map(|pat| TypingPredicate { pat, ..pred })
+                .collect_vec(),
+            Err(TypeError::OverlyGeneralExpr) => pred
+                .expr
+                .deepen(a)
+                .into_iter()
+                .map(|expr| TypingPredicate { expr, ..pred })
+                .collect_vec(),
+            Err(TypeError::OverlyGeneralType) => pred
+                .expr
+                .deepen_ty(a)
+                .into_iter()
+                .map(|expr| TypingPredicate { expr, ..pred })
+                .collect_vec(),
+            Err(_) => vec![],
+        };
+        if TRACE {
+            print!(
+                "Pushing new preds:\n{}",
+                new_preds.iter().map(|p| format!("  {p}\n")).format("")
+            );
+        }
+        predicates.extend(new_preds);
     }
 
     // We generate the deepenings in the order we'd like to see them, so we reverse to restore that

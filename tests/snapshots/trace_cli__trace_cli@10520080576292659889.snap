@@ -33,32 +33,16 @@ p0 @ &mut (*p).0: &mut T0, p1 @ &mut (*p).1: &mut T1
 [p0, p1] @ p: &mut &mut T
 
 p @ *p: T
----------------------------------- "Deref(EatOuter)"
-&p @ p: &T, binding_mode(p) = move
-
-p @ *&p: &T
------------- "Deref(EatOuter)"
-&p @ &p: &&T
+---------- "Deref(EatOuter)"
+&p @ p: &T
 
 p @ *&p: &mut T
 ---------------- "Deref(EatOuter)"
 &p @ &p: &&mut T
 
-p @ *&mut p: &T
------------------------- "Deref(EatOuter)"
-&mut p @ &mut p: &mut &T
-
 p @ *p: T
------------------------------------------- "Deref(EatOuter)"
-&mut p @ p: &mut T, binding_mode(p) = move
-
-p @ *&mut p: &mut T
----------------------------- "Deref(EatOuter)"
-&mut p @ &mut p: &mut &mut T
-
-&p @ &p: &&T
--------------------- "DerefMutWithShared(EatOuter)"
-&p @ &mut p: &mut &T
+------------------ "Deref(EatOuter)"
+&mut p @ p: &mut T
 
 &p @ &*p: &T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
@@ -81,16 +65,8 @@ let x: T = p
 x @ p: T
 
 let mut x: T = p
------------------------------------- "Binding"
-mut x @ p: T, binding_mode(p) = move
-
-let mut x: &T = &p
------------------- "Binding"
-mut x @ &p: &T
-
-let mut x: &mut T = &mut p
--------------------------- "Binding"
-mut x @ &mut p: &mut T
+---------------- "Binding"
+mut x @ p: T
 
 p @ p: T
 -------------- "ExprSimplification"
