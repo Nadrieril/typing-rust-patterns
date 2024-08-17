@@ -106,19 +106,39 @@ impl<'a> Expression<'a> {
     fn deepen(&self, a: &'a Arenas<'a>) -> Vec<Self> {
         match self.kind {
             ExprKind::Scrutinee => vec![*self],
-            ExprKind::Abstract { bm_is_move: false } => vec![
-                Expression {
+            ExprKind::Abstract { bm_is_move: false } => {
+                // We know our rules only inspect the binding modes of expressions, so we only need
+                // to split along that dimension.
+                let mut vec = vec![Expression {
+                    // Stands for any non-`Ref` expression.
                     kind: ExprKind::Abstract { bm_is_move: true },
                     ty: self.ty,
-                },
-                self.borrow(a, Shared),
-                self.borrow(a, Mutable),
-            ],
-            ExprKind::Abstract { bm_is_move: true } => todo!(),
-            ExprKind::Ref(mtbl, e) => e.deepen(a).into_iter().map(|e| e.borrow(a, mtbl)).collect(),
+                }];
+                // Add more `Ref` expressions, following the type if relevant.
+                match *self.ty {
+                    Type::Ref(mtbl, ty) => {
+                        vec.push(
+                            Expression {
+                                kind: self.kind,
+                                ty,
+                            }
+                            .borrow(a, mtbl),
+                        );
+                    }
+                    Type::Var(..) => {
+                        vec.push(self.borrow(a, Shared));
+                        vec.push(self.borrow(a, Mutable));
+                    }
+                    Type::Tuple(..) => {}
+                }
+                vec
+            }
             // We never generate these.
             ExprKind::Deref(_) | ExprKind::Field(_, _) => {
                 unreachable!()
+            }
+            ExprKind::Ref(..) | ExprKind::Abstract { bm_is_move: true } => {
+                unreachable!("A rule is inspecting expressions in unexpected ways")
             }
         }
     }
