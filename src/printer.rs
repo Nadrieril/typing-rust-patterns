@@ -63,7 +63,6 @@ impl Display for ExprKind<'_> {
                     write!(f, "{e}.{n}")
                 }
             }
-            ExprKind::CastAsImmRef(e) => write!(f, "({e} as &_)"),
         }
     }
 }

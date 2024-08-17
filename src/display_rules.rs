@@ -120,7 +120,7 @@ impl<'a> Expression<'a> {
                 .expr_arena
                 .alloc_extend(e.deepen(a).iter().map(|e| e.borrow(a, mtbl))),
             // We never generate these.
-            ExprKind::Deref(_) | ExprKind::Field(_, _) | ExprKind::CastAsImmRef(_) => {
+            ExprKind::Deref(_) | ExprKind::Field(_, _) => {
                 unreachable!()
             }
         }
@@ -140,7 +140,7 @@ impl<'a> Expression<'a> {
                 .expr_arena
                 .alloc_extend(e.deepen_ty(a).iter().map(|e| e.borrow(a, mtbl))),
             // We never generate these.
-            ExprKind::Deref(_) | ExprKind::Field(_, _) | ExprKind::CastAsImmRef(_) => {
+            ExprKind::Deref(_) | ExprKind::Field(_, _) => {
                 unreachable!()
             }
         }
@@ -178,7 +178,7 @@ fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
         .borrow(a, Mutable);
         predicates.push(TypingPredicate {
             pat: req.pat,
-            expr: mut_borrow.cast_as_imm_ref(a),
+            expr: mut_borrow.deref(a).borrow(a, Shared),
         });
         predicates.push(TypingPredicate {
             pat: req.pat,
@@ -251,10 +251,7 @@ fn requires_by_move(e: &Expression<'_>) -> bool {
     match e.kind {
         ExprKind::Scrutinee => false,
         ExprKind::Abstract { bm_is_move } => bm_is_move,
-        ExprKind::Ref(_, e)
-        | ExprKind::Deref(e)
-        | ExprKind::Field(e, _)
-        | ExprKind::CastAsImmRef(e) => requires_by_move(e),
+        ExprKind::Ref(_, e) | ExprKind::Deref(e) | ExprKind::Field(e, _) => requires_by_move(e),
     }
 }
 

@@ -4,11 +4,11 @@ info: "&x: &mut T"
 ---
 &x @ p: &mut T
 // Applying rule `DerefMutWithShared(EatOuter)`
-&x @ (p as &_): &T
+&x @ &*p: &T
 // Applying rule `Deref(EatOuter)`
-x @ *(p as &_): T
+x @ *&*p: T
 // Applying rule `Binding`
-let x: T = *(p as &_)
+let x: T = *&*p
 
 // Final bindings (simplified):
-let x: T = *(p as &_)
+let x: T = *p

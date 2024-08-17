@@ -20,7 +20,7 @@ info:
 // Applying rule `ConstructorRef`
 &x @ &mut (*(*p).0).0: &mut T
 // Applying rule `DerefMutWithShared(EatOuter)`
-&x @ (&mut (*(*p).0).0 as &_): &T
+&x @ &*&mut (*(*p).0).0: &T
 // Applying rule `ExprSimplification`
 &x @ &(*(*p).0).0: &T
 // Applying rule `Deref(EatOuter)`

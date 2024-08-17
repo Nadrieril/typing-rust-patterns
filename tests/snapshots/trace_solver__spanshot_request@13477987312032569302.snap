@@ -20,11 +20,11 @@ info:
 // Applying rule `ConstructorRef`
 &x @ &mut (*(*p).0).0: &mut T
 // Applying rule `DerefMutWithShared(EatOuter)`
-&x @ (&mut (*(*p).0).0 as &_): &T
+&x @ &*&mut (*(*p).0).0: &T
 // Applying rule `Deref(EatOuter)`
-x @ *(&mut (*(*p).0).0 as &_): T
+x @ *&*&mut (*(*p).0).0: T
 // Applying rule `Binding`
-let x: T = *(&mut (*(*p).0).0 as &_)
+let x: T = *&*&mut (*(*p).0).0
 
 // Final bindings (simplified):
 let x: T = *&mut (*(*p).0).0 // Borrow-check error: MutBorrowBehindSharedBorrow

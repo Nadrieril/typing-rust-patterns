@@ -181,12 +181,19 @@ impl<'a> TypingPredicate<'a> {
         let a = ctx.arenas;
 
         if ctx.options.simplify_expressions {
-            // Expression simplification rules.
+            // Expression simplification rules. We match on `*&mut e` and `&*&mut e`.
             match self.expr.kind {
-                E::CastAsImmRef(Expression {
-                    kind: E::Ref(Mutable, e),
-                    ..
-                }) => {
+                E::Ref(
+                    Shared,
+                    Expression {
+                        kind:
+                            E::Deref(Expression {
+                                kind: E::Ref(Mutable, &e),
+                                ..
+                            }),
+                        ..
+                    },
+                ) => {
                     return Ok((
                         Rule::ExprSimplification,
                         vec![Self {
@@ -207,6 +214,8 @@ impl<'a> TypingPredicate<'a> {
                         }],
                     ))
                 }
+                // Note: we technically should error on `Expr::Abstract` here. That would
+                // enormously complexify the rules listing however, so we don't.
                 _ => {}
             }
         }
@@ -313,7 +322,7 @@ impl<'a> TypingPredicate<'a> {
                                 Rule::DerefMutWithShared(rule_variant),
                                 Self {
                                     pat: self.pat,
-                                    expr: expr.cast_as_imm_ref(a),
+                                    expr: expr.deref(a).borrow(a, Shared),
                                 },
                             )
                         } else {

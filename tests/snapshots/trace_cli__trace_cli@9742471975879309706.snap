@@ -61,15 +61,15 @@ p @ &mut *p: &mut T
 ---------------------------- "Deref(EatInner)"
 &mut p @ &mut p: &mut &mut T
 
-&p @ (p as &_): &T
+&p @ &*p: &T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ p: &mut T, binding_mode(p) = move
 
-&p @ &(p as &_): &&T
--------------------- "DerefMutWithShared(EatInner)"
+&p @ &&*p: &&T
+---------------- "DerefMutWithShared(EatInner)"
 &p @ &p: &&mut T
 
-&p @ &(p as &_): &&T
+&p @ &&*p: &&T
 ------------------------ "DerefMutWithShared(EatInner)"
 &p @ &mut p: &mut &mut T
 
@@ -106,8 +106,8 @@ let mut x: T = p
 mut x @ p: T, binding_mode(p) = move
 
 p @ &p: &T
----------------------- "ExprSimplification"
-p @ (&mut p as &_): &T
+---------------- "ExprSimplification"
+p @ &*&mut p: &T
 
 p @ p: T
 -------------- "ExprSimplification"

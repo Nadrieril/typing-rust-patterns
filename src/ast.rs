@@ -87,8 +87,6 @@ pub enum ExprKind<'a> {
     Deref(&'a Expression<'a>),
     /// Field access.
     Field(&'a Expression<'a>, usize),
-    /// A `(e as &_)` cast.
-    CastAsImmRef(&'a Expression<'a>),
     /// An abstract expression, meant as a placeholder for some unknown expression. Used only when
     /// exploring possible rules. The binding mode may be known or unknown.
     Abstract { bm_is_move: bool },
@@ -131,13 +129,6 @@ impl<'a> Expression<'a> {
         Expression {
             ty: &tys[n],
             kind: ExprKind::Field(self.alloc(arenas), n),
-        }
-    }
-
-    pub fn cast_as_imm_ref(&self, arenas: &'a Arenas<'a>) -> Self {
-        Expression {
-            ty: self.ty.deref().borrow(Shared).alloc(arenas),
-            kind: ExprKind::CastAsImmRef(self.alloc(arenas)),
         }
     }
 }

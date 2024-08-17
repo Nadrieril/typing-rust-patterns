@@ -33,7 +33,6 @@ impl<'a> Expression<'a> {
             | ExprKind::Abstract { bm_is_move: true } => ByMove,
             ExprKind::Abstract { bm_is_move: false } => return Err(TypeError::OverlyGeneralExpr),
             ExprKind::Ref(mtbl, _) => ByRef(mtbl),
-            ExprKind::CastAsImmRef(_) => ByRef(Shared),
         })
     }
 
@@ -46,7 +45,6 @@ impl<'a> Expression<'a> {
             | ExprKind::Abstract { bm_is_move: true } => Ok(*self),
             ExprKind::Abstract { bm_is_move: false } => Err(TypeError::OverlyGeneralExpr),
             ExprKind::Ref(_, e) => Ok(*e),
-            ExprKind::CastAsImmRef(e) => e.reset_binding_mode(),
         }
     }
 
@@ -73,7 +71,6 @@ impl<'a> Expression<'a> {
                     e.borrow_check_inner(false)
                 }
             }
-            ExprKind::CastAsImmRef(e) => e.borrow_check_inner(false),
         }
     }
 
@@ -93,7 +90,6 @@ impl<'a> Expression<'a> {
                 min(bm, e.scrutinee_access_level())
             }
             ExprKind::Field(e, _) => e.scrutinee_access_level(),
-            ExprKind::CastAsImmRef(_) => ByRef(Shared),
             // We can't know, and strictly speaking we shouldn't assume, but we choose to lie here.
             ExprKind::Abstract { .. } => ByMove,
         }
@@ -125,18 +121,7 @@ impl<'a> Expression<'a> {
                 ExprKind::Ref(mtbl, inner) if inner.scrutinee_access_level() == ByRef(mtbl) => {
                     *inner
                 }
-                ExprKind::Ref(mtbl, inner) if top_level && mtbl == Shared && self.ty.is_copy() => {
-                    *inner
-                }
-                ExprKind::CastAsImmRef(inner)
-                    if inner.scrutinee_access_level() == ByRef(Shared) =>
-                {
-                    Expression {
-                        ty: self.ty,
-                        kind: ExprKind::Deref(inner),
-                    }
-                    .simplify_inner(a, top_level)
-                }
+                ExprKind::Ref(Shared, inner) if top_level && self.ty.is_copy() => *inner,
                 _ => Expression {
                     ty: self.ty,
                     kind: ExprKind::Deref(e.simplify_inner(a, false).alloc(a)),
@@ -145,10 +130,6 @@ impl<'a> Expression<'a> {
             ExprKind::Field(e, n) => Expression {
                 ty: self.ty,
                 kind: ExprKind::Field(e.simplify_inner(a, false).alloc(a), n),
-            },
-            ExprKind::CastAsImmRef(e) => Expression {
-                ty: self.ty,
-                kind: ExprKind::CastAsImmRef(e.simplify_inner(a, false).alloc(a)),
             },
         }
     }

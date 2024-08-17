@@ -58,16 +58,16 @@ p @ *&mut p: &mut T
 ---------------------------- "Deref(EatOuter)"
 &mut p @ &mut p: &mut &mut T
 
-&p @ (&mut p as &_): &&T
------------------------- "DerefMutWithShared(EatOuter)"
+&p @ &*&mut p: &&T
+-------------------- "DerefMutWithShared(EatOuter)"
 &p @ &mut p: &mut &T
 
-&p @ (p as &_): &T
+&p @ &*p: &T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ p: &mut T, binding_mode(p) = move
 
-&p @ (&mut p as &_): &&mut T
----------------------------- "DerefMutWithShared(EatOuter)"
+&p @ &*&mut p: &&mut T
+------------------------ "DerefMutWithShared(EatOuter)"
 &p @ &mut p: &mut &mut T
 
 x @ &p: &T
