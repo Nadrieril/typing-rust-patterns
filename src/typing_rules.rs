@@ -147,10 +147,12 @@ pub enum Rule {
 #[derive(Debug, Clone, Copy)]
 pub enum TypeError {
     TypeMismatch,
-    OverlyGeneralType,
     MutabilityMismatch,
     RefOnRef,
     MutOnRef,
+    OverlyGeneralPattern,
+    OverlyGeneralType,
+    OverlyGeneralExpr,
 }
 
 impl<'a> TypingPredicate<'a> {
@@ -209,8 +211,6 @@ impl<'a> TypingPredicate<'a> {
             }
         }
 
-        let bm = self.expr.binding_mode();
-        let type_of_underlying_place = self.expr.reset_binding_mode().ty;
         match (*self.pat, *self.expr.ty) {
             // Constructor rules
             (P::Tuple(pats), T::Tuple(tys)) if pats.len() == tys.len() => {
@@ -266,7 +266,9 @@ impl<'a> TypingPredicate<'a> {
                 let mut expr = self.expr;
                 let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
                 let mut reborrow_after = None;
+                let bm = self.expr.binding_mode()?;
                 if matches!(bm, ByRef(..)) {
+                    let type_of_underlying_place = self.expr.reset_binding_mode()?.ty;
                     match type_of_underlying_place {
                         T::Ref(inner_mtbl, _) => {
                             rule_variant = ctx.options.inherited_ref_on_ref;
@@ -274,11 +276,11 @@ impl<'a> TypingPredicate<'a> {
                                 InheritedRefOnRefBehavior::EatOuter => {}
                                 InheritedRefOnRefBehavior::EatInner => {
                                     reborrow_after = Some(t_mtbl);
-                                    expr = expr.reset_binding_mode();
+                                    expr = expr.reset_binding_mode()?;
                                     t_mtbl = *inner_mtbl;
                                 }
                                 InheritedRefOnRefBehavior::EatBoth => {
-                                    expr = expr.reset_binding_mode();
+                                    expr = expr.reset_binding_mode()?;
                                     t_mtbl = *inner_mtbl;
                                 }
                             }
@@ -330,6 +332,7 @@ impl<'a> TypingPredicate<'a> {
 
             // Binding rules
             (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _) => {
+                let bm = self.expr.binding_mode()?;
                 match (bm, ctx.options.ref_binding_on_inherited) {
                     // Easy case: we borrow the expression as expected. We rely on rust's lifetime
                     // extension of temporaries in expressions like `&&x`.
@@ -347,13 +350,17 @@ impl<'a> TypingPredicate<'a> {
                         Rule::BindingOverrideBorrow,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
-                            expr: self.expr.reset_binding_mode().borrow(a, by_ref_mtbl, false),
+                            expr: self
+                                .expr
+                                .reset_binding_mode()?
+                                .borrow(a, by_ref_mtbl, false),
                         }],
                     )),
                     (ByRef(_), RefBindingOnInheritedBehavior::Error) => Err(TypeError::RefOnRef),
                 }
             }
             (P::Binding(Mutable, ByMove, _), _) => {
+                let bm = self.expr.binding_mode()?;
                 match (bm, ctx.options.mut_binding_on_inherited) {
                     // Easy case: declare the binding as expected.
                     (ByMove, _) | (_, MutBindingOnInheritedBehavior::Keep) => {
@@ -364,13 +371,15 @@ impl<'a> TypingPredicate<'a> {
                         Rule::BindingResetBindingMode,
                         vec![Self {
                             pat: self.pat,
-                            expr: self.expr.reset_binding_mode(),
+                            expr: self.expr.reset_binding_mode()?,
                         }],
                     )),
                     (ByRef(_), MutBindingOnInheritedBehavior::Error) => Err(TypeError::MutOnRef),
                 }
             }
             (P::Binding(Shared, ByMove, _), _) => Ok((Rule::Binding, vec![])),
+
+            (P::Abstract(..), _) => Err(TypeError::OverlyGeneralPattern),
         }
     }
 }

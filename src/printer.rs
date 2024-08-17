@@ -27,6 +27,7 @@ impl Display for Pattern<'_> {
             Self::Tuple(pats) => write!(f, "[{}]", pats.iter().format(", ")),
             Self::Ref(mutable, pat) => write!(f, "&{mutable}{pat}"),
             Self::Binding(mutable, mode, name) => write!(f, "{mutable}{mode}{name}"),
+            Self::Abstract(name) => write!(f, "{name}"),
         }
     }
 }
@@ -51,6 +52,7 @@ impl Display for ExprKind<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ExprKind::Scrutinee => write!(f, "p"),
+            ExprKind::Abstract { .. } => write!(f, "p"),
             ExprKind::Ref(mutable, e) => write!(f, "&{mutable}{e}"),
             ExprKind::Deref(e) => write!(f, "*{e}"),
             ExprKind::Field(e, n) => {

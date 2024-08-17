@@ -25,19 +25,27 @@ pub enum BorrowCheckError {
 impl<'a> Expression<'a> {
     /// An expression is either a place or a reference to a place. This corresponds to the "default
     /// binding mode" of RFC2005 aka "match ergonomics".
-    pub fn binding_mode(&self) -> BindingMode {
-        match self.kind {
-            ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => ByMove,
+    pub fn binding_mode(&self) -> Result<BindingMode, TypeError> {
+        Ok(match self.kind {
+            ExprKind::Scrutinee
+            | ExprKind::Deref(_)
+            | ExprKind::Field(_, _)
+            | ExprKind::Abstract { bm_is_move: true } => ByMove,
+            ExprKind::Abstract { bm_is_move: false } => return Err(TypeError::OverlyGeneralExpr),
             ExprKind::Ref(mtbl, _) => ByRef(mtbl),
             ExprKind::CastAsImmRef(_) => ByRef(Shared),
-        }
+        })
     }
 
     /// Resets the binding mode to `move`.
-    pub fn reset_binding_mode(&self) -> Self {
+    pub fn reset_binding_mode(&self) -> Result<Self, TypeError> {
         match self.kind {
-            ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => *self,
-            ExprKind::Ref(_, e) => *e,
+            ExprKind::Scrutinee
+            | ExprKind::Deref(_)
+            | ExprKind::Field(_, _)
+            | ExprKind::Abstract { bm_is_move: true } => Ok(*self),
+            ExprKind::Abstract { bm_is_move: false } => Err(TypeError::OverlyGeneralExpr),
+            ExprKind::Ref(_, e) => Ok(*e),
             ExprKind::CastAsImmRef(e) => e.reset_binding_mode(),
         }
     }
@@ -50,6 +58,7 @@ impl<'a> Expression<'a> {
     fn borrow_check_inner(&self, top_level: bool) -> Result<(), BorrowCheckError> {
         match self.kind {
             ExprKind::Scrutinee => Ok(()),
+            ExprKind::Abstract { .. } => Ok(()),
             ExprKind::Ref(mtbl, e) => {
                 if mtbl == Mutable && e.scrutinee_access_level() == ByRef(Shared) {
                     Err(BorrowCheckError::MutBorrowBehindSharedBorrow)
@@ -85,6 +94,8 @@ impl<'a> Expression<'a> {
             }
             ExprKind::Field(e, _) => e.scrutinee_access_level(),
             ExprKind::CastAsImmRef(_) => ByRef(Shared),
+            // We can't know, and strictly speaking we shouldn't assume, but we choose to lie here.
+            ExprKind::Abstract { .. } => ByMove,
         }
     }
 
@@ -96,7 +107,7 @@ impl<'a> Expression<'a> {
 
     fn simplify_inner(&self, a: &'a Arenas<'a>, top_level: bool) -> Self {
         match self.kind {
-            ExprKind::Scrutinee => *self,
+            ExprKind::Scrutinee | ExprKind::Abstract { .. } => *self,
             ExprKind::Ref(mtbl, e) => match e.kind {
                 // `&*p` with `p: &T` can be simplified, but `&mut *p` with `p: &mut T` is a
                 // re-borrow so it must stay.

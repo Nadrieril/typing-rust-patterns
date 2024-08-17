@@ -14,25 +14,35 @@ impl<'a> TypingPredicate<'a> {
     fn parse_request_with_bm(
         a: &'a Arenas<'a>,
         req: &str,
-        bm: BindingMode,
+        bm: Option<BindingMode>,
     ) -> Result<Self, ErrorTree<String>> {
         let req = TypingRequest::parse(a, req)?;
-        let expr = if let ByRef(mtbl) = bm {
+        let kind = ExprKind::Abstract {
+            bm_is_move: bm == Some(ByMove),
+        };
+        let expr = if let Some(ByRef(mtbl)) = bm {
             // Instead of starting with the scrutinee `p` expression, we start with `&p` or `&mut
             // p`. This only makes sense if the type was already the corresponding reference.
             Expression {
-                kind: ExprKind::Scrutinee,
+                kind,
                 ty: req.ty.deref(),
             }
             .borrow(a, mtbl, false)
         } else {
-            Expression {
-                kind: ExprKind::Scrutinee,
-                ty: req.ty,
-            }
+            Expression { kind, ty: req.ty }
         };
         Ok(TypingPredicate { pat: req.pat, expr })
     }
+
+    fn typing_rule(&self, ctx: TypingCtx<'a>) -> Result<TypingRule<'a>, TypeError> {
+        let (rule, preconditions) = self.step(ctx)?;
+        Ok(TypingRule {
+            name: rule,
+            preconditions,
+            postcondition: *self,
+        })
+    }
+}
 }
 
 pub fn display_rules(options: RuleOptions) {
@@ -85,15 +95,7 @@ pub fn display_rules(options: RuleOptions) {
     ];
     let mut starting_predicates = basic_cases
         .iter()
-        .map(|&(case, bm)| {
-            let starting_pred = TypingPredicate::parse_request_with_bm(
-                arenas,
-                case,
-                bm.unwrap_or(BindingMode::ByMove),
-            )
-            .unwrap();
-            (starting_pred, bm.is_some())
-        })
+        .map(|&(case, bm)| TypingPredicate::parse_request_with_bm(arenas, case, bm).unwrap())
         .collect_vec();
 
     if options.simplify_expressions {
@@ -104,33 +106,26 @@ pub fn display_rules(options: RuleOptions) {
             ty: req.ty,
         }
         .borrow(arenas, Mutable, false);
-        starting_predicates.push((
-            TypingPredicate {
-                pat: req.pat,
-                expr: mut_borrow.cast_as_imm_ref(arenas),
-            },
-            false,
-        ));
-        starting_predicates.push((
-            TypingPredicate {
-                pat: req.pat,
-                expr: mut_borrow.deref(arenas),
-            },
-            false,
-        ));
+        starting_predicates.push(TypingPredicate {
+            pat: req.pat,
+            expr: mut_borrow.cast_as_imm_ref(arenas),
+        });
+        starting_predicates.push(TypingPredicate {
+            pat: req.pat,
+            expr: mut_borrow.deref(arenas),
+        });
     }
 
     let mut typing_rules = starting_predicates
         .into_iter()
-        .filter_map(|(starting_pred, enforce_bm)| {
-            let (rule, preconditions) = starting_pred.step(ctx).ok()?;
-            let tyrule = TypingRule {
-                name: rule,
-                preconditions,
-                postcondition: starting_pred,
-                require_by_move: enforce_bm && starting_pred.expr.binding_mode() == ByMove,
-            };
-            Some(tyrule)
+        .filter_map(|starting_pred| match starting_pred.typing_rule(ctx) {
+            Ok(x) => Some(x),
+            Err(
+                err @ (TypeError::OverlyGeneralPattern
+                | TypeError::OverlyGeneralExpr
+                | TypeError::OverlyGeneralType),
+            ) => panic!("overly general predicate: `{starting_pred}` ({err:?})"),
+            Err(_) => None,
         })
         .collect_vec();
     typing_rules.sort_by_key(|rule| rule.name);
@@ -143,8 +138,17 @@ struct TypingRule<'a> {
     name: Rule,
     preconditions: Vec<TypingPredicate<'a>>,
     postcondition: TypingPredicate<'a>,
-    /// Adds a `binding_mode(<expr>) = move` condition
-    require_by_move: bool,
+}
+
+fn requires_by_move(e: &Expression<'_>) -> bool {
+    match e.kind {
+        ExprKind::Scrutinee => false,
+        ExprKind::Abstract { bm_is_move } => bm_is_move,
+        ExprKind::Ref(_, e)
+        | ExprKind::Deref(e)
+        | ExprKind::Field(e, _)
+        | ExprKind::CastAsImmRef(e) => requires_by_move(e),
+    }
 }
 
 impl<'a> Display for TypingRule<'a> {
@@ -153,7 +157,6 @@ impl<'a> Display for TypingRule<'a> {
             name,
             preconditions,
             postcondition,
-            require_by_move,
         } = self;
         let preconditions_str = if preconditions.is_empty() {
             postcondition.display_as_let()
@@ -161,11 +164,11 @@ impl<'a> Display for TypingRule<'a> {
             preconditions.iter().format(", ").to_string()
         };
         let mut postcondition_str = postcondition.to_string();
-        if *require_by_move {
+        if requires_by_move(&postcondition.expr) {
             let _ = write!(
                 &mut postcondition_str,
                 ", binding_mode({}) = move",
-                postcondition.expr
+                ExprKind::Abstract { bm_is_move: true }
             );
         }
 

@@ -34,6 +34,9 @@ pub enum Pattern<'a> {
     /// Bindings: `mut x`, `ref mut x`, etc. We allow things like `mut ref mut x` that aren't
     /// representable in today's rust.
     Binding(Mutability, BindingMode, &'a str),
+    /// An abstract pattern, meant as a placeholder for some unknown pattern. Used only when
+    /// exploring possible rules.
+    Abstract(&'a str),
 }
 
 /// A type.
@@ -82,6 +85,9 @@ pub enum ExprKind<'a> {
     Field(&'a Expression<'a>, usize),
     /// A `(e as &_)` cast.
     CastAsImmRef(&'a Expression<'a>),
+    /// An abstract expression, meant as a placeholder for some unknown expression. Used only when
+    /// exploring possible rules. The binding mode may be known or unknown.
+    Abstract { bm_is_move: bool },
 }
 
 impl<'a> Expression<'a> {
