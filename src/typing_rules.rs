@@ -254,29 +254,26 @@ impl<'a> TypingPredicate<'a> {
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
                 let mut expr = self.expr;
                 let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
-                if !ctx.options.eat_inherited_ref_alone
-                    && !matches!(type_of_underlying_place, T::Ref(..))
-                {
-                    // The underlying place is not a reference, so we can't eat the inherited
-                    // reference.
-                    return Err(TypeError::TypeMismatch);
-                }
                 let mut reborrow_after = None;
-                if let T::Ref(inner_mtbl, _) = type_of_underlying_place
-                    && matches!(bm, ByRef(..))
-                {
-                    rule_variant = ctx.options.inherited_ref_on_ref;
-                    match ctx.options.inherited_ref_on_ref {
-                        InheritedRefOnRefBehavior::EatOuter => {}
-                        InheritedRefOnRefBehavior::EatInner => {
-                            reborrow_after = Some(t_mtbl);
-                            expr = expr.reset_binding_mode();
-                            t_mtbl = *inner_mtbl;
+                if matches!(bm, ByRef(..)) {
+                    if let T::Ref(inner_mtbl, _) = type_of_underlying_place {
+                        rule_variant = ctx.options.inherited_ref_on_ref;
+                        match ctx.options.inherited_ref_on_ref {
+                            InheritedRefOnRefBehavior::EatOuter => {}
+                            InheritedRefOnRefBehavior::EatInner => {
+                                reborrow_after = Some(t_mtbl);
+                                expr = expr.reset_binding_mode();
+                                t_mtbl = *inner_mtbl;
+                            }
+                            InheritedRefOnRefBehavior::EatBoth => {
+                                expr = expr.reset_binding_mode();
+                                t_mtbl = *inner_mtbl;
+                            }
                         }
-                        InheritedRefOnRefBehavior::EatBoth => {
-                            expr = expr.reset_binding_mode();
-                            t_mtbl = *inner_mtbl;
-                        }
+                    } else if !ctx.options.eat_inherited_ref_alone {
+                        // The underlying place is not a reference, so we can't eat the inherited
+                        // reference.
+                        return Err(TypeError::TypeMismatch);
                     }
                 }
                 let (rule, mut pred) = match (p_mtbl, t_mtbl) {
@@ -287,24 +284,25 @@ impl<'a> TypingPredicate<'a> {
                             expr: expr.deref(a),
                         },
                     ),
-                    (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => (
-                        Rule::DerefMutWithShared(rule_variant),
-                        Self {
-                            pat: self.pat,
-                            expr: expr.cast_as_imm_ref(a),
-                        },
-                    ),
-                    (Shared, Mutable) | (Mutable, Shared) => {
-                        return Err(TypeError::MutabilityMismatch)
+                    (Shared, Mutable) => {
+                        if ctx.options.allow_ref_pat_on_ref_mut {
+                            (
+                                Rule::DerefMutWithShared(rule_variant),
+                                Self {
+                                    pat: self.pat,
+                                    expr: expr.cast_as_imm_ref(a),
+                                },
+                            )
+                        } else {
+                            return Err(TypeError::MutabilityMismatch);
+                        }
                     }
+                    (Mutable, Shared) => return Err(TypeError::MutabilityMismatch),
                 };
                 if let Some(mtbl) = reborrow_after {
-                    pred = Self {
-                        pat: pred.pat,
-                        expr: pred
-                            .expr
-                            .borrow(a, mtbl, ctx.options.downgrade_shared_inside_shared),
-                    }
+                    pred.expr =
+                        pred.expr
+                            .borrow(a, mtbl, ctx.options.downgrade_shared_inside_shared);
                 }
                 Ok((rule, vec![pred]))
             }
