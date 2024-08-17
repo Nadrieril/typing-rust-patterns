@@ -2,101 +2,101 @@
 source: tests/compute_rules.rs
 info: ergo2024
 ---
-p0 @ p.0: T0, p1 @ p.1: T1
+p0 @ q.0: T0, p1 @ q.1: T1
 -------------------------- "Constructor"
-[p0, p1] @ p: [T0, T1]
+[p0, p1] @ q: [T0, T1]
 
-p0 @ &(*p).0: &T0, p1 @ &(*p).1: &T1
+p0 @ &(*q).0: &T0, p1 @ &(*q).1: &T1
 ------------------------------------ "ConstructorRef"
-[p0, p1] @ p: &[T0, T1]
+[p0, p1] @ q: &[T0, T1]
 
-p0 @ &mut (*p).0: &mut T0, p1 @ &mut (*p).1: &mut T1
+p0 @ &mut (*q).0: &mut T0, p1 @ &mut (*q).1: &mut T1
 ---------------------------------------------------- "ConstructorRef"
-[p0, p1] @ p: &mut [T0, T1]
+[p0, p1] @ q: &mut [T0, T1]
 
-[p0, p1] @ *p: &T
+[p0, p1] @ *q: &T
 ----------------- "ConstructorMultiRef"
-[p0, p1] @ p: &&T
+[p0, p1] @ q: &&T
 
-[p0, p1] @ &**p: &T
+[p0, p1] @ &**q: &T
 --------------------- "ConstructorMultiRef"
-[p0, p1] @ p: &&mut T
+[p0, p1] @ q: &&mut T
 
-[p0, p1] @ *p: &T
+[p0, p1] @ *q: &T
 --------------------- "ConstructorMultiRef"
-[p0, p1] @ p: &mut &T
+[p0, p1] @ q: &mut &T
 
-[p0, p1] @ &mut **p: &mut T
+[p0, p1] @ &mut **q: &mut T
 --------------------------- "ConstructorMultiRef"
-[p0, p1] @ p: &mut &mut T
+[p0, p1] @ q: &mut &mut T
 
-p @ *p: T
+p @ *q: T
 ---------------------------------- "Deref(EatOuter)"
-&p @ p: &T, binding_mode(p) = move
+&p @ q: &T, binding_mode(q) = move
 
-p @ *p: T
+p @ *q: T
 ------------------------------------------ "Deref(EatOuter)"
-&mut p @ p: &mut T, binding_mode(p) = move
+&mut p @ q: &mut T, binding_mode(q) = move
 
-p @ &*p: &T
+p @ &*q: &T
 ------------ "Deref(EatInner)"
-&p @ &p: &&T
+&p @ &q: &&T
 
-p @ &*p: &T
+p @ &*q: &T
 -------------------- "Deref(EatInner)"
-&p @ &mut p: &mut &T
+&p @ &mut q: &mut &T
 
-p @ &*p: &T
+p @ &*q: &T
 -------------------- "Deref(EatInner)"
-&mut p @ &p: &&mut T
+&mut p @ &q: &&mut T
 
-p @ &mut *p: &mut T
+p @ &mut *q: &mut T
 ---------------------------- "Deref(EatInner)"
-&mut p @ &mut p: &mut &mut T
+&mut p @ &mut q: &mut &mut T
 
-&p @ &*p: &T
+&p @ &*q: &T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
-&p @ p: &mut T, binding_mode(p) = move
+&p @ q: &mut T, binding_mode(q) = move
 
-&p @ &&*p: &&T
+&p @ &&*q: &&T
 ---------------- "DerefMutWithShared(EatInner)"
-&p @ &p: &&mut T
+&p @ &q: &&mut T
 
-&p @ &&*p: &&T
+&p @ &&*q: &&T
 ------------------------ "DerefMutWithShared(EatInner)"
-&p @ &mut p: &mut &mut T
+&p @ &mut q: &mut &mut T
 
-x @ &p: &T
+x @ &q: &T
 -------------- "BindingOverrideBorrow"
-ref x @ &p: &T
+ref x @ &q: &T
 
-x @ &p: &T
+x @ &q: &T
 ---------------------- "BindingOverrideBorrow"
-ref x @ &mut p: &mut T
+ref x @ &mut q: &mut T
 
-x @ &mut p: &mut T
+x @ &mut q: &mut T
 ------------------ "BindingOverrideBorrow"
-ref mut x @ &p: &T
+ref mut x @ &q: &T
 
-x @ &mut p: &mut T
+x @ &mut q: &mut T
 -------------------------- "BindingOverrideBorrow"
-ref mut x @ &mut p: &mut T
+ref mut x @ &mut q: &mut T
 
-x @ &p: &T
+x @ &q: &T
 ------------------------------------ "BindingBorrow"
-ref x @ p: T, binding_mode(p) = move
+ref x @ q: T, binding_mode(q) = move
 
-x @ &mut p: &mut T
+x @ &mut q: &mut T
 ---------------------------------------- "BindingBorrow"
-ref mut x @ p: T, binding_mode(p) = move
+ref mut x @ q: T, binding_mode(q) = move
 
-let x: T = p
+let x: T = q
 ------------ "Binding"
-x @ p: T
+x @ q: T
 
-let mut x: T = p
+let mut x: T = q
 ------------------------------------ "Binding"
-mut x @ p: T, binding_mode(p) = move
+mut x @ q: T, binding_mode(q) = move
 
 p @ p: T
 -------------- "ExprSimplification"
