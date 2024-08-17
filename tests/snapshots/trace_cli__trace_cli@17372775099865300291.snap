@@ -4,6 +4,8 @@ info: "set stateless\nrules"
 ---
 ref_binding_on_inherited: "Error" -> "AllocTemporary"
 simplify_expressions: true -> false
+The current options can be fully described as the following set of rules.
+
 p0 @ p.0: T0, p1 @ p.1: T1
 -------------------------- "Constructor"
 [p0, p1] @ p: [T0, T1]

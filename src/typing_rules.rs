@@ -191,7 +191,7 @@ impl<'a> TypingPredicate<'a> {
                         Rule::ExprSimplification,
                         vec![Self {
                             pat: self.pat,
-                            expr: e.borrow(a, Shared, false),
+                            expr: e.borrow(a, Shared),
                         }],
                     ))
                 }
@@ -230,7 +230,7 @@ impl<'a> TypingPredicate<'a> {
                     .iter()
                     .enumerate()
                     .map(|(i, pat)| {
-                        let expr = self.expr.deref(a).field(a, i).borrow(
+                        let expr = self.expr.deref(a).field(a, i).borrow_cap_mutability(
                             a,
                             mtbl,
                             ctx.options.downgrade_shared_inside_shared,
@@ -246,9 +246,11 @@ impl<'a> TypingPredicate<'a> {
                 let mut expr = self.expr.deref(a);
                 if let Mutable = inner_mtbl {
                     // Reborrow
-                    expr = expr
-                        .deref(a)
-                        .borrow(a, mtbl, ctx.options.downgrade_shared_inside_shared)
+                    expr = expr.deref(a).borrow_cap_mutability(
+                        a,
+                        mtbl,
+                        ctx.options.downgrade_shared_inside_shared,
+                    )
                 }
                 Ok((
                     Rule::ConstructorMultiRef,
@@ -321,9 +323,11 @@ impl<'a> TypingPredicate<'a> {
                     (Mutable, Shared) => return Err(TypeError::MutabilityMismatch),
                 };
                 if let Some(mtbl) = reborrow_after {
-                    pred.expr =
-                        pred.expr
-                            .borrow(a, mtbl, ctx.options.downgrade_shared_inside_shared);
+                    pred.expr = pred.expr.borrow_cap_mutability(
+                        a,
+                        mtbl,
+                        ctx.options.downgrade_shared_inside_shared,
+                    );
                 }
                 Ok((rule, vec![pred]))
             }
@@ -340,7 +344,7 @@ impl<'a> TypingPredicate<'a> {
                         Rule::BindingBorrow,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
-                            expr: self.expr.borrow(a, by_ref_mtbl, false),
+                            expr: self.expr.borrow(a, by_ref_mtbl),
                         }],
                     )),
                     // To replicate stable rust behavior, we inspect the binding mode and skip it.
@@ -350,10 +354,7 @@ impl<'a> TypingPredicate<'a> {
                         Rule::BindingOverrideBorrow,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
-                            expr: self
-                                .expr
-                                .reset_binding_mode()?
-                                .borrow(a, by_ref_mtbl, false),
+                            expr: self.expr.reset_binding_mode()?.borrow(a, by_ref_mtbl),
                         }],
                     )),
                     (ByRef(_), RefBindingOnInheritedBehavior::Error) => Err(TypeError::RefOnRef),

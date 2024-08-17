@@ -2,38 +2,13 @@ use std::fmt::Write;
 use std::{cmp::max, fmt::Display};
 
 use itertools::Itertools;
-use nom_supreme::error::ErrorTree;
 
 use crate::*;
 use BindingMode::*;
 use Mutability::*;
 
 impl<'a> TypingPredicate<'a> {
-    /// Starting point for most rules: a request and a binding mode. Panics if the binding mode is
-    /// not compatible with the type in the request.
-    fn parse_request_with_bm(
-        a: &'a Arenas<'a>,
-        req: &str,
-        bm: Option<BindingMode>,
-    ) -> Result<Self, ErrorTree<String>> {
-        let req = TypingRequest::parse(a, req)?;
-        let kind = ExprKind::Abstract {
-            bm_is_move: bm == Some(ByMove),
-        };
-        let expr = if let Some(ByRef(mtbl)) = bm {
-            // Instead of starting with the scrutinee `p` expression, we start with `&p` or `&mut
-            // p`. This only makes sense if the type was already the corresponding reference.
-            Expression {
-                kind,
-                ty: req.ty.deref(),
-            }
-            .borrow(a, mtbl, false)
-        } else {
-            Expression { kind, ty: req.ty }
-        };
-        Ok(TypingPredicate { pat: req.pat, expr })
-    }
-
+    /// Compute the typing rule associated with this predicate.
     fn typing_rule(&self, ctx: TypingCtx<'a>) -> Result<TypingRule<'a>, TypeError> {
         let (rule, preconditions) = self.step(ctx)?;
         Ok(TypingRule {
@@ -43,9 +18,212 @@ impl<'a> TypingPredicate<'a> {
         })
     }
 }
+
+impl<'a> Pattern<'a> {
+    /// Replace abstract subpatterns with all the possible more-precise patterns.
+    fn deepen(&'a self, a: &'a Arenas<'a>) -> &'a [Self] {
+        match *self {
+            Pattern::Abstract(name) => {
+                let tuple = {
+                    // We assume no rules depend on the specific constructor. We use length 2 for
+                    // demo purposes.
+                    let subnames = [name.to_string() + "0", name.to_string() + "1"];
+                    let subpats = subnames
+                        .into_iter()
+                        .map(|name| Pattern::Abstract(a.str_arena.alloc_str(&name)));
+                    Pattern::Tuple(a.pat_arena.alloc_extend(subpats))
+                };
+                a.pat_arena.alloc_extend(
+                    [tuple]
+                        .into_iter()
+                        .chain(
+                            Mutability::ALL
+                                .into_iter()
+                                .map(|mtbl| Pattern::Ref(mtbl, self)),
+                        )
+                        .chain(
+                            Mutability::ALL
+                                .into_iter()
+                                .map(|mtbl| Pattern::Binding(mtbl, ByMove, "x")),
+                        )
+                        .chain(
+                            Mutability::ALL
+                                .into_iter()
+                                .map(|mtbl| Pattern::Binding(Shared, ByRef(mtbl), "x")),
+                        ),
+                )
+            }
+            Pattern::Tuple(pats) => a.pat_arena.alloc_extend(
+                pats.iter()
+                    .map(|p| p.deepen(a))
+                    .multi_cartesian_product()
+                    .map(|pats| {
+                        Pattern::Tuple(a.pat_arena.alloc_extend(pats.into_iter().copied()))
+                    }),
+            ),
+            Pattern::Ref(mtbl, p) => a
+                .pat_arena
+                .alloc_extend(p.deepen(a).iter().map(|p| Pattern::Ref(mtbl, p))),
+            Pattern::Binding(_, _, _) => std::slice::from_ref(self),
+        }
+    }
+}
+
+impl<'a> Type<'a> {
+    /// Replace abstract subtypes with all the possible more-precise types.
+    fn deepen(&'a self, a: &'a Arenas<'a>) -> &'a [Self] {
+        match *self {
+            Type::Var(name) => {
+                let tuple = {
+                    // We assume no rules depend on the specific type beyond references. We use
+                    // length 2 for demo purposes.
+                    let subnames = [name.to_string() + "0", name.to_string() + "1"];
+                    let subtypes = subnames
+                        .into_iter()
+                        .map(|name| Type::Var(a.str_arena.alloc_str(&name)));
+                    Type::Tuple(a.type_arena.alloc_extend(subtypes))
+                };
+                a.type_arena.alloc_extend([
+                    tuple,
+                    Type::Ref(Shared, self),
+                    Type::Ref(Mutable, self),
+                ])
+            }
+            Type::Tuple(pats) => a.type_arena.alloc_extend(
+                pats.iter()
+                    .map(|p| p.deepen(a))
+                    .multi_cartesian_product()
+                    .map(|tys| Type::Tuple(a.type_arena.alloc_extend(tys.into_iter().copied()))),
+            ),
+            Type::Ref(mtbl, p) => a
+                .type_arena
+                .alloc_extend(p.deepen(a).iter().map(|p| Type::Ref(mtbl, p))),
+        }
+    }
+}
+
+impl<'a> Expression<'a> {
+    /// Replace abstract subexpressions with all the possible more-precise expressions.
+    fn deepen(&self, a: &'a Arenas<'a>) -> &'a [Self] {
+        match self.kind {
+            ExprKind::Scrutinee => a.expr_arena.alloc_extend([*self]),
+            ExprKind::Abstract { bm_is_move: false } => a.expr_arena.alloc_extend([
+                Expression {
+                    kind: ExprKind::Abstract { bm_is_move: true },
+                    ty: self.ty,
+                },
+                self.borrow(a, Shared),
+                self.borrow(a, Mutable),
+            ]),
+            ExprKind::Abstract { bm_is_move: true } => todo!(),
+            ExprKind::Ref(mtbl, e) => a
+                .expr_arena
+                .alloc_extend(e.deepen(a).iter().map(|e| e.borrow(a, mtbl))),
+            // We never generate these.
+            ExprKind::Deref(_) | ExprKind::Field(_, _) | ExprKind::CastAsImmRef(_) => {
+                unreachable!()
+            }
+        }
+    }
+
+    /// Replace abstract subtypes with all the possible more-precise types.
+    fn deepen_ty(&self, a: &'a Arenas<'a>) -> &'a [Self] {
+        match self.kind {
+            ExprKind::Scrutinee | ExprKind::Abstract { .. } => {
+                a.expr_arena
+                    .alloc_extend(self.ty.deepen(a).iter().map(|ty| Expression {
+                        kind: self.kind,
+                        ty,
+                    }))
+            }
+            ExprKind::Ref(mtbl, e) => a
+                .expr_arena
+                .alloc_extend(e.deepen_ty(a).iter().map(|e| e.borrow(a, mtbl))),
+            // We never generate these.
+            ExprKind::Deref(_) | ExprKind::Field(_, _) | ExprKind::CastAsImmRef(_) => {
+                unreachable!()
+            }
+        }
+    }
+}
+
+/// Compute all the rules that describe the behavior of the solver with the given options. We start
+/// with a dummy predicate with abstract pattern, expression and type, and recursively refine it as
+/// long as we get `OverlyGeneral` errors. This ensures we explore all possible cases.
+///
+/// Notable exceptions are the "ExprSimplification" rules and `downgrade_shared_inside_shared`
+/// option, which don't trigger `OverlyGeneral` errors despite the fact that they inspect the
+/// expression. For the simplification rules, the alternative would be overly detailed rules
+/// (enough to be disjoint, this would entail specializing every single rule for all possible
+/// expressions until depth 2 :')). For `downgrade_shared_inside_shared`, it's not possible to
+/// describe it as a rule without tracking aditional state.
+fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
+    let a = ctx.arenas;
+    let mut predicates = vec![TypingPredicate {
+        pat: &Pattern::Abstract("p"),
+        expr: Expression {
+            kind: ExprKind::Abstract { bm_is_move: false },
+            ty: Type::Var("T").alloc(a),
+        },
+    }];
+
+    // Add the special expression simplification predicates because we won't explore them since
+    // they don't trigger `OverlyGeneralExpr` errors.
+    if ctx.options.simplify_expressions {
+        let req = TypingRequest::parse(a, "p: T").unwrap();
+        let mut_borrow = &Expression {
+            kind: ExprKind::Scrutinee,
+            ty: req.ty,
+        }
+        .borrow(a, Mutable);
+        predicates.push(TypingPredicate {
+            pat: req.pat,
+            expr: mut_borrow.cast_as_imm_ref(a),
+        });
+        predicates.push(TypingPredicate {
+            pat: req.pat,
+            expr: mut_borrow.deref(a),
+        });
+    }
+
+    let mut rules = Vec::new();
+    while let Some(pred) = predicates.pop() {
+        match pred.typing_rule(ctx) {
+            Ok(rule) => rules.push(rule),
+            // TODO: try substituting
+            Err(TypeError::OverlyGeneralPattern) => predicates.extend(
+                pred.pat
+                    .deepen(a)
+                    .iter()
+                    .map(|pat| TypingPredicate { pat, ..pred }),
+            ),
+            Err(TypeError::OverlyGeneralExpr) => predicates.extend(
+                pred.expr
+                    .deepen(a)
+                    .iter()
+                    .cloned()
+                    .map(|expr| TypingPredicate { expr, ..pred }),
+            ),
+            Err(TypeError::OverlyGeneralType) => predicates.extend(
+                pred.expr
+                    .deepen_ty(a)
+                    .iter()
+                    .cloned()
+                    .map(|expr| TypingPredicate { expr, ..pred }),
+            ),
+            Err(_) => {}
+        }
+    }
+
+    // We generate the deepenings in the order we'd like to see them, so we reverse to restore that
+    // order.
+    rules.reverse();
+    rules
 }
 
 pub fn display_rules(options: RuleOptions) {
+    println!("The current options can be fully described as the following set of rules.");
+
     let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
     if options.downgrade_shared_inside_shared {
@@ -54,78 +232,9 @@ pub fn display_rules(options: RuleOptions) {
         );
     }
 
-    // We know how deep each rule inspects the predicate. We can therefore make a list of
-    // predicates that exercises all rules and codepaths.
-    // The binding mode is `None` if it never matters for the given case.
-    let basic_cases = [
-        // Constructor rules
-        ("[p0, p1]: [T0, T1]", None),
-        ("[p0, p1]: &[T0, T1]", None),
-        ("[p0, p1]: &mut [T0, T1]", None),
-        ("[p0, p1]: &&T", None),
-        ("[p0, p1]: &&mut T", None),
-        ("[p0, p1]: &mut &T", None),
-        ("[p0, p1]: &mut &mut T", None),
-        // Dereference rules
-        ("&p: &T", Some(ByMove)),
-        ("&p: &&T", Some(ByRef(Shared))),
-        ("&p: &mut &T", Some(ByRef(Mutable))),
-        ("&p: &mut T", Some(ByMove)),
-        ("&p: &&mut T", Some(ByRef(Shared))),
-        ("&p: &mut &mut T", Some(ByRef(Mutable))),
-        ("&mut p: &T", Some(ByMove)),
-        ("&mut p: &&T", Some(ByRef(Shared))),
-        ("&mut p: &&mut T", Some(ByRef(Shared))),
-        ("&mut p: &mut &T", Some(ByRef(Mutable))),
-        ("&mut p: &mut T", Some(ByMove)),
-        ("&mut p: &mut &mut T", Some(ByRef(Mutable))),
-        // Binding rules
-        ("ref x: T", Some(ByMove)),
-        ("ref x: &T", Some(ByRef(Shared))),
-        ("ref x: &mut T", Some(ByRef(Mutable))),
-        ("ref mut x: T", Some(ByMove)),
-        ("ref mut x: &T", Some(ByRef(Shared))),
-        ("ref mut x: &mut T", Some(ByRef(Mutable))),
-        ("x: T", None),
-        ("mut x: T", Some(ByMove)),
-        ("mut x: &T", Some(ByRef(Shared))),
-        ("mut x: &mut T", Some(ByRef(Mutable))),
-    ];
-    let mut starting_predicates = basic_cases
-        .iter()
-        .map(|&(case, bm)| TypingPredicate::parse_request_with_bm(arenas, case, bm).unwrap())
-        .collect_vec();
+    println!();
 
-    if options.simplify_expressions {
-        // Add the special expression simplification rules.
-        let req = TypingRequest::parse(arenas, "p: T").unwrap();
-        let mut_borrow = &Expression {
-            kind: ExprKind::Scrutinee,
-            ty: req.ty,
-        }
-        .borrow(arenas, Mutable, false);
-        starting_predicates.push(TypingPredicate {
-            pat: req.pat,
-            expr: mut_borrow.cast_as_imm_ref(arenas),
-        });
-        starting_predicates.push(TypingPredicate {
-            pat: req.pat,
-            expr: mut_borrow.deref(arenas),
-        });
-    }
-
-    let mut typing_rules = starting_predicates
-        .into_iter()
-        .filter_map(|starting_pred| match starting_pred.typing_rule(ctx) {
-            Ok(x) => Some(x),
-            Err(
-                err @ (TypeError::OverlyGeneralPattern
-                | TypeError::OverlyGeneralExpr
-                | TypeError::OverlyGeneralType),
-            ) => panic!("overly general predicate: `{starting_pred}` ({err:?})"),
-            Err(_) => None,
-        })
-        .collect_vec();
+    let mut typing_rules = compute_rules(ctx);
     typing_rules.sort_by_key(|rule| rule.name);
     for rule in typing_rules {
         println!("{rule}\n");

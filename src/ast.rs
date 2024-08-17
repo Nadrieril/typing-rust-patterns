@@ -13,6 +13,10 @@ pub enum Mutability {
     Mutable,
 }
 
+impl Mutability {
+    pub const ALL: [Self; 2] = [Shared, Mutable];
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BindingMode {
     ByRef(Mutability),
@@ -98,9 +102,17 @@ impl<'a> Expression<'a> {
         }
     }
 
+    /// Borrow the expression.
+    pub fn borrow(&self, arenas: &'a Arenas<'a>, mtbl: Mutability) -> Self {
+        Expression {
+            ty: self.ty.borrow(mtbl).alloc(arenas),
+            kind: ExprKind::Ref(mtbl, self.alloc(arenas)),
+        }
+    }
+
     /// Borrow the expression. If `cap_mutability` is set, we will downgrade `&mut` to `&` if we
     /// only have shared access to the scrutinee.
-    pub fn borrow(
+    pub fn borrow_cap_mutability(
         &self,
         arenas: &'a Arenas<'a>,
         mut mtbl: Mutability,
@@ -109,10 +121,7 @@ impl<'a> Expression<'a> {
         if cap_mutability && let ByRef(cap) = self.scrutinee_access_level() {
             mtbl = min(mtbl, cap);
         }
-        Expression {
-            ty: self.ty.borrow(mtbl).alloc(arenas),
-            kind: ExprKind::Ref(mtbl, self.alloc(arenas)),
-        }
+        self.borrow(arenas, mtbl)
     }
 
     pub fn field(&self, arenas: &'a Arenas<'a>, n: usize) -> Self {
