@@ -157,7 +157,7 @@ impl<'a> Expression<'a> {
                 }
             }
             ExprKind::Deref(e) | ExprKind::Field(e, _) => {
-                if top_level && !self.ty.is_copy() {
+                if top_level && !self.ty.is_copy() && self.scrutinee_access_level() != ByMove {
                     Err(BorrowCheckError::CantCopyRefMut)
                 } else {
                     e.borrow_check_inner(false)
