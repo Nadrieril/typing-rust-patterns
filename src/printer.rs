@@ -78,10 +78,10 @@ impl Display for TypingPredicate<'_> {
     }
 }
 
-impl TypingPredicate<'_> {
+impl<'a> TypingPredicate<'a> {
     /// Display as `let ...` if the predicate is done.
-    pub fn display_done(&self) -> impl Display + '_ {
-        if self.is_done() {
+    pub fn display_done(&self, ctx: TypingCtx<'a>) -> impl Display + '_ {
+        if self.is_done(ctx) {
             format!("let {}: {} = {}", self.pat, self.expr.ty, self.expr)
         } else {
             format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty)
