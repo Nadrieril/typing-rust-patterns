@@ -15,6 +15,8 @@ info:
 mut ref mut x @ p: T
 // Applying rule `BindingBorrow`
 mut x @ &mut p: &mut T
+// Applying rule `Binding`
+let mut x: &mut T = &mut p
 
 // Final bindings (simplified):
 let mut x: &mut T = &mut p

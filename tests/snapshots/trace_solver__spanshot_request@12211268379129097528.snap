@@ -17,6 +17,8 @@ info:
 ref x @ *p: T
 // Applying rule `BindingBorrow`
 x @ &*p: &T
+// Applying rule `Binding`
+let x: &T = &*p
 
 // Final bindings (simplified):
 let x: &T = p

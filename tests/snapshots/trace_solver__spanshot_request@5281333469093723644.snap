@@ -21,6 +21,8 @@ mut x @ &&(*p).0: &&T
 mut x @ &(*p).0: &T
 // Applying rule `BindingResetBindingMode`
 mut x @ (*p).0: T
+// Applying rule `Binding`
+let mut x: T = (*p).0
 
 // Final bindings (simplified):
 let mut x: T = (*p).0

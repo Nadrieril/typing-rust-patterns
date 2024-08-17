@@ -23,6 +23,8 @@ info:
 &x @ (&mut (*(*p).0).0 as &_): &T
 // Applying rule `Deref(EatOuter)`
 x @ *(&mut (*(*p).0).0 as &_): T
+// Applying rule `Binding`
+let x: T = *(&mut (*(*p).0).0 as &_)
 
 // Final bindings (simplified):
 let x: T = *&mut (*(*p).0).0 // Borrow-check error: MutBorrowBehindSharedBorrow

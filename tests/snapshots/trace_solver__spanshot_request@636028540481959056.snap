@@ -13,6 +13,8 @@ info:
   request: "x: T"
 ---
 x @ p: T
+// Applying rule `Binding`
+let x: T = p
 
 // Final bindings (simplified):
 let x: T = p

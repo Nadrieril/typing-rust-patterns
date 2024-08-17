@@ -21,6 +21,8 @@ info:
 ref mut x @ *(&mut (*p).0 as &_): T
 // Applying rule `BindingBorrow`
 x @ &mut *(&mut (*p).0 as &_): &mut T
+// Applying rule `Binding`
+let x: &mut T = &mut *(&mut (*p).0 as &_)
 
 // Final bindings (simplified):
 let x: &mut T = &mut *(&mut (*p).0 as &_) // Borrow-check error: MutBorrowBehindSharedBorrow

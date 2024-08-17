@@ -17,6 +17,8 @@ info:
 ref x @ &(*p).0: &T
 // Applying rule `BindingOverrideBorrow`
 x @ &(*p).0: &T
+// Applying rule `Binding`
+let x: &T = &(*p).0
 
 // Final bindings (simplified):
 let x: &T = &(*p).0

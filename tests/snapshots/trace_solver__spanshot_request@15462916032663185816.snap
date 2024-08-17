@@ -13,6 +13,8 @@ info:
   request: "x: &mut T"
 ---
 x @ p: &mut T
+// Applying rule `Binding`
+let x: &mut T = p
 
 // Final bindings (simplified):
 let x: &mut T = p

@@ -50,13 +50,12 @@ impl<'a> TypingSolver<'a> {
             Ok((rule, new_preds)) => {
                 if new_preds.is_empty() {
                     self.done_predicates.push(first_pred);
-                    self.step(ctx)
                 } else {
                     for p in new_preds.into_iter().rev() {
                         self.predicates.push_front(p);
                     }
-                    Ok(rule)
                 }
+                Ok(rule)
             }
             Err(err) => Err(CantStep::NoApplicableRule(first_pred, err)),
         }

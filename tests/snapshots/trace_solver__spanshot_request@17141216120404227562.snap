@@ -17,6 +17,8 @@ info:
 [x] @ *p: [&mut T]
 // Applying rule `Constructor`
 x @ (*p).0: &mut T
+// Applying rule `Binding`
+let x: &mut T = (*p).0
 
 // Final bindings (simplified):
 let x: &mut T = (*p).0 // Borrow-check error: CantCopyRefMut
