@@ -2,8 +2,7 @@
 source: tests/trace_cli.rs
 info: set
 ---
-Error: couldn't parse `set` command.
-Syntax is `set option value`.
+Error: Syntax is `set option value`.
 
 Options are:
 - ref_binding_on_inherited: AllocTemporary | Skip | Error

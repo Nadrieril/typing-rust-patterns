@@ -94,6 +94,9 @@ fn main() -> anyhow::Result<()> {
 
 fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> anyhow::Result<()> {
     let cmd = cmd.trim();
+    if cmd == "" {
+        bail!("Syntax is `set option value`.")
+    }
     if let Some(opt) = RuleOptions::from_bundle_name(cmd) {
         *options = opt;
         return Ok(());
