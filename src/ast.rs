@@ -5,6 +5,7 @@
 use std::cmp::min;
 
 use BindingMode::*;
+use Mutability::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Mutability {
@@ -47,8 +48,8 @@ impl<'a> Type<'a> {
     pub fn is_copy(&self) -> bool {
         match self {
             Type::Tuple(tys) => tys.iter().all(|ty| ty.is_copy()),
-            Type::Ref(Mutability::Shared, _) => true,
-            Type::Ref(Mutability::Mutable, _) => false,
+            Type::Ref(Shared, _) => true,
+            Type::Ref(Mutable, _) => false,
             Type::Var(_) => true,
         }
     }
@@ -121,7 +122,7 @@ impl<'a> Expression<'a> {
             panic!("type error")
         };
         Expression {
-            ty: Type::Ref(Mutability::Shared, ty).alloc(arenas),
+            ty: Type::Ref(Shared, ty).alloc(arenas),
             kind: ExprKind::CastAsImmRef(self.alloc(arenas)),
         }
     }
@@ -132,7 +133,7 @@ impl<'a> Expression<'a> {
         match self.kind {
             ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => ByMove,
             ExprKind::Ref(mtbl, _) => ByRef(mtbl),
-            ExprKind::CastAsImmRef(_) => ByRef(Mutability::Shared),
+            ExprKind::CastAsImmRef(_) => ByRef(Shared),
         }
     }
 
@@ -154,9 +155,7 @@ impl<'a> Expression<'a> {
         match self.kind {
             ExprKind::Scrutinee => Ok(()),
             ExprKind::Ref(mtbl, e) => {
-                if mtbl == Mutability::Mutable
-                    && e.scrutinee_access_level() == ByRef(Mutability::Shared)
-                {
+                if mtbl == Mutable && e.scrutinee_access_level() == ByRef(Shared) {
                     Err(BorrowCheckError::MutBorrowBehindSharedBorrow)
                 } else {
                     e.borrow_check_inner(false)
@@ -177,7 +176,6 @@ impl<'a> Expression<'a> {
     /// under references we get by-reference binding mode of the least permissive reference
     /// encountered.
     pub fn scrutinee_access_level(&self) -> BindingMode {
-        use Mutability::*;
         match self.kind {
             ExprKind::Scrutinee => ByMove,
             ExprKind::Ref(mtbl, e) => min(ByRef(mtbl), e.scrutinee_access_level()),
@@ -207,8 +205,7 @@ impl<'a> Expression<'a> {
                 // `&*p` with `p: &T` can be simplified, but `&mut *p` with `p: &mut T` is a
                 // re-borrow so it must stay.
                 ExprKind::Deref(inner)
-                    if mtbl == Mutability::Shared
-                        && matches!(inner.ty, Type::Ref(Mutability::Shared, _)) =>
+                    if mtbl == Shared && matches!(inner.ty, Type::Ref(Shared, _)) =>
                 {
                     *inner
                 }
@@ -221,13 +218,11 @@ impl<'a> Expression<'a> {
                 ExprKind::Ref(mtbl, inner) if inner.scrutinee_access_level() == ByRef(mtbl) => {
                     *inner
                 }
-                ExprKind::Ref(mtbl, inner)
-                    if top_level && mtbl == Mutability::Shared && self.ty.is_copy() =>
-                {
+                ExprKind::Ref(mtbl, inner) if top_level && mtbl == Shared && self.ty.is_copy() => {
                     *inner
                 }
                 ExprKind::CastAsImmRef(inner)
-                    if inner.scrutinee_access_level() == ByRef(Mutability::Shared) =>
+                    if inner.scrutinee_access_level() == ByRef(Shared) =>
                 {
                     Expression {
                         ty: self.ty,

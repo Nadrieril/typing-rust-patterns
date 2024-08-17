@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::cmp::min;
 
 use crate::*;
+use BindingMode::*;
+use Mutability::*;
 
 /// What to do to a `ref x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
@@ -162,9 +164,7 @@ pub enum TypeError {
 impl<'a> TypingPredicate<'a> {
     /// Apply one step of rule to this predicate.
     pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), TypeError> {
-        use BindingMode::*;
         use ExprKind as E;
-        use Mutability::*;
         use Pattern as P;
         use Type as T;
         let a = ctx.arenas;
@@ -348,6 +348,6 @@ impl<'a> TypingPredicate<'a> {
 
     /// Whether this predicate is completed, i.e. is a simple binding pattern.
     pub fn is_done(&self) -> bool {
-        matches!(self.pat, Pattern::Binding(_, BindingMode::ByMove, _))
+        matches!(self.pat, Pattern::Binding(_, ByMove, _))
     }
 }
