@@ -24,26 +24,6 @@ pub enum CantStep<'a> {
     NoApplicableRule(TypingPredicate<'a>, TypeError),
 }
 
-impl<'a> TypingPredicate<'a> {
-    pub fn new(req: TypingRequest<'a>) -> Self {
-        TypingPredicate {
-            pat: req.pat,
-            expr: Expression {
-                kind: ExprKind::Scrutinee,
-                ty: req.ty,
-            },
-        }
-    }
-
-    /// Simplify the expression in a semantics-preserving way.
-    pub fn simplify_expr(&self, a: &'a Arenas<'a>) -> Self {
-        Self {
-            pat: self.pat,
-            expr: self.expr.simplify(a),
-        }
-    }
-}
-
 /// The solver itself. It contains a set of predicates to satisfy
 #[derive(Clone)]
 pub struct TypingSolver<'a> {
