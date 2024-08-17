@@ -51,25 +51,10 @@ fn main() -> anyhow::Result<()> {
                 println!(
                     "Error: {err}\n\n\
                     Options are:\n\
-                    - ref_binding_on_inherited: AllocTemporary | Skip | Error\n    \
-                        how to handle a `ref x` binding on an inherited reference\n\
-                    - mut_binding_on_inherited: ResetBindingMode | Keep | Error\n    \
-                        how to handle a `mut x` binding on an inherited reference\n\
-                    - inherited_ref_on_ref: EatOuter | EatInner | EatBoth\n    \
-                        how to handle a reference pattern on a double reference when the outer one is inherited\n\
-                    - allow_ref_pat_on_ref_mut: bool\n    \
-                        whether to allow `&p: &mut T`\n\
-                    - simplify_expressions: bool\n    \
-                        whether to simplify some expressions, which removes some borrow errors\n\
-                    - eat_two_layers: bool\n    \
-                        whether `&p: &&T` eats both references when the outer one is inherited\n\
-                    - eat_inherited_ref_alone: bool\n    \
-                        whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`\n\
-                    - downgrade_shared_inside_shared: bool\n    \
-                        RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref\n\
-                    \n\
+                    {}\n\
                     There also exist some predefined option-bundles. Activate one with `set bundle`\n\
                     {}",
+                    RuleOptions::OPTIONS_DOC.iter().map(|(name, ty, descr)| format!("- {name}: {ty}\n    {descr}\n")).format(""),
                     RuleOptions::KNOWN_OPTION_BUNDLES.iter().map(|(name, _, descr)| format!("- {name}: {descr}")).format("\n")
                 )
             } else {

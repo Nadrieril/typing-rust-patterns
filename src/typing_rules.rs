@@ -141,12 +141,46 @@ impl RuleOptions {
             .map(|(_, bundle, _)| *bundle)
     }
 
-    pub fn to_map(&self) -> serde_json::Map<String, serde_json::Value> {
-        let serde_json::Value::Object(map) = serde_json::to_value(self).unwrap() else {
-            panic!()
-        };
-        map
-    }
+    /// Documentation for the options
+    pub const OPTIONS_DOC: &[(&str, &str, &str)] = &[
+        (
+            "ref_binding_on_inherited",
+            "AllocTemporary | Skip | Error",
+            "how to handle a `ref x` binding on an inherited reference",
+        ),
+        (
+            "mut_binding_on_inherited",
+            "ResetBindingMode | Keep | Error",
+            "how to handle a `mut x` binding on an inherited reference",
+        ),
+        (
+            "inherited_ref_on_ref",
+            "EatOuter | EatInner | EatBoth",
+            "how to handle a reference pattern on a \
+             double reference when the outer one is inherited",
+        ),
+        (
+            "allow_ref_pat_on_ref_mut",
+            "bool",
+            "whether to allow `&p: &mut T`",
+        ),
+        (
+            "simplify_expressions",
+            "bool",
+            "whether to simplify some expressions, which removes some borrow errors",
+        ),
+        (
+            "eat_inherited_ref_alone",
+            "bool",
+            "whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`",
+        ),
+        (
+            "downgrade_shared_inside_shared",
+            "bool",
+            "RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref",
+        ),
+    ];
+
     pub fn set_key(&mut self, key: &str, val: &str) -> anyhow::Result<()> {
         fn from_str<T: for<'de> Deserialize<'de>>(s: &str) -> anyhow::Result<T> {
             let v = serde_yaml::from_str(&s)?;
@@ -159,9 +193,19 @@ impl RuleOptions {
             "allow_ref_pat_on_ref_mut" => self.allow_ref_pat_on_ref_mut = from_str(val)?,
             "simplify_expressions" => self.simplify_expressions = from_str(val)?,
             "eat_inherited_ref_alone" => self.eat_inherited_ref_alone = from_str(val)?,
+            "downgrade_shared_inside_shared" => {
+                self.downgrade_shared_inside_shared = from_str(val)?
+            }
             _ => anyhow::bail!("unknown key `{key}`"),
         }
         Ok(())
+    }
+
+    pub fn to_map(&self) -> serde_json::Map<String, serde_json::Value> {
+        let serde_json::Value::Object(map) = serde_json::to_value(self).unwrap() else {
+            panic!()
+        };
+        map
     }
 }
 

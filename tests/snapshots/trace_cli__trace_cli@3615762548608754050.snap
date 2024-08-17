@@ -16,8 +16,6 @@ Options are:
     whether to allow `&p: &mut T`
 - simplify_expressions: bool
     whether to simplify some expressions, which removes some borrow errors
-- eat_two_layers: bool
-    whether `&p: &&T` eats both references when the outer one is inherited
 - eat_inherited_ref_alone: bool
     whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`
 - downgrade_shared_inside_shared: bool
