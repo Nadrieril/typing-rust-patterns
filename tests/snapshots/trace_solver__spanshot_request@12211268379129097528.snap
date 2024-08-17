@@ -15,7 +15,7 @@ info:
 &ref x @ p: &T
 // Applying rule `Deref(EatOuter)`
 ref x @ *p: T
-// Applying rule `Binding`
+// Applying rule `BindingBorrow`
 x @ &*p: &T
 
 // Final bindings (simplified):

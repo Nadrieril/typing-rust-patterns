@@ -21,7 +21,7 @@ info:
 &ref mut x @ &(*p).0: &T
 // Applying rule `Deref(EatOuter)`
 ref mut x @ *&(*p).0: T
-// Applying rule `Binding`
+// Applying rule `BindingBorrow`
 x @ &mut *&(*p).0: &mut T
 
 // Final bindings (simplified):

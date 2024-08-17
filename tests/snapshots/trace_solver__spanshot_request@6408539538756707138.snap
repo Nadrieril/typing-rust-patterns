@@ -13,7 +13,7 @@ info:
   request: "ref mut x: T"
 ---
 ref mut x @ p: T
-// Applying rule `Binding`
+// Applying rule `BindingBorrow`
 x @ &mut p: &mut T
 
 // Final bindings (simplified):

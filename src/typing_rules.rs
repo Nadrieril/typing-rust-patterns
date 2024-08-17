@@ -327,7 +327,7 @@ impl<'a> TypingPredicate<'a> {
                     // Easy case: we borrow the expression as expected. We rely on rust's lifetime
                     // extension of temporaries in expressions like `&&x`.
                     (ByMove, _) | (_, RefBindingOnInheritedBehavior::AllocTemporary) => Ok((
-                        Rule::Binding,
+                        Rule::BindingBorrow,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
                             expr: self.expr.borrow(a, by_ref_mtbl, false),
@@ -350,7 +350,7 @@ impl<'a> TypingPredicate<'a> {
                 match (bm, ctx.options.mut_binding_on_inherited) {
                     // Easy case: declare the binding as expected.
                     (ByMove, _) | (_, MutBindingOnInheritedBehavior::Keep) => {
-                        Ok((Rule::BindingBorrow, vec![]))
+                        Ok((Rule::Binding, vec![]))
                     }
                     // To replicate stable rust behavior, we reset the binding mode.
                     (ByRef(_), MutBindingOnInheritedBehavior::ResetBindingMode) => Ok((
