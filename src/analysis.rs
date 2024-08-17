@@ -30,8 +30,8 @@ impl<'a> Expression<'a> {
             ExprKind::Scrutinee
             | ExprKind::Deref(_)
             | ExprKind::Field(_, _)
-            | ExprKind::Abstract { bm_is_move: true } => ByMove,
-            ExprKind::Abstract { bm_is_move: false } => return Err(TypeError::OverlyGeneralExpr),
+            | ExprKind::Abstract { not_a_ref: true } => ByMove,
+            ExprKind::Abstract { not_a_ref: false } => return Err(TypeError::OverlyGeneralExpr),
             ExprKind::Ref(mtbl, _) => ByRef(mtbl),
         })
     }
@@ -42,8 +42,8 @@ impl<'a> Expression<'a> {
             ExprKind::Scrutinee
             | ExprKind::Deref(_)
             | ExprKind::Field(_, _)
-            | ExprKind::Abstract { bm_is_move: true } => Ok(*self),
-            ExprKind::Abstract { bm_is_move: false } => Err(TypeError::OverlyGeneralExpr),
+            | ExprKind::Abstract { not_a_ref: true } => Ok(*self),
+            ExprKind::Abstract { not_a_ref: false } => Err(TypeError::OverlyGeneralExpr),
             ExprKind::Ref(_, e) => Ok(*e),
         }
     }

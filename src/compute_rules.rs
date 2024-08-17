@@ -106,12 +106,12 @@ impl<'a> Expression<'a> {
     fn deepen(&self, a: &'a Arenas<'a>) -> Vec<Self> {
         match self.kind {
             ExprKind::Scrutinee => vec![*self],
-            ExprKind::Abstract { bm_is_move: false } => {
+            ExprKind::Abstract { not_a_ref: false } => {
                 // We know our rules only inspect the binding modes of expressions, so we only need
                 // to split along that dimension.
                 let mut vec = vec![Expression {
                     // Stands for any non-`Ref` expression.
-                    kind: ExprKind::Abstract { bm_is_move: true },
+                    kind: ExprKind::Abstract { not_a_ref: true },
                     ty: self.ty,
                 }];
                 // Add more `Ref` expressions, following the type if relevant.
@@ -137,7 +137,7 @@ impl<'a> Expression<'a> {
             ExprKind::Deref(_) | ExprKind::Field(_, _) => {
                 unreachable!()
             }
-            ExprKind::Ref(..) | ExprKind::Abstract { bm_is_move: true } => {
+            ExprKind::Ref(..) | ExprKind::Abstract { not_a_ref: true } => {
                 unreachable!("A rule is inspecting expressions in unexpected ways")
             }
         }
@@ -185,7 +185,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     let mut predicates = vec![TypingPredicate {
         pat: &Pattern::Abstract("p"),
         expr: Expression {
-            kind: ExprKind::Abstract { bm_is_move: false },
+            kind: ExprKind::Abstract { not_a_ref: false },
             ty: Type::Var("T").alloc(a),
         },
     }];
@@ -281,7 +281,7 @@ pub struct TypingRule<'a> {
 fn requires_by_move(e: &Expression<'_>) -> bool {
     match e.kind {
         ExprKind::Scrutinee => false,
-        ExprKind::Abstract { bm_is_move } => bm_is_move,
+        ExprKind::Abstract { not_a_ref } => not_a_ref,
         ExprKind::Ref(_, e) | ExprKind::Deref(e) | ExprKind::Field(e, _) => requires_by_move(e),
     }
 }
@@ -303,7 +303,7 @@ impl<'a> Display for TypingRule<'a> {
             let _ = write!(
                 &mut postcondition_str,
                 ", binding_mode({}) = move",
-                ExprKind::Abstract { bm_is_move: true }
+                ExprKind::Abstract { not_a_ref: true }
             );
         }
 

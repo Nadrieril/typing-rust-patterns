@@ -88,9 +88,10 @@ pub enum ExprKind<'a> {
     /// Field access.
     Field(&'a Expression<'a>, usize),
     /// An abstract expression, meant as a placeholder for some unknown expression. Used only when
-    /// exploring possible rules. The binding mode may be known or unknown. If `bm_is_move`, this
-    /// is a placeholder for any non-`Ref` expression.
-    Abstract { bm_is_move: bool },
+    /// exploring possible rules. The binding mode may be known or unknown. If `not_a_ref` is true,
+    /// this is a placeholder for any non-`Ref` expression. If it is false, this stands for any
+    /// expression at all.
+    Abstract { not_a_ref: bool },
 }
 
 impl<'a> Expression<'a> {
