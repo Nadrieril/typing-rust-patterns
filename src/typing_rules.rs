@@ -140,6 +140,29 @@ impl RuleOptions {
             .find(|(n, _, _)| *n == name)
             .map(|(_, bundle, _)| *bundle)
     }
+
+    pub fn to_map(&self) -> serde_json::Map<String, serde_json::Value> {
+        let serde_json::Value::Object(map) = serde_json::to_value(self).unwrap() else {
+            panic!()
+        };
+        map
+    }
+    pub fn set_key(&mut self, key: &str, val: &str) -> anyhow::Result<()> {
+        fn from_str<T: for<'de> Deserialize<'de>>(s: &str) -> anyhow::Result<T> {
+            let v = serde_yaml::from_str(&s)?;
+            Ok(v)
+        }
+        match key {
+            "ref_binding_on_inherited" => self.ref_binding_on_inherited = from_str(val)?,
+            "mut_binding_on_inherited" => self.mut_binding_on_inherited = from_str(val)?,
+            "inherited_ref_on_ref" => self.inherited_ref_on_ref = from_str(val)?,
+            "allow_ref_pat_on_ref_mut" => self.allow_ref_pat_on_ref_mut = from_str(val)?,
+            "simplify_expressions" => self.simplify_expressions = from_str(val)?,
+            "eat_inherited_ref_alone" => self.eat_inherited_ref_alone = from_str(val)?,
+            _ => anyhow::bail!("unknown key `{key}`"),
+        }
+        Ok(())
+    }
 }
 
 /// The various typing rules we can apply.

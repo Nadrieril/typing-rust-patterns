@@ -2,9 +2,9 @@
 source: tests/trace_cli.rs
 info: set mistyped
 ---
-Couldn't parse `set` command.
-
+Error: couldn't parse `set` command.
 Syntax is `set option value`.
+
 Options are:
 - ref_binding_on_inherited: AllocTemporary | Skip | Error
     how to handle a `ref x` binding on an inherited reference

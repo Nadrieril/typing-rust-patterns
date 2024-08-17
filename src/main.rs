@@ -1,7 +1,7 @@
 use std::io::IsTerminal;
 
+use anyhow::bail;
 use inquire::{history::SimpleHistory, Text};
-use serde::Deserialize;
 
 use itertools::Itertools;
 use typing_rust_patterns::*;
@@ -47,10 +47,9 @@ fn main() -> anyhow::Result<()> {
             print!("{options}");
         } else if let Some(cmd) = request.strip_prefix("set") {
             let old_options = options;
-            if parse_set_cmd(cmd, &mut options).is_none() {
+            if let Err(err) = parse_set_cmd(cmd, &mut options) {
                 println!(
-                    "Couldn't parse `set` command.\n\n\
-                    Syntax is `set option value`.\n\
+                    "Error: {err}\n\n\
                     Options are:\n\
                     - ref_binding_on_inherited: AllocTemporary | Skip | Error\n    \
                         how to handle a `ref x` binding on an inherited reference\n\
@@ -75,11 +74,9 @@ fn main() -> anyhow::Result<()> {
                 )
             } else {
                 // Display what changed.
-                let old_options = serde_json::to_value(&old_options)?;
-                let old_options = old_options.as_object().unwrap();
-                let new_options = serde_json::to_value(&options)?;
-                let new_options = new_options.as_object().unwrap();
-                for (k, v) in old_options {
+                let old_options = old_options.to_map();
+                let new_options = options.to_map();
+                for (k, v) in &old_options {
                     let new_v = &new_options[k];
                     if v != new_v {
                         println!("{k}: {v} -> {new_v}");
@@ -110,28 +107,16 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn from_str<T: for<'de> Deserialize<'de>>(s: &str) -> Option<T> {
-    serde_yaml::from_str(&s).ok()
-}
-
-fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> Option<()> {
+fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> anyhow::Result<()> {
     let cmd = cmd.trim();
     if let Some(opt) = RuleOptions::from_bundle_name(cmd) {
         *options = opt;
-        return Some(());
+        return Ok(());
     }
     let cmd = cmd.split(" ").collect_vec();
     let ([opt, val] | [opt, "=", val]) = cmd.as_slice() else {
-        return None;
+        bail!("couldn't parse `set` command.\nSyntax is `set option value`.")
     };
-    match *opt {
-        "ref_binding_on_inherited" => options.ref_binding_on_inherited = from_str(val)?,
-        "mut_binding_on_inherited" => options.mut_binding_on_inherited = from_str(val)?,
-        "inherited_ref_on_ref" => options.inherited_ref_on_ref = from_str(val)?,
-        "allow_ref_pat_on_ref_mut" => options.allow_ref_pat_on_ref_mut = from_str(val)?,
-        "simplify_expressions" => options.simplify_expressions = from_str(val)?,
-        "eat_inherited_ref_alone" => options.eat_inherited_ref_alone = from_str(val)?,
-        _ => return None,
-    }
-    Some(())
+    options.set_key(opt, val)?;
+    Ok(())
 }
