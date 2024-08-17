@@ -1,0 +1,31 @@
+---
+source: tests/trace_cli.rs
+info: set ref_binding_on_inherited true
+---
+Couldn't parse `set` command.
+
+Syntax is `set option value`.
+Options are:
+- ref_binding_on_inherited: AllocTemporary | Skip | Error
+    how to handle a `ref x` binding on an inherited reference
+- mut_binding_on_inherited: ResetBindingMode | Keep | Error
+    how to handle a `mut x` binding on an inherited reference
+- inherited_ref_on_ref: EatOuter | EatInner | EatBoth
+    how to handle a reference pattern on a double reference when the outer one is inherited
+- allow_ref_pat_on_ref_mut: bool
+    whether to allow `&p: &mut T`
+- simplify_expressions: bool
+    whether to simplify some expressions, which removes some borrow errors
+- eat_two_layers: bool
+    whether `&p: &&T` eats both references when the outer one is inherited
+- eat_inherited_ref_alone: bool
+    whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`
+- downgrade_shared_inside_shared: bool
+    RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref
+
+There also exist some predefined option-bundles. Activate one with `set bundle`
+- default: the default settings
+- permissive: an even more permissive proposal than the default
+- stateless: a proposal that tracks no hidden state; purely type-based
+- ergo2024: wip emulation of RFC3627 rules
+- stable_rust: emulates the behavior of current stable rust

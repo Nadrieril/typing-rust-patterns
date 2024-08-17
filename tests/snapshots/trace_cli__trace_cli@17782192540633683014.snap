@@ -1,0 +1,7 @@
+---
+source: tests/trace_cli.rs
+info: "set allow_ref_pat_on_ref_mut false\n&x: &mut T"
+---
+allow_ref_pat_on_ref_mut: true -> false
+&x @ p: &mut T
+// Type error for `&x @ p: &mut T`: MutabilityMismatch

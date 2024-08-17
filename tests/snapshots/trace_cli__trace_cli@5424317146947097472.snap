@@ -1,0 +1,12 @@
+---
+source: tests/trace_cli.rs
+info: "&x: &mut T"
+---
+&x @ p: &mut T
+// Applying rule `Deref`
+&x @ (p as &_): &T
+// Applying rule `Deref`
+x @ *(p as &_): T
+
+// Final bindings (simplified):
+let x: T = *(p as &_)
