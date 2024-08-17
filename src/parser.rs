@@ -182,15 +182,15 @@ where
     })
 }
 
-fn parse_mutability<'a, 'i, E>() -> impl Parser<&'i str, Mutable, E>
+fn parse_mutability<'a, 'i, E>() -> impl Parser<&'i str, Mutability, E>
 where
     E: ParseError<&'i str>,
 {
     tag("mut ").followed_by(multispace0).opt().map(|x| {
         if x.is_some() {
-            Mutable::Mutable
+            Mutability::Mutable
         } else {
-            Mutable::Shared
+            Mutability::Shared
         }
     })
 }

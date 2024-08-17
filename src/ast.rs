@@ -7,14 +7,14 @@ use std::cmp::min;
 use BindingMode::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Mutable {
+pub enum Mutability {
     Shared,
     Mutable,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BindingMode {
-    ByRef(Mutable),
+    ByRef(Mutability),
     ByMove,
 }
 
@@ -25,10 +25,10 @@ pub enum Pattern<'a> {
     /// constructor `[p, q]`.
     Tuple(&'a [Self]),
     /// `&p` or `&mut p`.
-    Ref(Mutable, &'a Self),
+    Ref(Mutability, &'a Self),
     /// Bindings: `mut x`, `ref mut x`, etc. We allow things like `mut ref mut x` that aren't
     /// representable in today's rust.
-    Binding(Mutable, BindingMode, &'a str),
+    Binding(Mutability, BindingMode, &'a str),
 }
 
 /// A type.
@@ -37,7 +37,7 @@ pub enum Type<'a> {
     /// Our only type is the tuple, represented as `[T, U]`, with its constructor `[p, q]`.
     Tuple(&'a [Self]),
     /// Reference type.
-    Ref(Mutable, &'a Self),
+    Ref(Mutability, &'a Self),
     /// Type variable, representing an unknown and irrelevant type.
     Var(&'a str),
 }
@@ -47,8 +47,8 @@ impl<'a> Type<'a> {
     pub fn is_copy(&self) -> bool {
         match self {
             Type::Tuple(tys) => tys.iter().all(|ty| ty.is_copy()),
-            Type::Ref(Mutable::Shared, _) => true,
-            Type::Ref(Mutable::Mutable, _) => false,
+            Type::Ref(Mutability::Shared, _) => true,
+            Type::Ref(Mutability::Mutable, _) => false,
             Type::Var(_) => true,
         }
     }
@@ -69,7 +69,7 @@ pub enum ExprKind<'a> {
     /// The starting expression, written `p`.
     Scrutinee,
     /// Reference: `&e` or `&mut e`.
-    Ref(Mutable, &'a Expression<'a>),
+    Ref(Mutability, &'a Expression<'a>),
     /// Reference dereference.
     Deref(&'a Expression<'a>),
     /// Field access.
@@ -91,7 +91,12 @@ impl<'a> Expression<'a> {
 
     /// Borrow the expression. If `cap_mutability` is set, we will downgrade `&mut` to `&` if we
     /// only have shared access to the scrutinee.
-    pub fn borrow(&self, arenas: &'a Arenas<'a>, mut mtbl: Mutable, cap_mutability: bool) -> Self {
+    pub fn borrow(
+        &self,
+        arenas: &'a Arenas<'a>,
+        mut mtbl: Mutability,
+        cap_mutability: bool,
+    ) -> Self {
         if cap_mutability && let ByRef(cap) = self.scrutinee_access_level() {
             mtbl = min(mtbl, cap);
         }
@@ -116,7 +121,7 @@ impl<'a> Expression<'a> {
             panic!("type error")
         };
         Expression {
-            ty: Type::Ref(Mutable::Shared, ty).alloc(arenas),
+            ty: Type::Ref(Mutability::Shared, ty).alloc(arenas),
             kind: ExprKind::CastAsImmRef(self.alloc(arenas)),
         }
     }
@@ -127,7 +132,7 @@ impl<'a> Expression<'a> {
         match self.kind {
             ExprKind::Scrutinee | ExprKind::Deref(_) | ExprKind::Field(_, _) => ByMove,
             ExprKind::Ref(mtbl, _) => ByRef(mtbl),
-            ExprKind::CastAsImmRef(_) => ByRef(Mutable::Shared),
+            ExprKind::CastAsImmRef(_) => ByRef(Mutability::Shared),
         }
     }
 
@@ -149,7 +154,8 @@ impl<'a> Expression<'a> {
         match self.kind {
             ExprKind::Scrutinee => Ok(()),
             ExprKind::Ref(mtbl, e) => {
-                if mtbl == Mutable::Mutable && e.scrutinee_access_level() == ByRef(Mutable::Shared)
+                if mtbl == Mutability::Mutable
+                    && e.scrutinee_access_level() == ByRef(Mutability::Shared)
                 {
                     Err(BorrowCheckError::MutBorrowBehindSharedBorrow)
                 } else {
@@ -171,7 +177,7 @@ impl<'a> Expression<'a> {
     /// under references we get by-reference binding mode of the least permissive reference
     /// encountered.
     pub fn scrutinee_access_level(&self) -> BindingMode {
-        use crate::Mutable::*;
+        use Mutability::*;
         match self.kind {
             ExprKind::Scrutinee => ByMove,
             ExprKind::Ref(mtbl, e) => min(ByRef(mtbl), e.scrutinee_access_level()),
@@ -201,8 +207,8 @@ impl<'a> Expression<'a> {
                 // `&*p` with `p: &T` can be simplified, but `&mut *p` with `p: &mut T` is a
                 // re-borrow so it must stay.
                 ExprKind::Deref(inner)
-                    if mtbl == Mutable::Shared
-                        && matches!(inner.ty, Type::Ref(Mutable::Shared, _)) =>
+                    if mtbl == Mutability::Shared
+                        && matches!(inner.ty, Type::Ref(Mutability::Shared, _)) =>
                 {
                     *inner
                 }
@@ -216,12 +222,12 @@ impl<'a> Expression<'a> {
                     *inner
                 }
                 ExprKind::Ref(mtbl, inner)
-                    if top_level && mtbl == Mutable::Shared && self.ty.is_copy() =>
+                    if top_level && mtbl == Mutability::Shared && self.ty.is_copy() =>
                 {
                     *inner
                 }
                 ExprKind::CastAsImmRef(inner)
-                    if inner.scrutinee_access_level() == ByRef(Mutable::Shared) =>
+                    if inner.scrutinee_access_level() == ByRef(Mutability::Shared) =>
                 {
                     Expression {
                         ty: self.ty,

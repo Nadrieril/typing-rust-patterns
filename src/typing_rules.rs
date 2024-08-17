@@ -162,9 +162,9 @@ pub enum TypeError {
 impl<'a> TypingPredicate<'a> {
     /// Apply one step of rule to this predicate.
     pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), TypeError> {
-        use crate::Mutable::*;
         use BindingMode::*;
         use ExprKind as E;
+        use Mutability::*;
         use Pattern as P;
         use Type as T;
         let a = ctx.arenas;
