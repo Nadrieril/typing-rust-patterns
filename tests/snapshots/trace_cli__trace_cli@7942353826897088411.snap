@@ -1,0 +1,5 @@
+---
+source: tests/trace_cli.rs
+info: help
+---
+Commands: options, set, quit

@@ -1,0 +1,15 @@
+---
+source: tests/trace_cli.rs
+info: "set ergo2024\noptions"
+---
+downgrade_shared_inside_shared: false -> true
+inherited_ref_on_ref: "EatOuter" -> "EatInner"
+mut_binding_on_inherited: "Keep" -> "Error"
+ref_binding_on_inherited: "Error" -> "Skip"
+ref_binding_on_inherited: Skip
+mut_binding_on_inherited: Error
+inherited_ref_on_ref: EatInner
+allow_ref_pat_on_ref_mut: true
+simplify_expressions: true
+eat_inherited_ref_alone: true
+downgrade_shared_inside_shared: true

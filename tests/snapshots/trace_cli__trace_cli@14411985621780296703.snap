@@ -1,5 +1,0 @@
----
-source: tests/trace_cli.rs
-info: set downgrade_shared_inside_shared false
----
-
