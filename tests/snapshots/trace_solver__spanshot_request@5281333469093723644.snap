@@ -17,9 +17,9 @@ info:
 mut ref x @ &(*p).0: &T
 // Applying rule `Binding`
 mut x @ &&(*p).0: &&T
-// Applying rule `Binding`
+// Applying rule `BindingResetBindingMode`
 mut x @ &(*p).0: &T
-// Applying rule `Binding`
+// Applying rule `BindingResetBindingMode`
 mut x @ (*p).0: T
 
 // Final bindings (simplified):

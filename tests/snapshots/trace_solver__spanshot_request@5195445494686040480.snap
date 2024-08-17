@@ -15,9 +15,9 @@ info:
 [&ref mut x] @ p: &mut [T]
 // Applying rule `ConstructorRef`
 &ref mut x @ &mut (*p).0: &mut T
-// Applying rule `Deref`
+// Applying rule `DerefMutWithShared(EatOuter)`
 &ref mut x @ (&mut (*p).0 as &_): &T
-// Applying rule `Deref`
+// Applying rule `Deref(EatOuter)`
 ref mut x @ *(&mut (*p).0 as &_): T
 // Applying rule `Binding`
 x @ &mut *(&mut (*p).0 as &_): &mut T

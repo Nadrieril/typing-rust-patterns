@@ -15,7 +15,7 @@ info:
 [mut x] @ p: &[T]
 // Applying rule `ConstructorRef`
 mut x @ &(*p).0: &T
-// Applying rule `Binding`
+// Applying rule `BindingResetBindingMode`
 mut x @ (*p).0: T
 
 // Final bindings (simplified):

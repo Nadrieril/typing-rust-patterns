@@ -13,7 +13,7 @@ info:
   request: "&x: &T"
 ---
 &x @ p: &T
-// Applying rule `Deref`
+// Applying rule `Deref(EatOuter)`
 x @ *p: T
 
 // Final bindings (simplified):

@@ -13,11 +13,11 @@ info:
   request: "&[&x]: &&[&&T]"
 ---
 &[&x] @ p: &&[&&T]
-// Applying rule `Deref`
+// Applying rule `Deref(EatOuter)`
 [&x] @ *p: &[&&T]
 // Applying rule `ConstructorRef`
 &x @ &(**p).0: &&&T
-// Applying rule `Deref`
+// Applying rule `Deref(EatBoth)`
 x @ *(**p).0: &T
 
 // Final bindings (simplified):

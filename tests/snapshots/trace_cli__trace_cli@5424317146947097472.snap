@@ -3,9 +3,9 @@ source: tests/trace_cli.rs
 info: "&x: &mut T"
 ---
 &x @ p: &mut T
-// Applying rule `Deref`
+// Applying rule `DerefMutWithShared(EatOuter)`
 &x @ (p as &_): &T
-// Applying rule `Deref`
+// Applying rule `Deref(EatOuter)`
 x @ *(p as &_): T
 
 // Final bindings (simplified):

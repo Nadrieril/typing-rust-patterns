@@ -15,7 +15,7 @@ info:
 [ref x] @ p: &mut [T]
 // Applying rule `ConstructorRef`
 ref x @ &mut (*p).0: &mut T
-// Applying rule `Binding`
+// Applying rule `BindingOverrideBorrow`
 x @ &(*p).0: &T
 
 // Final bindings (simplified):

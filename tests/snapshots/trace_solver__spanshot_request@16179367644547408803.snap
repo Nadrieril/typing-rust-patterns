@@ -13,7 +13,7 @@ info:
   request: "&[x]: &&mut [T]"
 ---
 &[x] @ p: &&mut [T]
-// Applying rule `Deref`
+// Applying rule `Deref(EatOuter)`
 [x] @ *p: &mut [T]
 // Applying rule `ConstructorRef`
 x @ &mut (**p).0: &mut T

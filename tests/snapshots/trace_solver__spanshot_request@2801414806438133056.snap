@@ -13,17 +13,17 @@ info:
   request: "&[[&x]]: &[&mut [T]]"
 ---
 &[[&x]] @ p: &[&mut [T]]
-// Applying rule `Deref`
+// Applying rule `Deref(EatOuter)`
 [[&x]] @ *p: [&mut [T]]
 // Applying rule `Constructor`
 [&x] @ (*p).0: &mut [T]
 // Applying rule `ConstructorRef`
 &x @ &mut (*(*p).0).0: &mut T
-// Applying rule `Deref`
+// Applying rule `DerefMutWithShared(EatOuter)`
 &x @ (&mut (*(*p).0).0 as &_): &T
 // Applying rule `ExprSimplification`
 &x @ &(*(*p).0).0: &T
-// Applying rule `Deref`
+// Applying rule `Deref(EatOuter)`
 x @ *&(*(*p).0).0: T
 
 // Final bindings (simplified):

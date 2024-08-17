@@ -135,8 +135,12 @@ pub enum Rule {
     Constructor,
     ConstructorRef,
     ConstructorMultiRef,
-    Deref,
+    Deref(InheritedRefOnRefBehavior),
+    DerefMutWithShared(InheritedRefOnRefBehavior),
     Binding,
+    BindingOverrideBorrow,
+    BindingBorrow,
+    BindingResetBindingMode,
     ExprSimplification,
 }
 
@@ -249,6 +253,7 @@ impl<'a> TypingPredicate<'a> {
             // Dereference rules
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
                 let mut expr = self.expr;
+                let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
                 if !ctx.options.eat_inherited_ref_alone
                     && !matches!(type_of_underlying_place, T::Ref(..))
                 {
@@ -256,31 +261,39 @@ impl<'a> TypingPredicate<'a> {
                     // reference.
                     return Err(TypeError::TypeMismatch);
                 }
-                if ctx.options.inherited_ref_on_ref == InheritedRefOnRefBehavior::EatBoth
-                    && let T::Ref(inner_mtbl, _) = type_of_underlying_place
-                    && matches!(bm, ByRef(..))
-                {
-                    expr = expr.reset_binding_mode();
-                    t_mtbl = *inner_mtbl;
-                }
                 let mut reborrow_after = None;
-                if ctx.options.inherited_ref_on_ref == InheritedRefOnRefBehavior::EatInner
-                    && let T::Ref(inner_mtbl, _) = type_of_underlying_place
+                if let T::Ref(inner_mtbl, _) = type_of_underlying_place
                     && matches!(bm, ByRef(..))
                 {
-                    expr = expr.reset_binding_mode();
-                    reborrow_after = Some(t_mtbl);
-                    t_mtbl = *inner_mtbl;
+                    rule_variant = ctx.options.inherited_ref_on_ref;
+                    match ctx.options.inherited_ref_on_ref {
+                        InheritedRefOnRefBehavior::EatOuter => {}
+                        InheritedRefOnRefBehavior::EatInner => {
+                            reborrow_after = Some(t_mtbl);
+                            expr = expr.reset_binding_mode();
+                            t_mtbl = *inner_mtbl;
+                        }
+                        InheritedRefOnRefBehavior::EatBoth => {
+                            expr = expr.reset_binding_mode();
+                            t_mtbl = *inner_mtbl;
+                        }
+                    }
                 }
-                let mut pred = match (p_mtbl, t_mtbl) {
-                    (Shared, Shared) | (Mutable, Mutable) => Self {
-                        pat: p_inner,
-                        expr: expr.deref(a),
-                    },
-                    (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => Self {
-                        pat: self.pat,
-                        expr: expr.cast_as_imm_ref(a),
-                    },
+                let (rule, mut pred) = match (p_mtbl, t_mtbl) {
+                    (Shared, Shared) | (Mutable, Mutable) => (
+                        Rule::Deref(rule_variant),
+                        Self {
+                            pat: p_inner,
+                            expr: expr.deref(a),
+                        },
+                    ),
+                    (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => (
+                        Rule::DerefMutWithShared(rule_variant),
+                        Self {
+                            pat: self.pat,
+                            expr: expr.cast_as_imm_ref(a),
+                        },
+                    ),
                     (Shared, Mutable) | (Mutable, Shared) => {
                         return Err(TypeError::MutabilityMismatch)
                     }
@@ -293,7 +306,7 @@ impl<'a> TypingPredicate<'a> {
                             .borrow(a, mtbl, ctx.options.downgrade_shared_inside_shared),
                     }
                 }
-                Ok((Rule::Deref, vec![pred]))
+                Ok((rule, vec![pred]))
             }
             (P::Ref(..), _) => Err(TypeError::TypeMismatch),
 
@@ -313,7 +326,7 @@ impl<'a> TypingPredicate<'a> {
                     // This amounts to getting ahold of the referenced place and re-borrowing it
                     // with the requested mutability.
                     (ByRef(_), RefBindingOnInheritedBehavior::Skip) => Ok((
-                        Rule::Binding,
+                        Rule::BindingOverrideBorrow,
                         vec![Self {
                             pat: P::Binding(mtbl, ByMove, name).alloc(a),
                             expr: self.expr.reset_binding_mode().borrow(a, by_ref_mtbl, false),
@@ -326,11 +339,11 @@ impl<'a> TypingPredicate<'a> {
                 match (bm, ctx.options.mut_binding_on_inherited) {
                     // Easy case: declare the binding as expected.
                     (ByMove, _) | (_, MutBindingOnInheritedBehavior::Keep) => {
-                        Ok((Rule::Binding, vec![]))
+                        Ok((Rule::BindingBorrow, vec![]))
                     }
                     // To replicate stable rust behavior, we reset the binding mode.
                     (ByRef(_), MutBindingOnInheritedBehavior::ResetBindingMode) => Ok((
-                        Rule::Binding,
+                        Rule::BindingResetBindingMode,
                         vec![Self {
                             pat: self.pat,
                             expr: self.expr.reset_binding_mode(),

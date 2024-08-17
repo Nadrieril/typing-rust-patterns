@@ -15,7 +15,7 @@ info:
 [ref x] @ p: &[T]
 // Applying rule `ConstructorRef`
 ref x @ &(*p).0: &T
-// Applying rule `Binding`
+// Applying rule `BindingOverrideBorrow`
 x @ &(*p).0: &T
 
 // Final bindings (simplified):
