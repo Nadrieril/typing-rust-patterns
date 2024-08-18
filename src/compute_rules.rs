@@ -286,6 +286,17 @@ pub struct TypingRule<'a> {
 }
 
 impl<'a> Expression<'a> {
+    /// Whether the abstract variable requires a `binding_mode` constaint.
+    fn abstract_bm_constraint(self) -> Option<BindingMode> {
+        match self.kind {
+            ExprKind::Scrutinee => None,
+            ExprKind::Abstract { not_a_ref } => not_a_ref.then_some(ByMove),
+            ExprKind::Ref(_, e) | ExprKind::Deref(e) | ExprKind::Field(e, _) => {
+                e.abstract_bm_constraint()
+            }
+        }
+    }
+
     /// If the tail of this expression is `Abstract`, removes the binding mode on that variable and
     /// returns it. Beware: this changes the type of the variable. We must apply the same
     /// transformation to the preconditions.
@@ -329,22 +340,37 @@ impl<'a> Expression<'a> {
     }
 }
 
-impl<'a> Display for TypingRule<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+pub enum TypingRuleStyle {
+    PlainPredicate,
+    SeparateBindingMode,
+    // TODO: implement
+    HideExpr,
+}
+
+impl<'a> TypingRule<'a> {
+    fn display(&self, f: &mut std::fmt::Formatter<'_>, style: TypingRuleStyle) -> std::fmt::Result {
         let a = &Arenas::default();
 
         // Extract the bm of the expression variable and show it on the side.
         let mut pred = self.postcondition.clone();
-        let (bm, expr) = pred.expr.extract_abstract_bm(a);
-        pred.expr = expr;
         let mut preconditions = self.preconditions.clone();
-        // If we changed the type of `q` above; we must change it here too.
-        if let Some(ByRef(..)) = bm {
-            for pred in &mut preconditions {
-                let (_, expr) = pred.expr.extract_abstract_bm(a);
+
+        let bm = match style {
+            TypingRuleStyle::PlainPredicate => pred.expr.abstract_bm_constraint(),
+            TypingRuleStyle::SeparateBindingMode | TypingRuleStyle::HideExpr => {
+                let (bm, expr) = pred.expr.extract_abstract_bm(a);
                 pred.expr = expr;
+                // If we changed the type of `q` above; we must change it here too.
+                if let Some(ByRef(..)) = bm {
+                    for pred in &mut preconditions {
+                        // TODO: if the bm was changed we should deref instead of resetting it.
+                        let (_, expr) = pred.expr.extract_abstract_bm(a);
+                        pred.expr = expr;
+                    }
+                }
+                bm
             }
-        }
+        };
 
         let mut postconditions_str = pred.to_string();
         if let Some(bm) = bm {
@@ -372,5 +398,11 @@ impl<'a> Display for TypingRule<'a> {
         write!(f, "{bar} \"{:?}\"\n", self.name)?;
         write!(f, "{postconditions_str}")?;
         Ok(())
+    }
+}
+
+impl<'a> Display for TypingRule<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.display(f, TypingRuleStyle::SeparateBindingMode)
     }
 }
