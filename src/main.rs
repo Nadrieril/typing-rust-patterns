@@ -49,6 +49,7 @@ fn main() -> anyhow::Result<()> {
         } else if request == "rules" {
             display_rules(options)
         } else if let Some(cmd) = request.strip_prefix("set") {
+            history.push(request.to_string());
             let old_options = options;
             if let Err(err) = parse_set_cmd(cmd, &mut options) {
                 println!(
