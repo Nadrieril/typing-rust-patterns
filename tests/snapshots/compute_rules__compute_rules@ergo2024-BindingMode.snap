@@ -44,7 +44,7 @@ p @ *q: T
 ---------------------------------- "Deref(EatOuter)"
 &p @ q: &T, binding_mode(q) = move
 
-p @ *q: [T0, T1]
+p @ reset(q): [T0, T1]
 ---------------------------------------- "Deref(EatOuter)"
 &p @ q: &[T0, T1], binding_mode(q) = ref
 
@@ -52,23 +52,23 @@ p @ *q: T
 ------------------------------------------ "Deref(EatOuter)"
 &mut p @ q: &mut T, binding_mode(q) = move
 
-p @ *q: [T0, T1]
+p @ reset(q): [T0, T1]
 ---------------------------------------------------- "Deref(EatOuter)"
 &mut p @ q: &mut [T0, T1], binding_mode(q) = ref mut
 
-p @ &**q: &T
+p @ &*reset(q): &T
 ---------------------------------- "Deref(EatInner)"
 &p @ q: &&T, binding_mode(q) = ref
 
-p @ &**q: &T
+p @ &*reset(q): &T
 ------------------------------------------ "Deref(EatInner)"
 &p @ q: &mut &T, binding_mode(q) = ref mut
 
-p @ &**q: &T
+p @ &*reset(q): &T
 ------------------------------------------ "Deref(EatInner)"
 &mut p @ q: &&mut T, binding_mode(q) = ref
 
-p @ &mut **q: &mut T
+p @ &mut *reset(q): &mut T
 -------------------------------------------------- "Deref(EatInner)"
 &mut p @ q: &mut &mut T, binding_mode(q) = ref mut
 
@@ -76,31 +76,31 @@ p @ &mut **q: &mut T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ q: &mut T, binding_mode(q) = move
 
-&p @ &*q: &[T0, T1]
+&p @ &reset(q): &[T0, T1]
 ------------------------------------------------ "DerefMutWithShared(EatOuter)"
 &p @ q: &mut [T0, T1], binding_mode(q) = ref mut
 
-&p @ &&**q: &&T
+&p @ &&*reset(q): &&T
 -------------------------------------- "DerefMutWithShared(EatInner)"
 &p @ q: &&mut T, binding_mode(q) = ref
 
-&p @ &&**q: &&T
+&p @ &&*reset(q): &&T
 ---------------------------------------------- "DerefMutWithShared(EatInner)"
 &p @ q: &mut &mut T, binding_mode(q) = ref mut
 
-ref x @ *q: T
+ref x @ reset(q): T
 ------------------------------------ "RefBindingResetBindingMode"
 ref x @ q: &T, binding_mode(q) = ref
 
-ref x @ *q: T
+ref x @ reset(q): T
 -------------------------------------------- "RefBindingResetBindingMode"
 ref x @ q: &mut T, binding_mode(q) = ref mut
 
-ref mut x @ *q: T
+ref mut x @ reset(q): T
 ---------------------------------------- "RefBindingResetBindingMode"
 ref mut x @ q: &T, binding_mode(q) = ref
 
-ref mut x @ *q: T
+ref mut x @ reset(q): T
 ------------------------------------------------ "RefBindingResetBindingMode"
 ref mut x @ q: &mut T, binding_mode(q) = ref mut
 

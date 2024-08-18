@@ -52,19 +52,19 @@ p @ *q: T
 -------------- "DerefMutWithShared(EatOuter)"
 &p @ q: &mut T
 
-ref x @ *q: T
+ref x @ reset(q): T
 ------------------------------------ "RefBindingResetBindingMode"
 ref x @ q: &T, binding_mode(q) = ref
 
-ref x @ *q: T
+ref x @ reset(q): T
 -------------------------------------------- "RefBindingResetBindingMode"
 ref x @ q: &mut T, binding_mode(q) = ref mut
 
-ref mut x @ *q: T
+ref mut x @ reset(q): T
 ---------------------------------------- "RefBindingResetBindingMode"
 ref mut x @ q: &T, binding_mode(q) = ref
 
-ref mut x @ *q: T
+ref mut x @ reset(q): T
 ------------------------------------------------ "RefBindingResetBindingMode"
 ref mut x @ q: &mut T, binding_mode(q) = ref mut
 

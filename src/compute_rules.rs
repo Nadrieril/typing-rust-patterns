@@ -411,11 +411,17 @@ impl<'a> TypingRule<'a> {
             }
         }
 
-        let preconditions_str = if rule.preconditions.is_empty() {
+        let mut preconditions_str = if rule.preconditions.is_empty() {
             rule.postcondition.display_as_let()
         } else {
             rule.preconditions.iter().format(",  ").to_string()
         };
+        if style == TypingRuleStyle::BindingMode
+            && let Some(ByRef(..)) = bm
+        {
+            // In binding mode style, dereferencing the bm is called "resetting".
+            preconditions_str = preconditions_str.replace("*q", "reset(q)");
+        }
 
         let len = max(preconditions_str.len(), postconditions_str.len());
         let bar = "-".repeat(len);
