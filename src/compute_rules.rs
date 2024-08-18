@@ -238,30 +238,11 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     // We generate the deepenings in the order we'd like to see them, so we reverse to restore that
     // order.
     rules.reverse();
+    rules.sort_by_key(|rule| rule.name);
     rules
 }
 
-pub fn display_rules(options: RuleOptions) {
-    println!("The current options can be fully described as the following set of rules.");
-
-    let arenas = &Arenas::default();
-    let ctx = TypingCtx { arenas, options };
-    if options.downgrade_shared_inside_shared {
-        println!(
-            "Warning: option `downgrade_shared_inside_shared` is not represented in the rules"
-        );
-    }
-
-    println!();
-
-    let mut typing_rules = compute_rules(ctx);
-    typing_rules.sort_by_key(|rule| rule.name);
-    for rule in typing_rules {
-        println!("{}\n", rule.display(options.rules_display_style));
-    }
-}
-
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct TypingRule<'a> {
     pub name: Rule,
     pub preconditions: Vec<TypingPredicate<'a>>,

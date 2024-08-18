@@ -138,7 +138,7 @@ impl RuleOptions {
 }
 
 /// The various typing rules we can apply.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Rule {
     Constructor,
     ConstructorRef,

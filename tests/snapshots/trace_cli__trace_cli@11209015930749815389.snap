@@ -3,3 +3,7 @@ source: tests/trace_cli.rs
 info: set allow_ref_pat_on_ref_mut false
 ---
 allow_ref_pat_on_ref_mut: true -> false
+
+-&p @ &*q: &T
+--------------- "DerefMutWithShared(EatOuter)"
+-&p @ q: &mut T

@@ -7,7 +7,7 @@ use std::cmp::min;
 use BindingMode::*;
 use Mutability::*;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Mutability {
     Shared,
     Mutable,
@@ -17,7 +17,7 @@ impl Mutability {
     pub const ALL: [Self; 2] = [Shared, Mutable];
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BindingMode {
     ByRef(Mutability),
     ByMove,
@@ -28,7 +28,7 @@ impl BindingMode {
 }
 
 /// A pattern.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Pattern<'a> {
     /// The constructor for a type. Our only type is the tuple, represented as `[T, U]`, with its
     /// constructor `[p, q]`.
@@ -44,7 +44,7 @@ pub enum Pattern<'a> {
 }
 
 /// A type.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Type<'a> {
     /// Our only type is the tuple, represented as `[T, U]`, with its constructor `[p, q]`.
     Tuple(&'a [Self]),
@@ -71,13 +71,13 @@ impl<'a> Type<'a> {
 /// that points to the place currently being matched on. At the end, each binding is given assigned
 /// to such an expression.
 /// We remember the types of inner expressions for convenience.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Expression<'a> {
     pub ty: &'a Type<'a>,
     pub kind: ExprKind<'a>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ExprKind<'a> {
     /// The starting expression, written `p`.
     Scrutinee,

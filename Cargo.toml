@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.86"
 assert_cmd = "2.0.16"
+colored = "2.1.0"
 # Custom fork with https://github.com/mikaelmello/inquire/pull/229 rebased
 inquire = { git = "https://github.com/Nadrieril/inquire", branch = "history" }
 itertools = "0.13.0"

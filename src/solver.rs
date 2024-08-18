@@ -13,7 +13,7 @@ pub struct TypingCtx<'a> {
 
 /// The inner state of our solver: the typing of `let pat: type = expr`. We write it `pat @ expr :
 /// type`.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypingPredicate<'a> {
     pub pat: &'a Pattern<'a>,
     pub expr: Expression<'a>,

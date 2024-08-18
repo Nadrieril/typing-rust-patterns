@@ -1,8 +1,8 @@
-use std::io::IsTerminal;
+use std::{collections::HashSet, fmt::Display, io::IsTerminal};
 
 use anyhow::bail;
+use colored::Color;
 use inquire::{history::SimpleHistory, Text};
-
 use itertools::Itertools;
 use typing_rust_patterns::*;
 
@@ -51,25 +51,23 @@ fn main() -> anyhow::Result<()> {
         } else if let Some(cmd) = request.strip_prefix("set") {
             history.push(request.to_string());
             let old_options = options;
-            if let Err(err) = parse_set_cmd(cmd, &mut options) {
-                println!(
-                    "Error: {err}\n\n\
-                    Options are:\n\
-                    {}\n\
-                    There also exist some predefined option-bundles. Activate one with `set bundle`\n\
-                    {}",
-                    RuleOptions::OPTIONS_DOC.iter().map(|(name, ty, descr)| format!("- {name}: {ty}\n    {descr}\n")).format(""),
-                    RuleOptions::KNOWN_OPTION_BUNDLES.iter().map(|(name, _, descr)| format!("- {name}: {descr}")).format("\n")
-                )
-            } else {
+            match parse_set_cmd(cmd, &mut options) {
                 // Display what changed.
-                let old_options = old_options.to_map();
-                let new_options = options.to_map();
-                for (k, v) in &old_options {
-                    let new_v = &new_options[k];
-                    if v != new_v {
-                        println!("{k}: {v} -> {new_v}");
-                    }
+                Ok(_) => {
+                    display_options_diff(old_options, options);
+                    println!();
+                    display_rules_diff(old_options, options);
+                }
+                Err(err) => {
+                    println!(
+                        "Error: {err}\n\n\
+                        Options are:\n\
+                        {}\n\
+                        There also exist some predefined option-bundles. Activate one with `set bundle`\n\
+                        {}",
+                        RuleOptions::OPTIONS_DOC.iter().map(|(name, ty, descr)| format!("- {name}: {ty}\n    {descr}\n")).format(""),
+                        RuleOptions::KNOWN_OPTION_BUNDLES.iter().map(|(name, _, descr)| format!("- {name}: {descr}")).format("\n")
+                    )
                 }
             }
         } else {
@@ -111,4 +109,124 @@ fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> anyhow::Result<()> {
     };
     options.set_key(opt, val)?;
     Ok(())
+}
+
+fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
+    let old_options = old_options.to_map();
+    let new_options = new_options.to_map();
+    for (k, v) in &old_options {
+        let new_v = &new_options[k];
+        if v != new_v {
+            println!("{k}: {v} -> {new_v}");
+        }
+    }
+}
+
+fn display_rules(options: RuleOptions) {
+    println!("The current options can be fully described as the following set of rules.");
+
+    let arenas = &Arenas::default();
+    let ctx = TypingCtx { arenas, options };
+    if options.downgrade_shared_inside_shared {
+        println!(
+            "Warning: option `downgrade_shared_inside_shared` is not represented in the rules"
+        );
+    }
+
+    println!();
+
+    let typing_rules = compute_rules(ctx);
+    for rule in typing_rules {
+        println!("{}\n", rule.display(options.rules_display_style));
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DiffState {
+    Both,
+    Old,
+    New,
+}
+
+impl DiffState {
+    fn display<'a>(&self, text: &'a str) -> impl Display + 'a {
+        use colored::Colorize;
+        let (marker, color) = match self {
+            Self::New => ("+", Some(Color::Green)),
+            Self::Old => ("-", Some(Color::Red)),
+            Self::Both => (" ", None),
+        };
+        text.lines()
+            .map(move |line| {
+                let line = format!("{marker}{line}");
+                if let Some(color) = color {
+                    line.color(color)
+                } else {
+                    <&str as Colorize>::clear(&line)
+                }
+            })
+            .format("\n")
+    }
+}
+
+fn display_rules_diff(old_options: RuleOptions, new_options: RuleOptions) {
+    let arenas = &Arenas::default();
+    let old_rules = compute_rules(TypingCtx {
+        arenas,
+        options: old_options,
+    });
+    let new_rules = compute_rules(TypingCtx {
+        arenas,
+        options: new_options,
+    });
+
+    let mut all_rules: Vec<(DiffState, &TypingRule)> = Vec::new();
+    let new_rules_hashed: HashSet<&TypingRule> = new_rules.iter().collect();
+    for rule in &old_rules {
+        let state = if new_rules_hashed.contains(rule) {
+            DiffState::Both
+        } else {
+            DiffState::Old
+        };
+        all_rules.push((state, rule));
+    }
+    let old_rules_hashed: HashSet<&TypingRule> = old_rules.iter().collect();
+    for rule in &new_rules {
+        if !old_rules_hashed.contains(rule) {
+            all_rules.push((DiffState::New, rule));
+        }
+    }
+    all_rules.sort_by_key(|(_, rule)| rule.name);
+
+    if old_options.downgrade_shared_inside_shared || new_options.downgrade_shared_inside_shared {
+        println!(
+            "Warning: option `downgrade_shared_inside_shared` is not represented in the rules"
+        );
+        println!();
+    }
+    // Display the rules diff.
+    for (state, rule) in all_rules {
+        match state {
+            DiffState::Both => {
+                if old_options.rules_display_style != new_options.rules_display_style {
+                    // Show the style diff if there is one.
+                    let old_style = rule.display(old_options.rules_display_style).to_string();
+                    let new_style = rule.display(new_options.rules_display_style).to_string();
+                    if old_style == new_style {
+                        continue;
+                    }
+                    println!("{}\n", DiffState::Old.display(&old_style));
+                    println!("{}\n", DiffState::New.display(&new_style));
+                }
+            }
+            DiffState::Old => {
+                let rule_str = rule.display(old_options.rules_display_style).to_string();
+                println!("{}\n", state.display(&rule_str));
+            }
+            DiffState::New => {
+                let rule_str = rule.display(new_options.rules_display_style).to_string();
+                println!("{}\n", state.display(&rule_str));
+            }
+        }
+    }
 }

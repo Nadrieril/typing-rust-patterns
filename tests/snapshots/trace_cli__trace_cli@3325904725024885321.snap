@@ -7,6 +7,67 @@ eat_inherited_ref_alone: true -> false
 mut_binding_on_inherited: "Keep" -> "Error"
 ref_binding_on_inherited: "Skip" -> "Error"
 simplify_deref_mut: true -> false
+
+-p @ *q: T
+----------- "Deref(EatOuter)"
+-&p @ q: &T
+
+-p @ *q: T
+------------------- "Deref(EatOuter)"
+-&mut p @ q: &mut T
+
++p @ *q: T
++-------------------------------- "Deref(EatOuter)"
++&p @ q: &T, q is not a reference
+
++p @ *&q: &T
++------------ "Deref(EatOuter)"
++&p @ &q: &&T
+
++p @ *&q: &mut T
++---------------- "Deref(EatOuter)"
++&p @ &q: &&mut T
+
++p @ *q: T
++---------------------------------------- "Deref(EatOuter)"
++&mut p @ q: &mut T, q is not a reference
+
++p @ *&mut q: &T
++------------------------ "Deref(EatOuter)"
++&mut p @ &mut q: &mut &T
+
++p @ *&mut q: &mut T
++---------------------------- "Deref(EatOuter)"
++&mut p @ &mut q: &mut &mut T
+
+-&p @ &*q: &T
+--------------- "DerefMutWithShared(EatOuter)"
+-&p @ q: &mut T
+
+-ref x @ q: T
+--------------- "RefBindingResetBindingMode"
+-ref x @ &q: &T
+
+-ref x @ q: T
+----------------------- "RefBindingResetBindingMode"
+-ref x @ &mut q: &mut T
+
+-ref mut x @ q: T
+------------------- "RefBindingResetBindingMode"
+-ref mut x @ &q: &T
+
+-ref mut x @ q: T
+--------------------------- "RefBindingResetBindingMode"
+-ref mut x @ &mut q: &mut T
+
+-let mut x: T = q
+----------------- "Binding"
+-mut x @ q: T
+
++let mut x: T = q
++---------------------------------- "Binding"
++mut x @ q: T, q is not a reference
+
 The current options can be fully described as the following set of rules.
 
 p0 @ q.0: T0,  p1 @ q.1: T1

@@ -5,6 +5,77 @@ info: "set ergo2024\noptions"
 downgrade_shared_inside_shared: false -> true
 inherited_ref_on_ref: "EatOuter" -> "EatInner"
 mut_binding_on_inherited: "Keep" -> "Error"
+
+Warning: option `downgrade_shared_inside_shared` is not represented in the rules
+
+-p @ *q: T
+----------- "Deref(EatOuter)"
+-&p @ q: &T
+
+-p @ *q: T
+------------------- "Deref(EatOuter)"
+-&mut p @ q: &mut T
+
++p @ *q: T
++-------------------------------- "Deref(EatOuter)"
++&p @ q: &T, q is not a reference
+
++p @ *&q: [T0, T1]
++------------------ "Deref(EatOuter)"
++&p @ &q: &[T0, T1]
+
++p @ *q: T
++---------------------------------------- "Deref(EatOuter)"
++&mut p @ q: &mut T, q is not a reference
+
++p @ q: [T0, T1]
++------------------------------ "Deref(EatOuter)"
++&mut p @ &mut q: &mut [T0, T1]
+
++p @ &*q: &T
++------------ "Deref(EatInner)"
++&p @ &q: &&T
+
++p @ &*q: &T
++-------------------- "Deref(EatInner)"
++&p @ &mut q: &mut &T
+
++p @ &*q: &T
++-------------------- "Deref(EatInner)"
++&mut p @ &q: &&mut T
+
++p @ &mut *q: &mut T
++---------------------------- "Deref(EatInner)"
++&mut p @ &mut q: &mut &mut T
+
+-&p @ &*q: &T
+--------------- "DerefMutWithShared(EatOuter)"
+-&p @ q: &mut T
+
++&p @ &*q: &T
++------------------------------------ "DerefMutWithShared(EatOuter)"
++&p @ q: &mut T, q is not a reference
+
++&p @ &q: &[T0, T1]
++-------------------------- "DerefMutWithShared(EatOuter)"
++&p @ &mut q: &mut [T0, T1]
+
++&p @ &&*q: &&T
++---------------- "DerefMutWithShared(EatInner)"
++&p @ &q: &&mut T
+
++&p @ &&*q: &&T
++------------------------ "DerefMutWithShared(EatInner)"
++&p @ &mut q: &mut &mut T
+
+-let mut x: T = q
+----------------- "Binding"
+-mut x @ q: T
+
++let mut x: T = q
++---------------------------------- "Binding"
++mut x @ q: T, q is not a reference
+
 ref_binding_on_inherited: Skip
 mut_binding_on_inherited: Error
 inherited_ref_on_ref: EatInner
