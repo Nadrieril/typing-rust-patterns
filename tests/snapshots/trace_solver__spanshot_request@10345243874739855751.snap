@@ -20,4 +20,4 @@ x @ *p: &mut T
 let x: &mut T = *p
 
 // Final bindings (simplified):
-let x: &mut T = *p // Borrow-check error: CantCopyRefMut
+let x: &mut T = *p; // Borrow-check error: CantCopyRefMut

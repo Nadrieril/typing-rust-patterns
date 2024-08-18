@@ -81,7 +81,7 @@ impl<'a> TypingSolver<'a> {
                     .map(|err| format!(" // Borrow-check error: {err:?}"))
                     .unwrap_or_default();
                 let p = p.display_as_let();
-                format!("{p}{bck}")
+                format!("{p};{bck}")
             })
             .join("\n")
     }

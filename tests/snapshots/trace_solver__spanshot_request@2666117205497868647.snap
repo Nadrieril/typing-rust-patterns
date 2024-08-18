@@ -18,4 +18,4 @@ mut x @ p: &T
 let mut x: &T = p
 
 // Final bindings (simplified):
-let mut x: &T = p
+let mut x: &T = p;

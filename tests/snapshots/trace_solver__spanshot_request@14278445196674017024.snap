@@ -26,4 +26,4 @@ mut x @ (*p).0: T
 let mut x: T = (*p).0
 
 // Final bindings (simplified):
-let mut x: T = (*p).0
+let mut x: T = (*p).0;

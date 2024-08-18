@@ -28,4 +28,4 @@ x @ *&*&mut (*(*p).0).0: T
 let x: T = *&*&mut (*(*p).0).0
 
 // Final bindings (simplified):
-let x: T = (*(*p).0).0
+let x: T = (*(*p).0).0;

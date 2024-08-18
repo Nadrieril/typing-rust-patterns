@@ -22,4 +22,4 @@ x @ &*(*p).0: &T
 let x: &T = &*(*p).0
 
 // Final bindings (simplified):
-let x: &T = &*(*p).0
+let x: &T = &*(*p).0;

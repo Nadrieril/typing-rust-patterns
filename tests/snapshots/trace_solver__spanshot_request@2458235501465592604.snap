@@ -20,4 +20,4 @@ mut x @ &mut p: &mut T
 let mut x: &mut T = &mut p
 
 // Final bindings (simplified):
-let mut x: &mut T = &mut p
+let mut x: &mut T = &mut p;

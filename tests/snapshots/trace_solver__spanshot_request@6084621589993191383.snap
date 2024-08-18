@@ -28,5 +28,5 @@ let x: &T = &(*p).0
 let y: U = *&(*p).1
 
 // Final bindings (simplified):
-let x: &T = &(*p).0
-let y: U = (*p).1
+let x: &T = &(*p).0;
+let y: U = (*p).1;
