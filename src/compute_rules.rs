@@ -446,6 +446,6 @@ impl<'a> TypingRule<'a> {
 
 impl<'a> Display for TypingRule<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.display(f, TypingRuleStyle::SeparateBindingMode)
+        self.display(f, TypingRuleStyle::PlainPredicate)
     }
 }

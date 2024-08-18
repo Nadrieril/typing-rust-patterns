@@ -42,9 +42,9 @@ p @ *q: T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ q: &mut T, binding_mode(q) = move
 
-&p @ &*q: &T
------------------------------------------ "DerefMutWithShared(EatOuter)"
-&p @ q: &mut T, binding_mode(q) = ref mut
+&p @ &q: &T
+------------------- "DerefMutWithShared(EatOuter)"
+&p @ &mut q: &mut T
 
 x @ &q: &T
 ------------------------------------ "BindingBorrow"
