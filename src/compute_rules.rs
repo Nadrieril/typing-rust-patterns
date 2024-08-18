@@ -279,6 +279,7 @@ pub fn display_rules(options: RuleOptions) {
     }
 }
 
+#[derive(Clone)]
 pub struct TypingRule<'a> {
     pub name: Rule,
     pub preconditions: Vec<TypingPredicate<'a>>,
@@ -338,9 +339,47 @@ impl<'a> Expression<'a> {
             }
         }
     }
+
+    /// Changes the abstract variable to have the provided bm. Assumes that the expression was
+    /// obtained from applying rules to an expression hwere the abstract variable already had that
+    /// binding mode.
+    fn set_abstract_bm(&self, a: &'a Arenas<'a>, bm: Option<BindingMode>) -> Expression<'a> {
+        match (self.kind, bm) {
+            (ExprKind::Scrutinee, _) => *self,
+            (ExprKind::Abstract { not_a_ref: false }, None) => *self,
+            (ExprKind::Abstract { not_a_ref: false }, Some(ByMove)) => unreachable!(),
+            (ExprKind::Abstract { not_a_ref: false }, Some(ByRef(mtbl))) => Expression {
+                ty: Type::Ref(mtbl, self.ty).alloc(a),
+                kind: self.kind,
+            }
+            .deref(a),
+            (ExprKind::Abstract { not_a_ref: true }, Some(ByMove)) => Expression {
+                ty: self.ty,
+                kind: ExprKind::Abstract { not_a_ref: false },
+            },
+            (ExprKind::Abstract { not_a_ref: true }, _) => unreachable!(),
+            (
+                ExprKind::Ref(
+                    mtbl,
+                    Expression {
+                        kind: ExprKind::Abstract { not_a_ref: false },
+                        ..
+                    },
+                ),
+                Some(ByRef(bm_mtbl)),
+            ) if mtbl == bm_mtbl => Expression {
+                ty: self.ty,
+                kind: ExprKind::Abstract { not_a_ref: false },
+            },
+            (ExprKind::Ref(mtbl, e), _) => e.set_abstract_bm(a, bm).borrow(a, mtbl),
+            (ExprKind::Deref(e), _) => e.set_abstract_bm(a, bm).deref(a),
+            (ExprKind::Field(e, n), _) => e.set_abstract_bm(a, bm).field(a, n),
+        }
+    }
 }
 
 pub enum TypingRuleStyle {
+    // TODO: Rename binding mode to e.g. "is not ref"
     PlainPredicate,
     SeparateBindingMode,
     // TODO: implement
@@ -348,31 +387,35 @@ pub enum TypingRuleStyle {
 }
 
 impl<'a> TypingRule<'a> {
+    /// If the postcondition expression contains an abstract variable with a known binding mode,
+    /// extract it and reset the binding mode of the variable.
+    fn extract_abstract_bm(&self, a: &'a Arenas<'a>) -> (Option<BindingMode>, Self) {
+        let mut ret = self.clone();
+        let (bm, expr) = ret.postcondition.expr.extract_abstract_bm(a);
+        ret.postcondition.expr = expr;
+        // If we changed the type of `q` above, we must change it here too.
+        for pred in &mut ret.preconditions {
+            pred.expr = pred.expr.set_abstract_bm(a, bm);
+        }
+        (bm, ret)
+    }
+
     fn display(&self, f: &mut std::fmt::Formatter<'_>, style: TypingRuleStyle) -> std::fmt::Result {
         let a = &Arenas::default();
 
-        // Extract the bm of the expression variable and show it on the side.
-        let mut pred = self.postcondition.clone();
-        let mut preconditions = self.preconditions.clone();
+        let mut rule = self.clone();
 
         let bm = match style {
-            TypingRuleStyle::PlainPredicate => pred.expr.abstract_bm_constraint(),
+            TypingRuleStyle::PlainPredicate => rule.postcondition.expr.abstract_bm_constraint(),
             TypingRuleStyle::SeparateBindingMode | TypingRuleStyle::HideExpr => {
-                let (bm, expr) = pred.expr.extract_abstract_bm(a);
-                pred.expr = expr;
-                // If we changed the type of `q` above; we must change it here too.
-                if let Some(ByRef(..)) = bm {
-                    for pred in &mut preconditions {
-                        // TODO: if the bm was changed we should deref instead of resetting it.
-                        let (_, expr) = pred.expr.extract_abstract_bm(a);
-                        pred.expr = expr;
-                    }
-                }
+                // Extract the bm of the expression variable and show it on the side.
+                let (bm, new_rule) = rule.extract_abstract_bm(a);
+                rule = new_rule;
                 bm
             }
         };
 
-        let mut postconditions_str = pred.to_string();
+        let mut postconditions_str = rule.postcondition.to_string();
         if let Some(bm) = bm {
             let bm = match bm {
                 ByRef(mtbl) => &format!("ref {mtbl}"),
@@ -386,16 +429,16 @@ impl<'a> TypingRule<'a> {
             );
         }
 
-        let preconditions_str = if preconditions.is_empty() {
-            pred.display_as_let()
+        let preconditions_str = if rule.preconditions.is_empty() {
+            rule.postcondition.display_as_let()
         } else {
-            preconditions.iter().format(", ").to_string()
+            rule.preconditions.iter().format(", ").to_string()
         };
 
         let len = max(preconditions_str.len(), postconditions_str.len());
         let bar = "-".repeat(len);
         write!(f, "{preconditions_str}\n")?;
-        write!(f, "{bar} \"{:?}\"\n", self.name)?;
+        write!(f, "{bar} \"{:?}\"\n", rule.name)?;
         write!(f, "{postconditions_str}")?;
         Ok(())
     }

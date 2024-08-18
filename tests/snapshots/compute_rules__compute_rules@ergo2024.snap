@@ -46,19 +46,19 @@ p @ *q: [T0, T1]
 ---------------------------------------------------- "Deref(EatOuter)"
 &mut p @ q: &mut [T0, T1], binding_mode(q) = ref mut
 
-p @ &*q: &T
+p @ &**q: &T
 ---------------------------------- "Deref(EatInner)"
 &p @ q: &&T, binding_mode(q) = ref
 
-p @ &*q: &T
+p @ &**q: &T
 ------------------------------------------ "Deref(EatInner)"
 &p @ q: &mut &T, binding_mode(q) = ref mut
 
-p @ &*q: &T
+p @ &**q: &T
 ------------------------------------------ "Deref(EatInner)"
 &mut p @ q: &&mut T, binding_mode(q) = ref
 
-p @ &mut *q: &mut T
+p @ &mut **q: &mut T
 -------------------------------------------------- "Deref(EatInner)"
 &mut p @ q: &mut &mut T, binding_mode(q) = ref mut
 
@@ -66,15 +66,15 @@ p @ &mut *q: &mut T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ q: &mut T, binding_mode(q) = move
 
-&p @ q: &[T0, T1]
+&p @ &*q: &[T0, T1]
 ------------------------------------------------ "DerefMutWithShared(EatOuter)"
 &p @ q: &mut [T0, T1], binding_mode(q) = ref mut
 
-&p @ &&*q: &&T
+&p @ &&**q: &&T
 -------------------------------------- "DerefMutWithShared(EatInner)"
 &p @ q: &&mut T, binding_mode(q) = ref
 
-&p @ &&*q: &&T
+&p @ &&**q: &&T
 ---------------------------------------------- "DerefMutWithShared(EatInner)"
 &p @ q: &mut &mut T, binding_mode(q) = ref mut
 
@@ -82,11 +82,11 @@ x @ q: &T
 ------------------------------------ "BindingOverrideBorrow"
 ref x @ q: &T, binding_mode(q) = ref
 
-x @ q: &T
+x @ &*q: &T
 -------------------------------------------- "BindingOverrideBorrow"
 ref x @ q: &mut T, binding_mode(q) = ref mut
 
-x @ q: &mut T
+x @ &mut *q: &mut T
 ---------------------------------------- "BindingOverrideBorrow"
 ref mut x @ q: &T, binding_mode(q) = ref
 
