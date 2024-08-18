@@ -1,0 +1,140 @@
+---
+source: tests/generate_design_doc.rs
+---
+- `[&x]: &[&T]` => `x: &T`
+```rust
+[&x] @ p: &[&T]
+// Applying rule `ConstructorRef`
+&x @ &(*p).0: &&T
+// Applying rule `Deref(EatOuter)`
+x @ *&(*p).0: &T
+// Applying rule `Binding`
+let x: &T = *&(*p).0
+
+// Final bindings (simplified):
+let x: &T = (*p).0;
+```
+
+- `[&x]: &[&mut T]` => `x: &mut T`, move error
+```rust
+[&x] @ p: &[&mut T]
+// Applying rule `ConstructorRef`
+&x @ &(*p).0: &&mut T
+// Applying rule `Deref(EatOuter)`
+x @ *&(*p).0: &mut T
+// Applying rule `Binding`
+let x: &mut T = *&(*p).0
+
+// Final bindings (simplified):
+let x: &mut T = (*p).0; // Borrow-check error: CantCopyRefMut
+```
+
+- `[&&mut x]: &[&mut T]` => `x: T`
+```rust
+[&&mut x] @ p: &[&mut T]
+// Applying rule `ConstructorRef`
+&&mut x @ &(*p).0: &&mut T
+// Applying rule `Deref(EatOuter)`
+&mut x @ *&(*p).0: &mut T
+// Applying rule `Deref(EatOuter)`
+x @ **&(*p).0: T
+// Applying rule `Binding`
+let x: T = **&(*p).0
+
+// Final bindings (simplified):
+let x: T = *(*p).0;
+```
+
+- `[&mut x]: &mut [&T]` => `x: &T`
+```rust
+[&mut x] @ p: &mut [&T]
+// Applying rule `ConstructorRef`
+&mut x @ &mut (*p).0: &mut &T
+// Applying rule `Deref(EatOuter)`
+x @ *&mut (*p).0: &T
+// Applying rule `Binding`
+let x: &T = *&mut (*p).0
+
+// Final bindings (simplified):
+let x: &T = (*p).0;
+```
+
+- `[&mut x]: &[&mut T]` => type error
+```rust
+[&mut x] @ p: &[&mut T]
+// Applying rule `ConstructorRef`
+&mut x @ &(*p).0: &&mut T
+// Type error for `&mut x @ &(*p).0: &&mut T`: MutabilityMismatch
+```
+
+- `&[[x]]: &[&mut [T]]` => `x: &mut T`, borrow error
+```rust
+&[[x]] @ p: &[&mut [T]]
+// Applying rule `Deref(EatOuter)`
+[[x]] @ *p: [&mut [T]]
+// Applying rule `Constructor`
+[x] @ (*p).0: &mut [T]
+// Applying rule `ConstructorRef`
+x @ &mut (*(*p).0).0: &mut T
+// Applying rule `Binding`
+let x: &mut T = &mut (*(*p).0).0
+
+// Final bindings (simplified):
+let x: &mut T = &mut (*(*p).0).0; // Borrow-check error: MutBorrowBehindSharedBorrow
+```
+
+- `&[[&x]]: &[&mut [T]]` => `x: T`, borrow error if we don't use simplification rules
+```rust
+&[[&x]] @ p: &[&mut [T]]
+// Applying rule `Deref(EatOuter)`
+[[&x]] @ *p: [&mut [T]]
+// Applying rule `Constructor`
+[&x] @ (*p).0: &mut [T]
+// Applying rule `ConstructorRef`
+&x @ &mut (*(*p).0).0: &mut T
+// Applying rule `DerefMutWithShared(EatOuter)`
+&x @ &*&mut (*(*p).0).0: &T
+// Applying rule `Deref(EatOuter)`
+x @ *&*&mut (*(*p).0).0: T
+// Applying rule `Binding`
+let x: T = *&*&mut (*(*p).0).0
+
+// Final bindings (simplified):
+let x: T = (*(*p).0).0;
+```
+
+- `&[[&mut x]]: &[&mut [T]]` => `x: T`, borrow error if we don't use simplification rules
+```rust
+&[[&mut x]] @ p: &[&mut [T]]
+// Applying rule `Deref(EatOuter)`
+[[&mut x]] @ *p: [&mut [T]]
+// Applying rule `Constructor`
+[&mut x] @ (*p).0: &mut [T]
+// Applying rule `ConstructorRef`
+&mut x @ &mut (*(*p).0).0: &mut T
+// Applying rule `Deref(EatOuter)`
+x @ *&mut (*(*p).0).0: T
+// Applying rule `Binding`
+let x: T = *&mut (*(*p).0).0
+
+// Final bindings (simplified):
+let x: T = (*(*p).0).0;
+```
+
+- `[&ref mut x]: &mut [T]` => `x: &mut T`, borrow error
+```rust
+[&ref mut x] @ p: &mut [T]
+// Applying rule `ConstructorRef`
+&ref mut x @ &mut (*p).0: &mut T
+// Applying rule `DerefMutWithShared(EatOuter)`
+&ref mut x @ &*&mut (*p).0: &T
+// Applying rule `Deref(EatOuter)`
+ref mut x @ *&*&mut (*p).0: T
+// Applying rule `BindingBorrow`
+x @ &mut *&*&mut (*p).0: &mut T
+// Applying rule `Binding`
+let x: &mut T = &mut *&*&mut (*p).0
+
+// Final bindings (simplified):
+let x: &mut T = &mut *&(*p).0; // Borrow-check error: MutBorrowBehindSharedBorrow
+```

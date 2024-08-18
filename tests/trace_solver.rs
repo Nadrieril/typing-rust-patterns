@@ -31,7 +31,6 @@ fn spanshot_request(test_case: TestCase<'_>) -> anyhow::Result<()> {
         hasher.finish().to_string()
     };
     let trace = trace_solver(test_case.request, test_case.options)?;
-    // let trace = format!("Query: `{request}`\n\n{trace}");
     insta::with_settings!({
         snapshot_suffix => req_hash,
         info => &test_case,
