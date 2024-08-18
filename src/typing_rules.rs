@@ -64,46 +64,46 @@ pub struct RuleOptions {
 
 impl RuleOptions {
     /// Documentation for the options.
-    pub const OPTIONS_DOC: &[(&str, &str, &str)] = &[
+    pub const OPTIONS_DOC: &[(&str, &[&str], &str)] = &[
         (
             "rules_display_style",
-            "Plain | BindingMode",
+            &["Plain", "BindingMode"],
             "how to display typing rules (in the `rules` command)",
         ),
         (
             "ref_binding_on_inherited",
-            "ResetBindingMode | AllocTemporary | Error",
+            &["ResetBindingMode", "AllocTemporary", "Error"],
             "how to handle a `ref x` binding on an inherited reference",
         ),
         (
             "mut_binding_on_inherited",
-            "ResetBindingMode | Keep | Error",
+            &["ResetBindingMode", "Keep", "Error"],
             "how to handle a `mut x` binding on an inherited reference",
         ),
         (
             "inherited_ref_on_ref",
-            "EatOuter | EatInner | EatBoth",
+            &["EatOuter", "EatInner", "EatBoth"],
             "how to handle a reference pattern on a \
              double reference when the outer one is inherited",
         ),
         (
             "allow_ref_pat_on_ref_mut",
-            "bool",
+            &["true", "false"],
             "whether to allow `&p: &mut T`",
         ),
         (
             "simplify_deref_mut",
-            "bool",
+            &["true", "false"],
             "whether to simplify `*&mut expr`, which removes some borrow errors",
         ),
         (
             "eat_inherited_ref_alone",
-            "bool",
+            &["true", "false"],
             "whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`",
         ),
         (
             "downgrade_shared_inside_shared",
-            "bool",
+            &["true", "false"],
             "RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref",
         ),
     ];

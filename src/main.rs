@@ -2,9 +2,11 @@ use std::{collections::HashSet, fmt::Display, io::IsTerminal};
 
 use anyhow::bail;
 use colored::Color;
-use inquire::{history::SimpleHistory, Text};
+use inquire::{history::SimpleHistory, CustomUserError, Text};
 use itertools::Itertools;
 use typing_rust_patterns::*;
+
+static COMMANDS: &[&str] = &["help", "options", "set", "rules", "quit"];
 
 fn main() -> anyhow::Result<()> {
     let is_interactive = std::io::stdin().is_terminal();
@@ -25,6 +27,8 @@ fn main() -> anyhow::Result<()> {
     let prompt = |history: &[_]| {
         if is_interactive {
             Text::new("")
+                .with_placeholder("[&x]: &mut [&T]")
+                .with_autocomplete(Autocomplete)
                 .with_history(SimpleHistory::new(history.iter().rev().cloned().collect()))
                 .prompt_skippable()
         } else {
@@ -65,7 +69,7 @@ fn main() -> anyhow::Result<()> {
                         {}\n\
                         There also exist some predefined option-bundles. Activate one with `set bundle`\n\
                         {}",
-                        RuleOptions::OPTIONS_DOC.iter().map(|(name, ty, descr)| format!("- {name}: {ty}\n    {descr}\n")).format(""),
+                        RuleOptions::OPTIONS_DOC.iter().map(|(name, values, descr)| format!("- {name}: {}\n    {descr}\n", values.iter().format(" | "))).format(""),
                         RuleOptions::KNOWN_OPTION_BUNDLES.iter().map(|(name, _, descr)| format!("- {name}: {descr}")).format("\n")
                     )
                 }
@@ -226,6 +230,60 @@ fn display_rules_diff(old_options: RuleOptions, new_options: RuleOptions) {
             DiffState::New => {
                 let rule_str = rule.display(new_options.rules_display_style).to_string();
                 println!("{}\n", state.display(&rule_str));
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+struct Autocomplete;
+
+impl inquire::Autocomplete for Autocomplete {
+    fn get_suggestions(&mut self, input: &str) -> Result<Vec<String>, CustomUserError> {
+        let mut ret = vec![];
+        if input.is_empty() {
+            return Ok(ret);
+        }
+        let input = input.to_lowercase();
+
+        for &cmd in COMMANDS {
+            if cmd.starts_with(&input) && cmd != input {
+                ret.push(format!("{cmd}"))
+            }
+        }
+
+        if let Some(opt) = input.strip_prefix("set") {
+            let opt = opt.trim();
+            for &(name, values, _) in RuleOptions::OPTIONS_DOC {
+                if let Some(val) = opt.strip_prefix(name) {
+                    let val = val.trim();
+                    for possible_value in values {
+                        if possible_value.to_lowercase().starts_with(val) {
+                            ret.push(format!("set {name} {possible_value}"));
+                        }
+                    }
+                } else if name.starts_with(opt) {
+                    ret.push(format!("set {name}"));
+                }
+            }
+        }
+
+        Ok(ret)
+    }
+
+    fn get_completion(
+        &mut self,
+        input: &str,
+        suggestion: Option<String>,
+    ) -> Result<Option<String>, CustomUserError> {
+        if suggestion.is_some() {
+            Ok(suggestion)
+        } else {
+            let suggestions = self.get_suggestions(input)?;
+            if let Ok([completion]) = <Vec<_> as TryInto<[_; 1]>>::try_into(suggestions) {
+                Ok(Some(completion))
+            } else {
+                Ok(None)
             }
         }
     }
