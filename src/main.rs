@@ -254,11 +254,6 @@ impl inquire::Autocomplete for Autocomplete {
 
         if let Some(opt) = input.strip_prefix("set") {
             let opt = opt.trim();
-            for &(bundle, _, _) in RuleOptions::KNOWN_OPTION_BUNDLES {
-                if bundle.starts_with(opt) {
-                    ret.push(format!("set {bundle}"))
-                }
-            }
             for &(name, values, _) in RuleOptions::OPTIONS_DOC {
                 if let Some(val) = opt.strip_prefix(name) {
                     let val = val.trim();
@@ -269,6 +264,11 @@ impl inquire::Autocomplete for Autocomplete {
                     }
                 } else if name.starts_with(opt) {
                     ret.push(format!("set {name}"));
+                }
+            }
+            for &(bundle, _, _) in RuleOptions::KNOWN_OPTION_BUNDLES {
+                if bundle.starts_with(opt) {
+                    ret.push(format!("set {bundle}"))
                 }
             }
         }
