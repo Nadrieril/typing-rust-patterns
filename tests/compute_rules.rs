@@ -13,7 +13,11 @@ fn compute_rules() -> anyhow::Result<()> {
 
         let mut rules_str = String::new();
         for rule in typing_rules {
-            let _ = writeln!(&mut rules_str, "{rule}\n");
+            let _ = writeln!(
+                &mut rules_str,
+                "{}\n",
+                rule.display(options.rules_display_style)
+            );
         }
 
         insta::with_settings!({

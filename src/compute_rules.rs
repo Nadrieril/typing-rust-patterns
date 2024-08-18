@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::Write;
 use std::{cmp::max, fmt::Display};
 
@@ -211,7 +212,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
         let new_preds = match pred.typing_rule(ctx) {
             Ok(rule) => {
                 if TRACE {
-                    let rule_str = rule.to_string();
+                    let rule_str = rule.display(TypingRuleStyle::Plain).to_string();
                     let rule_str = rule_str.replace("\n", "\n    ");
                     println!("  Pushing rule:\n    {rule_str}");
                 }
@@ -275,7 +276,7 @@ pub fn display_rules(options: RuleOptions) {
     let mut typing_rules = compute_rules(ctx);
     typing_rules.sort_by_key(|rule| rule.name);
     for rule in typing_rules {
-        println!("{rule}\n");
+        println!("{}\n", rule.display(options.rules_display_style));
     }
 }
 
@@ -378,9 +379,10 @@ impl<'a> Expression<'a> {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TypingRuleStyle {
-    PlainPredicate,
-    SeparateBindingMode,
+    Plain,
+    BindingMode,
 }
 
 impl<'a> TypingRule<'a> {
@@ -397,14 +399,22 @@ impl<'a> TypingRule<'a> {
         (bm, ret)
     }
 
-    fn display(&self, f: &mut std::fmt::Formatter<'_>, style: TypingRuleStyle) -> std::fmt::Result {
+    pub fn display(&self, style: TypingRuleStyle) -> impl Display + '_ {
+        TypingRuleWithStyle(self, style)
+    }
+
+    fn display_inner(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        style: TypingRuleStyle,
+    ) -> std::fmt::Result {
         let a = &Arenas::default();
 
         let mut rule = self.clone();
 
         let bm = match style {
-            TypingRuleStyle::PlainPredicate => rule.postcondition.expr.abstract_bm_constraint(),
-            TypingRuleStyle::SeparateBindingMode => {
+            TypingRuleStyle::Plain => rule.postcondition.expr.abstract_bm_constraint(),
+            TypingRuleStyle::BindingMode => {
                 // Extract the bm of the expression variable and show it on the side.
                 let (bm, new_rule) = rule.extract_abstract_bm(a);
                 rule = new_rule;
@@ -416,7 +426,7 @@ impl<'a> TypingRule<'a> {
         if let Some(bm) = bm {
             let abstract_expr = ExprKind::Abstract { not_a_ref: true };
             match style {
-                TypingRuleStyle::PlainPredicate => {
+                TypingRuleStyle::Plain => {
                     assert!(bm == ByMove);
                     let _ = write!(
                         &mut postconditions_str,
@@ -424,7 +434,7 @@ impl<'a> TypingRule<'a> {
                         abstract_expr
                     );
                 }
-                TypingRuleStyle::SeparateBindingMode => {
+                TypingRuleStyle::BindingMode => {
                     let bm = match bm {
                         ByRef(mtbl) => &format!("ref {mtbl}"),
                         ByMove => "move",
@@ -454,8 +464,9 @@ impl<'a> TypingRule<'a> {
     }
 }
 
-impl<'a> Display for TypingRule<'a> {
+struct TypingRuleWithStyle<'a>(&'a TypingRule<'a>, TypingRuleStyle);
+impl<'a> Display for TypingRuleWithStyle<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.display(f, TypingRuleStyle::PlainPredicate)
+        self.0.display_inner(f, self.1)
     }
 }

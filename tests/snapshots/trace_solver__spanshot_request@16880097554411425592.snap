@@ -1,0 +1,27 @@
+---
+source: tests/trace_solver.rs
+info:
+  options:
+    ref_binding_on_inherited: Skip
+    mut_binding_on_inherited: ResetBindingMode
+    inherited_ref_on_ref: EatBoth
+    allow_ref_pat_on_ref_mut: false
+    simplify_expressions: false
+    eat_inherited_ref_alone: false
+    downgrade_shared_inside_shared: false
+    rules_display_style: Plain
+  bundle_name: stable_rust
+  request: "[&x]: &&[&&T]"
+---
+[&x] @ p: &&[&&T]
+// Applying rule `ConstructorMultiRef`
+[&x] @ *p: &[&&T]
+// Applying rule `ConstructorRef`
+&x @ &(**p).0: &&&T
+// Applying rule `Deref(EatBoth)`
+x @ *(**p).0: &T
+// Applying rule `Binding`
+let x: &T = *(**p).0
+
+// Final bindings (simplified):
+let x: &T = *(**p).0

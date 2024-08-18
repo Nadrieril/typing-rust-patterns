@@ -89,6 +89,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
                 "[x]: [&mut T]",
                 "&mut x: &mut &mut T",
                 "&x: &&mut T",
+                "&ref mut x: &mut T",
             ],
         ),
         (

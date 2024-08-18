@@ -58,11 +58,18 @@ pub struct RuleOptions {
     /// If we've dereferenced a shared reference, any subsequent `&mut` inherited reference becomes
     /// `&`. This is RFC3627 rule 3.
     pub downgrade_shared_inside_shared: bool,
+    /// How to display rules.
+    pub rules_display_style: TypingRuleStyle,
 }
 
 impl RuleOptions {
-    /// Documentation for the options
+    /// Documentation for the options.
     pub const OPTIONS_DOC: &[(&str, &str, &str)] = &[
+        (
+            "rules_display_style",
+            "Plain | BindingMode",
+            "how to display typing rules (in the `rules` command)",
+        ),
         (
             "ref_binding_on_inherited",
             "AllocTemporary | Skip | Error",
@@ -107,6 +114,7 @@ impl RuleOptions {
             Ok(v)
         }
         match key {
+            "rules_display_style" => self.rules_display_style = from_str(val)?,
             "ref_binding_on_inherited" => self.ref_binding_on_inherited = from_str(val)?,
             "mut_binding_on_inherited" => self.mut_binding_on_inherited = from_str(val)?,
             "inherited_ref_on_ref" => self.inherited_ref_on_ref = from_str(val)?,
