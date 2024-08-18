@@ -25,6 +25,8 @@ fn trace_cli() -> anyhow::Result<()> {
             .write_stdin(test_case)
             .assert()
             .success();
+        let err = String::from_utf8(success.get_output().stderr.clone())?;
+        assert!(err.is_empty(), "nonempty stderr!:\n{err}");
         let out = String::from_utf8(success.get_output().stdout.clone())?;
 
         // Identify each snapshot file by the hash of the test case.
