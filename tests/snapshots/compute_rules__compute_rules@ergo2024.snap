@@ -31,84 +31,84 @@ p0 @ &mut (*q).0: &mut T0, p1 @ &mut (*q).1: &mut T1
 [p0, p1] @ q: &mut &mut T
 
 p @ *q: T
--------------------------------- "Deref(EatOuter)"
-&p @ q: &T, q is not a reference
+---------------------------------- "Deref(EatOuter)"
+&p @ q: &T, binding_mode(q) = move
 
-p @ *&q: [T0, T1]
------------------- "Deref(EatOuter)"
-&p @ &q: &[T0, T1]
+p @ *q: [T0, T1]
+---------------------------------------- "Deref(EatOuter)"
+&p @ q: &[T0, T1], binding_mode(q) = ref
 
 p @ *q: T
----------------------------------------- "Deref(EatOuter)"
-&mut p @ q: &mut T, q is not a reference
+------------------------------------------ "Deref(EatOuter)"
+&mut p @ q: &mut T, binding_mode(q) = move
 
-p @ *&mut q: [T0, T1]
------------------------------- "Deref(EatOuter)"
-&mut p @ &mut q: &mut [T0, T1]
+p @ *q: [T0, T1]
+---------------------------------------------------- "Deref(EatOuter)"
+&mut p @ q: &mut [T0, T1], binding_mode(q) = ref mut
 
-p @ &*q: &T
------------- "Deref(EatInner)"
-&p @ &q: &&T
+p @ &**q: &T
+---------------------------------- "Deref(EatInner)"
+&p @ q: &&T, binding_mode(q) = ref
 
-p @ &*q: &T
--------------------- "Deref(EatInner)"
-&p @ &mut q: &mut &T
+p @ &**q: &T
+------------------------------------------ "Deref(EatInner)"
+&p @ q: &mut &T, binding_mode(q) = ref mut
 
-p @ &*q: &T
--------------------- "Deref(EatInner)"
-&mut p @ &q: &&mut T
+p @ &**q: &T
+------------------------------------------ "Deref(EatInner)"
+&mut p @ q: &&mut T, binding_mode(q) = ref
 
-p @ &mut *q: &mut T
----------------------------- "Deref(EatInner)"
-&mut p @ &mut q: &mut &mut T
+p @ &mut **q: &mut T
+-------------------------------------------------- "Deref(EatInner)"
+&mut p @ q: &mut &mut T, binding_mode(q) = ref mut
 
 &p @ &*q: &T
------------------------------------- "DerefMutWithShared(EatOuter)"
-&p @ q: &mut T, q is not a reference
+-------------------------------------- "DerefMutWithShared(EatOuter)"
+&p @ q: &mut T, binding_mode(q) = move
 
-&p @ &q: &[T0, T1]
--------------------------- "DerefMutWithShared(EatOuter)"
-&p @ &mut q: &mut [T0, T1]
+&p @ &*q: &[T0, T1]
+------------------------------------------------ "DerefMutWithShared(EatOuter)"
+&p @ q: &mut [T0, T1], binding_mode(q) = ref mut
 
-&p @ &&*q: &&T
----------------- "DerefMutWithShared(EatInner)"
-&p @ &q: &&mut T
+&p @ &&**q: &&T
+-------------------------------------- "DerefMutWithShared(EatInner)"
+&p @ q: &&mut T, binding_mode(q) = ref
 
-&p @ &&*q: &&T
------------------------- "DerefMutWithShared(EatInner)"
-&p @ &mut q: &mut &mut T
+&p @ &&**q: &&T
+---------------------------------------------- "DerefMutWithShared(EatInner)"
+&p @ q: &mut &mut T, binding_mode(q) = ref mut
+
+x @ q: &T
+------------------------------------ "BindingOverrideBorrow"
+ref x @ q: &T, binding_mode(q) = ref
+
+x @ &*q: &T
+-------------------------------------------- "BindingOverrideBorrow"
+ref x @ q: &mut T, binding_mode(q) = ref mut
+
+x @ &mut *q: &mut T
+---------------------------------------- "BindingOverrideBorrow"
+ref mut x @ q: &T, binding_mode(q) = ref
+
+x @ q: &mut T
+------------------------------------------------ "BindingOverrideBorrow"
+ref mut x @ q: &mut T, binding_mode(q) = ref mut
 
 x @ &q: &T
--------------- "BindingOverrideBorrow"
-ref x @ &q: &T
-
-x @ &q: &T
----------------------- "BindingOverrideBorrow"
-ref x @ &mut q: &mut T
+------------------------------------ "BindingBorrow"
+ref x @ q: T, binding_mode(q) = move
 
 x @ &mut q: &mut T
------------------- "BindingOverrideBorrow"
-ref mut x @ &q: &T
-
-x @ &mut q: &mut T
--------------------------- "BindingOverrideBorrow"
-ref mut x @ &mut q: &mut T
-
-x @ &q: &T
----------------------------------- "BindingBorrow"
-ref x @ q: T, q is not a reference
-
-x @ &mut q: &mut T
--------------------------------------- "BindingBorrow"
-ref mut x @ q: T, q is not a reference
+---------------------------------------- "BindingBorrow"
+ref mut x @ q: T, binding_mode(q) = move
 
 let x: T = q
 ------------ "Binding"
 x @ q: T
 
 let mut x: T = q
----------------------------------- "Binding"
-mut x @ q: T, q is not a reference
+------------------------------------ "Binding"
+mut x @ q: T, binding_mode(q) = move
 
 p @ p: T
 -------------- "ExprSimplification"

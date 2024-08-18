@@ -6,6 +6,10 @@ use typing_rust_patterns::*;
 fn compute_rules() -> anyhow::Result<()> {
     let arenas = &Arenas::default();
     for &(name, options, _) in RuleOptions::KNOWN_OPTION_BUNDLES {
+        let options = RuleOptions {
+            rules_display_style: TypingRuleStyle::BindingMode,
+            ..options
+        };
         let ctx = TypingCtx { arenas, options };
 
         let mut typing_rules = typing_rust_patterns::compute_rules(ctx);
