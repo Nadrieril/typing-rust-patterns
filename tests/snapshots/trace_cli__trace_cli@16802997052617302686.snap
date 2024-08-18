@@ -6,7 +6,7 @@ ref_binding_on_inherited: Error
 mut_binding_on_inherited: Keep
 inherited_ref_on_ref: EatOuter
 allow_ref_pat_on_ref_mut: true
-simplify_expressions: true
+simplify_deref_mut: true
 eat_inherited_ref_alone: true
 downgrade_shared_inside_shared: false
 rules_display_style: Plain

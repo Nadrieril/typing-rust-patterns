@@ -8,7 +8,7 @@ impl RuleOptions {
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
         allow_ref_pat_on_ref_mut: false,
-        simplify_expressions: false,
+        simplify_deref_mut: false,
         eat_inherited_ref_alone: false,
         downgrade_shared_inside_shared: false,
     };
@@ -20,7 +20,7 @@ impl RuleOptions {
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
         allow_ref_pat_on_ref_mut: true,
-        simplify_expressions: true,
+        simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
         downgrade_shared_inside_shared: true,
     };
@@ -32,7 +32,7 @@ impl RuleOptions {
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Keep,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: true,
-        simplify_expressions: true,
+        simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
         downgrade_shared_inside_shared: false,
     };
@@ -40,7 +40,7 @@ impl RuleOptions {
     /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
     /// inspect the DBM, we only follow the types.
     pub const STATELESS: Self = RuleOptions {
-        simplify_expressions: false,
+        simplify_deref_mut: false,
         ..Self::PERMISSIVE
     };
 
@@ -57,7 +57,7 @@ impl RuleOptions {
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: false,
-        simplify_expressions: false,
+        simplify_deref_mut: false,
         eat_inherited_ref_alone: false,
         downgrade_shared_inside_shared: false,
     };

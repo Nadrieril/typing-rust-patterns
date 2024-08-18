@@ -5,7 +5,7 @@ info: "set restrictive\nset rules_display_style BindingMode\nrules"
 allow_ref_pat_on_ref_mut: true -> false
 eat_inherited_ref_alone: true -> false
 mut_binding_on_inherited: "Keep" -> "Error"
-simplify_expressions: true -> false
+simplify_deref_mut: true -> false
 rules_display_style: "Plain" -> "BindingMode"
 The current options can be fully described as the following set of rules.
 

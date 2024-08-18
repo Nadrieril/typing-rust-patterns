@@ -7,7 +7,7 @@ info:
     mut_binding_on_inherited: Error
     inherited_ref_on_ref: EatOuter
     allow_ref_pat_on_ref_mut: false
-    simplify_expressions: false
+    simplify_deref_mut: false
     eat_inherited_ref_alone: false
     downgrade_shared_inside_shared: false
     rules_display_style: BindingMode

@@ -51,7 +51,7 @@ pub struct RuleOptions {
     pub allow_ref_pat_on_ref_mut: bool,
     /// Whether to simplify some expressions, which removes some borrow errors involving mixes of
     /// `&mut` and `&`.
-    pub simplify_expressions: bool,
+    pub simplify_deref_mut: bool,
     /// If false, a reference pattern is only allowed if the _underlying place_ has a compatible
     /// reference type. This is RFC3627 rule 4.
     pub eat_inherited_ref_alone: bool,
@@ -92,9 +92,9 @@ impl RuleOptions {
             "whether to allow `&p: &mut T`",
         ),
         (
-            "simplify_expressions",
+            "simplify_deref_mut",
             "bool",
-            "whether to simplify some expressions, which removes some borrow errors",
+            "whether to simplify `*&mut expr`, which removes some borrow errors",
         ),
         (
             "eat_inherited_ref_alone",
@@ -119,7 +119,7 @@ impl RuleOptions {
             "mut_binding_on_inherited" => self.mut_binding_on_inherited = from_str(val)?,
             "inherited_ref_on_ref" => self.inherited_ref_on_ref = from_str(val)?,
             "allow_ref_pat_on_ref_mut" => self.allow_ref_pat_on_ref_mut = from_str(val)?,
-            "simplify_expressions" => self.simplify_expressions = from_str(val)?,
+            "simplify_deref_mut" => self.simplify_deref_mut = from_str(val)?,
             "eat_inherited_ref_alone" => self.eat_inherited_ref_alone = from_str(val)?,
             "downgrade_shared_inside_shared" => {
                 self.downgrade_shared_inside_shared = from_str(val)?
@@ -218,7 +218,7 @@ impl<'a> TypingPredicate<'a> {
             (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
                 let mtbl = min(outer_mtbl, inner_mtbl);
                 // Dereference the expression.
-                let mut expr = if ctx.options.simplify_expressions {
+                let mut expr = if ctx.options.simplify_deref_mut {
                     self.expr.deref_or_reset(a)
                 } else {
                     self.expr.deref(a)
@@ -291,7 +291,7 @@ impl<'a> TypingPredicate<'a> {
                 }
 
                 // Dereference the expression.
-                let expr = if ctx.options.simplify_expressions {
+                let expr = if ctx.options.simplify_deref_mut {
                     expr.deref_or_reset(a)
                 } else {
                     expr.deref(a)
