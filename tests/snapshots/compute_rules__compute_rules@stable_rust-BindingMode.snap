@@ -64,29 +64,29 @@ p @ **q: T
 -------------------------------------------------- "Deref(EatBoth)"
 &mut p @ q: &mut &mut T, binding_mode(q) = ref mut
 
-mut x @ *q: T
------------------------------------- "BindingResetBindingMode"
-mut x @ q: &T, binding_mode(q) = ref
-
-mut x @ *q: T
--------------------------------------------- "BindingResetBindingMode"
-mut x @ q: &mut T, binding_mode(q) = ref mut
-
 ref x @ *q: T
------------------------------------- "BindingResetBindingMode"
+------------------------------------ "RefBindingResetBindingMode"
 ref x @ q: &T, binding_mode(q) = ref
 
 ref x @ *q: T
--------------------------------------------- "BindingResetBindingMode"
+-------------------------------------------- "RefBindingResetBindingMode"
 ref x @ q: &mut T, binding_mode(q) = ref mut
 
 ref mut x @ *q: T
----------------------------------------- "BindingResetBindingMode"
+---------------------------------------- "RefBindingResetBindingMode"
 ref mut x @ q: &T, binding_mode(q) = ref
 
 ref mut x @ *q: T
------------------------------------------------- "BindingResetBindingMode"
+------------------------------------------------ "RefBindingResetBindingMode"
 ref mut x @ q: &mut T, binding_mode(q) = ref mut
+
+mut x @ *q: T
+------------------------------------ "MutBindingResetBindingMode"
+mut x @ q: &T, binding_mode(q) = ref
+
+mut x @ *q: T
+-------------------------------------------- "MutBindingResetBindingMode"
+mut x @ q: &mut T, binding_mode(q) = ref mut
 
 x @ &q: &T
 ------------------------------------ "BindingBorrow"

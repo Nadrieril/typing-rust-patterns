@@ -16,7 +16,7 @@ info:
 [ref mut x] @ p: &mut [T]
 // Applying rule `ConstructorRef`
 ref mut x @ &mut (*p).0: &mut T
-// Applying rule `BindingResetBindingMode`
+// Applying rule `RefBindingResetBindingMode`
 ref mut x @ (*p).0: T
 // Applying rule `BindingBorrow`
 x @ &mut (*p).0: &mut T

@@ -18,9 +18,9 @@ info:
 mut ref x @ &(*p).0: &T
 // Applying rule `BindingBorrow`
 mut x @ &&(*p).0: &&T
-// Applying rule `BindingResetBindingMode`
+// Applying rule `MutBindingResetBindingMode`
 mut x @ &(*p).0: &T
-// Applying rule `BindingResetBindingMode`
+// Applying rule `MutBindingResetBindingMode`
 mut x @ (*p).0: T
 // Applying rule `Binding`
 let mut x: T = (*p).0

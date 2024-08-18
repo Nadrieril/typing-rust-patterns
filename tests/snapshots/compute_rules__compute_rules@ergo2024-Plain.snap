@@ -89,19 +89,19 @@ p @ &mut *q: &mut T
 &p @ &mut q: &mut &mut T
 
 ref x @ q: T
--------------- "BindingResetBindingMode"
+-------------- "RefBindingResetBindingMode"
 ref x @ &q: &T
 
 ref x @ q: T
----------------------- "BindingResetBindingMode"
+---------------------- "RefBindingResetBindingMode"
 ref x @ &mut q: &mut T
 
 ref mut x @ q: T
------------------- "BindingResetBindingMode"
+------------------ "RefBindingResetBindingMode"
 ref mut x @ &q: &T
 
 ref mut x @ q: T
--------------------------- "BindingResetBindingMode"
+-------------------------- "RefBindingResetBindingMode"
 ref mut x @ &mut q: &mut T
 
 x @ &q: &T

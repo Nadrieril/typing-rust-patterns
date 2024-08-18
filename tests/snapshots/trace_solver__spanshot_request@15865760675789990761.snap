@@ -16,7 +16,7 @@ info:
 [ref x] @ p: &[T]
 // Applying rule `ConstructorRef`
 ref x @ &(*p).0: &T
-// Applying rule `BindingResetBindingMode`
+// Applying rule `RefBindingResetBindingMode`
 ref x @ (*p).0: T
 // Applying rule `BindingBorrow`
 x @ &(*p).0: &T

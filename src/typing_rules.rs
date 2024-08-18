@@ -145,7 +145,8 @@ pub enum Rule {
     ConstructorMultiRef,
     Deref(InheritedRefOnRefBehavior),
     DerefMutWithShared(InheritedRefOnRefBehavior),
-    BindingResetBindingMode,
+    RefBindingResetBindingMode,
+    MutBindingResetBindingMode,
     BindingBorrow,
     Binding,
     ExprSimplification,
@@ -356,7 +357,7 @@ impl<'a> TypingPredicate<'a> {
                             // This amounts to getting ahold of the referenced place and re-borrowing it
                             // with the requested mutability.
                             RefBindingOnInheritedBehavior::Skip => Ok((
-                                Rule::BindingResetBindingMode,
+                                Rule::RefBindingResetBindingMode,
                                 vec![Self {
                                     pat: self.pat,
                                     expr: self.expr.reset_binding_mode()?,
@@ -385,7 +386,7 @@ impl<'a> TypingPredicate<'a> {
                         match ctx.options.mut_binding_on_inherited {
                             // To replicate stable rust behavior, we reset the binding mode.
                             MutBindingOnInheritedBehavior::ResetBindingMode => Ok((
-                                Rule::BindingResetBindingMode,
+                                Rule::MutBindingResetBindingMode,
                                 vec![Self {
                                     pat: self.pat,
                                     expr: self.expr.reset_binding_mode()?,
