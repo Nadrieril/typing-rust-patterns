@@ -9,10 +9,10 @@ use Mutability::*;
 /// of the scrutinee).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum RefBindingOnInheritedBehavior {
+    /// Stable rust behavior: skip the borrow in the expression and re-borrow the inner.
+    ResetBindingMode,
     /// Borrow that expression, which requires allocating a temporary variable.
     AllocTemporary,
-    /// Stable rust behavior: skip the borrow in the expression and re-borrow the inner.
-    Skip,
     /// Treat this as an error.
     Error,
 }
@@ -72,7 +72,7 @@ impl RuleOptions {
         ),
         (
             "ref_binding_on_inherited",
-            "AllocTemporary | Skip | Error",
+            "ResetBindingMode | AllocTemporary | Error",
             "how to handle a `ref x` binding on an inherited reference",
         ),
         (
@@ -356,7 +356,7 @@ impl<'a> TypingPredicate<'a> {
                             // To replicate stable rust behavior, we inspect the binding mode and skip it.
                             // This amounts to getting ahold of the referenced place and re-borrowing it
                             // with the requested mutability.
-                            RefBindingOnInheritedBehavior::Skip => Ok((
+                            RefBindingOnInheritedBehavior::ResetBindingMode => Ok((
                                 Rule::RefBindingResetBindingMode,
                                 vec![Self {
                                     pat: self.pat,

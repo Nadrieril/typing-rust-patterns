@@ -76,7 +76,7 @@ Warning: option `downgrade_shared_inside_shared` is not represented in the rules
 +---------------------------------- "Binding"
 +mut x @ q: T, q is not a reference
 
-ref_binding_on_inherited: Skip
+ref_binding_on_inherited: ResetBindingMode
 mut_binding_on_inherited: Error
 inherited_ref_on_ref: EatInner
 allow_ref_pat_on_ref_mut: true

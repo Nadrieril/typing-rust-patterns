@@ -4,7 +4,7 @@ impl RuleOptions {
     /// Reproduces stable rust behavior.
     pub const STABLE_RUST: Self = RuleOptions {
         rules_display_style: TypingRuleStyle::Plain,
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
         allow_ref_pat_on_ref_mut: false,
@@ -16,7 +16,7 @@ impl RuleOptions {
     /// Reproduces RFC3627 (match ergonomics 2024) behavior
     pub const ERGO2024: Self = RuleOptions {
         rules_display_style: TypingRuleStyle::Plain,
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
         allow_ref_pat_on_ref_mut: true,
@@ -46,7 +46,7 @@ impl RuleOptions {
 
     /// The default setting for the solver. A reasonable proposal.
     pub const DEFAULT: Self = RuleOptions {
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         ..Self::PERMISSIVE
     };
 

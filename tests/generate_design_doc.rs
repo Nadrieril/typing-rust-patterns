@@ -5,7 +5,7 @@ use typing_rust_patterns::*;
 #[test]
 fn generate_design_doc() -> anyhow::Result<()> {
     let options = RuleOptions {
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         ..RuleOptions::PERMISSIVE
     };
 

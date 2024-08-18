@@ -3,7 +3,7 @@ source: tests/compute_rules.rs
 info:
   bundle_name: stable_rust
   options:
-    ref_binding_on_inherited: Skip
+    ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: ResetBindingMode
     inherited_ref_on_ref: EatBoth
     allow_ref_pat_on_ref_mut: false

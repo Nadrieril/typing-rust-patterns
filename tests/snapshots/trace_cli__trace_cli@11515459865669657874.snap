@@ -2,12 +2,12 @@
 source: tests/trace_cli.rs
 info: set ref_binding_on_inherited true
 ---
-Error: unknown variant `true`, expected one of `AllocTemporary`, `Skip`, `Error`
+Error: unknown variant `true`, expected one of `ResetBindingMode`, `AllocTemporary`, `Error`
 
 Options are:
 - rules_display_style: Plain | BindingMode
     how to display typing rules (in the `rules` command)
-- ref_binding_on_inherited: AllocTemporary | Skip | Error
+- ref_binding_on_inherited: ResetBindingMode | AllocTemporary | Error
     how to handle a `ref x` binding on an inherited reference
 - mut_binding_on_inherited: ResetBindingMode | Keep | Error
     how to handle a `mut x` binding on an inherited reference

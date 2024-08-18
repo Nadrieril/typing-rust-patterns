@@ -108,7 +108,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
         ),
         (
             RuleOptions {
-                ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
+                ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
                 ..RuleOptions::PERMISSIVE
             },
             &[
