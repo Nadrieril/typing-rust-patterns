@@ -72,6 +72,6 @@ let mut x: T = q
 ---------------- "Binding"
 mut x @ q: T
 
-p @ p: T
--------------- "ExprSimplification"
-p @ *&mut p: T
+p @ *q: T
+------------------------------------ "ExprSimplification"
+p @ *q: T, binding_mode(q) = ref mut

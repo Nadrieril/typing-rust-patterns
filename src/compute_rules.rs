@@ -195,7 +195,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     // doesn't trigger `OverlyGeneralExpr` errors.
     if ctx.options.simplify_expressions {
         let e = &Expression {
-            kind: ExprKind::Scrutinee,
+            kind: ExprKind::Abstract { not_a_ref: false },
             ty: &Type::Var("T"),
         };
         predicates.push(TypingPredicate {
