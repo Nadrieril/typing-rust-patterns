@@ -14,13 +14,13 @@ Options are:
     how to handle a `mut x` binding on an inherited reference
 - inherited_ref_on_ref: EatOuter | EatInner | EatBoth
     how to handle a reference pattern on a double reference when the outer one is inherited
-- allow_ref_pat_on_ref_mut: bool
+- allow_ref_pat_on_ref_mut: true | false
     whether to allow `&p: &mut T`
-- simplify_deref_mut: bool
+- simplify_deref_mut: true | false
     whether to simplify `*&mut expr`, which removes some borrow errors
-- eat_inherited_ref_alone: bool
+- eat_inherited_ref_alone: true | false
     whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`
-- downgrade_shared_inside_shared: bool
+- downgrade_shared_inside_shared: true | false
     RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref
 
 There also exist some predefined option-bundles. Activate one with `set bundle`
