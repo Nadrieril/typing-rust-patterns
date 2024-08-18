@@ -10,16 +10,16 @@ simplify_deref_mut: true -> false
 rules_display_style: "Plain" -> "BindingMode"
 The current options can be fully described as the following set of rules.
 
-p0 @ q.0: T0, p1 @ q.1: T1
--------------------------- "Constructor"
+p0 @ q.0: T0,  p1 @ q.1: T1
+--------------------------- "Constructor"
 [p0, p1] @ q: [T0, T1]
 
-p0 @ &(*q).0: &T0, p1 @ &(*q).1: &T1
------------------------------------- "ConstructorRef"
+p0 @ &(*q).0: &T0,  p1 @ &(*q).1: &T1
+------------------------------------- "ConstructorRef"
 [p0, p1] @ q: &[T0, T1]
 
-p0 @ &mut (*q).0: &mut T0, p1 @ &mut (*q).1: &mut T1
----------------------------------------------------- "ConstructorRef"
+p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
+----------------------------------------------------- "ConstructorRef"
 [p0, p1] @ q: &mut [T0, T1]
 
 [p0, p1] @ *q: &T

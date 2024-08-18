@@ -433,7 +433,7 @@ impl<'a> TypingRule<'a> {
         let preconditions_str = if rule.preconditions.is_empty() {
             rule.postcondition.display_as_let()
         } else {
-            rule.preconditions.iter().format(", ").to_string()
+            rule.preconditions.iter().format(",  ").to_string()
         };
 
         let len = max(preconditions_str.len(), postconditions_str.len());

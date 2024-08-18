@@ -12,16 +12,16 @@ info:
     downgrade_shared_inside_shared: false
     rules_display_style: Plain
 ---
-p0 @ q.0: T0, p1 @ q.1: T1
--------------------------- "Constructor"
+p0 @ q.0: T0,  p1 @ q.1: T1
+--------------------------- "Constructor"
 [p0, p1] @ q: [T0, T1]
 
-p0 @ &(*q).0: &T0, p1 @ &(*q).1: &T1
------------------------------------- "ConstructorRef"
+p0 @ &(*q).0: &T0,  p1 @ &(*q).1: &T1
+------------------------------------- "ConstructorRef"
 [p0, p1] @ q: &[T0, T1]
 
-p0 @ &mut (*q).0: &mut T0, p1 @ &mut (*q).1: &mut T1
----------------------------------------------------- "ConstructorRef"
+p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
+----------------------------------------------------- "ConstructorRef"
 [p0, p1] @ q: &mut [T0, T1]
 
 [p0, p1] @ *q: &T
