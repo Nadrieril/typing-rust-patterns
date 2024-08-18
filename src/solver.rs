@@ -100,7 +100,6 @@ pub fn trace_solver(request: &str, options: RuleOptions) -> anyhow::Result<Strin
         match solver.step(ctx) {
             Ok(rule) => {
                 let _ = write!(&mut trace, "// Applying rule `{rule:?}`\n");
-                eprintln!("{}\n", solver.display_state());
                 let _ = write!(&mut trace, "{}\n", solver.display_state());
             }
             Err(e) => {
