@@ -1,10 +1,7 @@
 ---
-source: tests/trace_cli.rs
-info: "set rules_display_style BindingMode\nrules"
+source: tests/compute_rules.rs
+info: restrictive
 ---
-rules_display_style: "Plain" -> "BindingMode"
-The current options can be fully described as the following set of rules.
-
 p0 @ q.0: T0, p1 @ q.1: T1
 -------------------------- "Constructor"
 [p0, p1] @ q: [T0, T1]
@@ -34,37 +31,41 @@ p0 @ &mut (*q).0: &mut T0, p1 @ &mut (*q).1: &mut T1
 [p0, p1] @ q: &mut &mut T
 
 p @ *q: T
----------- "Deref(EatOuter)"
-&p @ q: &T
+-------------------------------- "Deref(EatOuter)"
+&p @ q: &T, q is not a reference
+
+p @ *&q: &T
+------------ "Deref(EatOuter)"
+&p @ &q: &&T
+
+p @ *&q: &mut T
+---------------- "Deref(EatOuter)"
+&p @ &q: &&mut T
 
 p @ *q: T
------------------- "Deref(EatOuter)"
-&mut p @ q: &mut T
+---------------------------------------- "Deref(EatOuter)"
+&mut p @ q: &mut T, q is not a reference
 
-&p @ &*q: &T
--------------------------------------- "DerefMutWithShared(EatOuter)"
-&p @ q: &mut T, binding_mode(q) = move
+p @ *&mut q: &T
+------------------------ "Deref(EatOuter)"
+&mut p @ &mut q: &mut &T
 
-&p @ &*q: &T
------------------------------------------ "DerefMutWithShared(EatOuter)"
-&p @ q: &mut T, binding_mode(q) = ref mut
+p @ *&mut q: &mut T
+---------------------------- "Deref(EatOuter)"
+&mut p @ &mut q: &mut &mut T
 
 x @ &q: &T
------------------------------------- "BindingBorrow"
-ref x @ q: T, binding_mode(q) = move
+---------------------------------- "BindingBorrow"
+ref x @ q: T, q is not a reference
 
 x @ &mut q: &mut T
----------------------------------------- "BindingBorrow"
-ref mut x @ q: T, binding_mode(q) = move
+-------------------------------------- "BindingBorrow"
+ref mut x @ q: T, q is not a reference
 
 let x: T = q
 ------------ "Binding"
 x @ q: T
 
 let mut x: T = q
----------------- "Binding"
-mut x @ q: T
-
-p @ p: T
--------------- "ExprSimplification"
-p @ *&mut p: T
+---------------------------------- "Binding"
+mut x @ q: T, q is not a reference

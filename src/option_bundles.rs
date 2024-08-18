@@ -50,6 +50,18 @@ impl RuleOptions {
         ..Self::PERMISSIVE
     };
 
+    /// A restrictive set of rules that accepts very little. Used mainly for tests.
+    pub const RESTRICTIVE: Self = RuleOptions {
+        rules_display_style: TypingRuleStyle::Plain,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+        mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
+        allow_ref_pat_on_ref_mut: false,
+        simplify_expressions: false,
+        eat_inherited_ref_alone: false,
+        downgrade_shared_inside_shared: false,
+    };
+
     /// The known bundles, with a short explanation.
     pub const KNOWN_OPTION_BUNDLES: &[(&str, Self, &str)] = &[
         ("default", Self::NADRIS_PROPOSAL, "the default settings"),
@@ -57,6 +69,11 @@ impl RuleOptions {
             "permissive",
             Self::PERMISSIVE,
             "an even more permissive proposal than the default",
+        ),
+        (
+            "restrictive",
+            Self::RESTRICTIVE,
+            "a restrictive set of rules that accepts very little",
         ),
         (
             "stateless",
