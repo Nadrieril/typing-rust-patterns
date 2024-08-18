@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use serde::Serialize;
 use std::fmt::Write;
 use typing_rust_patterns::*;
@@ -11,11 +12,20 @@ struct TestCase {
 #[test]
 fn compute_rules() -> anyhow::Result<()> {
     let arenas = &Arenas::default();
-    for &(name, options, _) in RuleOptions::KNOWN_OPTION_BUNDLES {
-        let options = RuleOptions {
-            rules_display_style: TypingRuleStyle::BindingMode,
-            ..options
-        };
+
+    // Try both styles
+    let bundles = RuleOptions::KNOWN_OPTION_BUNDLES
+        .iter()
+        .cartesian_product([TypingRuleStyle::Plain, TypingRuleStyle::BindingMode])
+        .map(|(&(name, options, _), style)| {
+            let options = RuleOptions {
+                rules_display_style: style,
+                ..options
+            };
+            (name, options)
+        });
+
+    for (name, options) in bundles {
         let ctx = TypingCtx { arenas, options };
 
         let mut typing_rules = typing_rust_patterns::compute_rules(ctx);
@@ -35,7 +45,7 @@ fn compute_rules() -> anyhow::Result<()> {
             options,
         };
         insta::with_settings!({
-            snapshot_suffix => name,
+            snapshot_suffix => format!("{name}-{:?}", options.rules_display_style),
             info => &info,
             omit_expression => true,
             prepend_module_to_snapshot => true,
