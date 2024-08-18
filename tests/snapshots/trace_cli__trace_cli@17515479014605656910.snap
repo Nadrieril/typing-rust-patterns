@@ -23,7 +23,7 @@ Options are:
     RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref
 
 There also exist some predefined option-bundles. Activate one with `set bundle`
-- default: the default settings
+- default: the default settings; a reasonable proposal
 - permissive: an even more permissive proposal than the default
 - restrictive: a restrictive set of rules that accepts very little
 - stateless: a proposal that tracks no hidden state; purely type-based

@@ -10,12 +10,12 @@ info:
     eat_inherited_ref_alone: true
     downgrade_shared_inside_shared: false
     rules_display_style: Plain
-  bundle_name: ~
-  request: "[ref x]: &mut [T]"
+  bundle_name: default
+  request: "[ref x]: &[T]"
 ---
-[ref x] @ p: &mut [T]
+[ref x] @ p: &[T]
 // Applying rule `ConstructorRef`
-ref x @ &mut (*p).0: &mut T
+ref x @ &(*p).0: &T
 // Applying rule `BindingOverrideBorrow`
 x @ &(*p).0: &T
 // Applying rule `Binding`

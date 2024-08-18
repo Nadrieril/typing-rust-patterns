@@ -3,7 +3,7 @@ source: tests/compute_rules.rs
 info:
   bundle_name: default
   options:
-    ref_binding_on_inherited: Error
+    ref_binding_on_inherited: Skip
     mut_binding_on_inherited: Keep
     inherited_ref_on_ref: EatOuter
     allow_ref_pat_on_ref_mut: true
@@ -51,6 +51,22 @@ p @ *q: T
 &p @ &*q: &T
 -------------- "DerefMutWithShared(EatOuter)"
 &p @ q: &mut T
+
+x @ &q: &T
+-------------- "BindingOverrideBorrow"
+ref x @ &q: &T
+
+x @ &q: &T
+---------------------- "BindingOverrideBorrow"
+ref x @ &mut q: &mut T
+
+x @ &mut q: &mut T
+------------------ "BindingOverrideBorrow"
+ref mut x @ &q: &T
+
+x @ &mut q: &mut T
+-------------------------- "BindingOverrideBorrow"
+ref mut x @ &mut q: &mut T
 
 x @ &q: &T
 ---------------------------------- "BindingBorrow"

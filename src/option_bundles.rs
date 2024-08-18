@@ -44,9 +44,9 @@ impl RuleOptions {
         ..Self::PERMISSIVE
     };
 
-    /// My favored proposal.
-    pub const NADRIS_PROPOSAL: Self = RuleOptions {
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+    /// The default setting for the solver. A reasonable proposal.
+    pub const DEFAULT: Self = RuleOptions {
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Skip,
         ..Self::PERMISSIVE
     };
 
@@ -64,7 +64,11 @@ impl RuleOptions {
 
     /// The known bundles, with a short explanation.
     pub const KNOWN_OPTION_BUNDLES: &[(&str, Self, &str)] = &[
-        ("default", Self::NADRIS_PROPOSAL, "the default settings"),
+        (
+            "default",
+            Self::DEFAULT,
+            "the default settings; a reasonable proposal",
+        ),
         (
             "permissive",
             Self::PERMISSIVE,

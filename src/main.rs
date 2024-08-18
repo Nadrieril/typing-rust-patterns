@@ -19,7 +19,7 @@ fn main() -> anyhow::Result<()> {
         println!("");
     }
 
-    let mut options = RuleOptions::NADRIS_PROPOSAL;
+    let mut options = RuleOptions::DEFAULT;
 
     let mut history = Vec::new();
     let prompt = |history: &[_]| {
