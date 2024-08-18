@@ -145,7 +145,6 @@ pub enum Rule {
     ConstructorMultiRef,
     Deref(InheritedRefOnRefBehavior),
     DerefMutWithShared(InheritedRefOnRefBehavior),
-    BindingOverrideBorrow,
     BindingResetBindingMode,
     BindingBorrow,
     Binding,
@@ -357,10 +356,10 @@ impl<'a> TypingPredicate<'a> {
                             // This amounts to getting ahold of the referenced place and re-borrowing it
                             // with the requested mutability.
                             RefBindingOnInheritedBehavior::Skip => Ok((
-                                Rule::BindingOverrideBorrow,
+                                Rule::BindingResetBindingMode,
                                 vec![Self {
-                                    pat: P::Binding(mtbl, ByMove, name).alloc(a),
-                                    expr: self.expr.reset_binding_mode()?.borrow(a, by_ref_mtbl),
+                                    pat: self.pat,
+                                    expr: self.expr.reset_binding_mode()?,
                                 }],
                             )),
                             RefBindingOnInheritedBehavior::Error => Err(TypeError::RefOnRef),

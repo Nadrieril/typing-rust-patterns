@@ -16,7 +16,9 @@ info:
 [ref x] @ p: &mut [T]
 // Applying rule `ConstructorRef`
 ref x @ &mut (*p).0: &mut T
-// Applying rule `BindingOverrideBorrow`
+// Applying rule `BindingResetBindingMode`
+ref x @ (*p).0: T
+// Applying rule `BindingBorrow`
 x @ &(*p).0: &T
 // Applying rule `Binding`
 let x: &T = &(*p).0

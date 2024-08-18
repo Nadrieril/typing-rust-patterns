@@ -88,20 +88,20 @@ p @ &mut *q: &mut T
 ------------------------ "DerefMutWithShared(EatInner)"
 &p @ &mut q: &mut &mut T
 
-x @ &q: &T
--------------- "BindingOverrideBorrow"
+ref x @ q: T
+-------------- "BindingResetBindingMode"
 ref x @ &q: &T
 
-x @ &q: &T
----------------------- "BindingOverrideBorrow"
+ref x @ q: T
+---------------------- "BindingResetBindingMode"
 ref x @ &mut q: &mut T
 
-x @ &mut q: &mut T
------------------- "BindingOverrideBorrow"
+ref mut x @ q: T
+------------------ "BindingResetBindingMode"
 ref mut x @ &q: &T
 
-x @ &mut q: &mut T
--------------------------- "BindingOverrideBorrow"
+ref mut x @ q: T
+-------------------------- "BindingResetBindingMode"
 ref mut x @ &mut q: &mut T
 
 x @ &q: &T

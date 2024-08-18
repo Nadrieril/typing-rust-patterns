@@ -64,22 +64,6 @@ p @ **q: T
 -------------------------------------------------- "Deref(EatBoth)"
 &mut p @ q: &mut &mut T, binding_mode(q) = ref mut
 
-x @ q: &T
------------------------------------- "BindingOverrideBorrow"
-ref x @ q: &T, binding_mode(q) = ref
-
-x @ &*q: &T
--------------------------------------------- "BindingOverrideBorrow"
-ref x @ q: &mut T, binding_mode(q) = ref mut
-
-x @ &mut *q: &mut T
----------------------------------------- "BindingOverrideBorrow"
-ref mut x @ q: &T, binding_mode(q) = ref
-
-x @ q: &mut T
------------------------------------------------- "BindingOverrideBorrow"
-ref mut x @ q: &mut T, binding_mode(q) = ref mut
-
 mut x @ *q: T
 ------------------------------------ "BindingResetBindingMode"
 mut x @ q: &T, binding_mode(q) = ref
@@ -87,6 +71,22 @@ mut x @ q: &T, binding_mode(q) = ref
 mut x @ *q: T
 -------------------------------------------- "BindingResetBindingMode"
 mut x @ q: &mut T, binding_mode(q) = ref mut
+
+ref x @ *q: T
+------------------------------------ "BindingResetBindingMode"
+ref x @ q: &T, binding_mode(q) = ref
+
+ref x @ *q: T
+-------------------------------------------- "BindingResetBindingMode"
+ref x @ q: &mut T, binding_mode(q) = ref mut
+
+ref mut x @ *q: T
+---------------------------------------- "BindingResetBindingMode"
+ref mut x @ q: &T, binding_mode(q) = ref
+
+ref mut x @ *q: T
+------------------------------------------------ "BindingResetBindingMode"
+ref mut x @ q: &mut T, binding_mode(q) = ref mut
 
 x @ &q: &T
 ------------------------------------ "BindingBorrow"
