@@ -1,16 +1,7 @@
 use itertools::Itertools;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::*;
-
-impl Display for Mutability {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Mutable => f.write_str("mut "),
-            Self::Shared => Ok(()),
-        }
-    }
-}
 
 impl BindingMode {
     pub fn name(self) -> &'static str {
@@ -26,6 +17,32 @@ impl BindingMode {
             BindingMode::ByMove => "",
             BindingMode::ByRef(Mutability::Shared) => "&",
             BindingMode::ByRef(Mutability::Mutable) => "&mut ",
+        }
+    }
+}
+
+impl<'a> TypingPredicate<'a> {
+    /// Display as `let ...`.
+    pub fn display_as_let(&self) -> String {
+        format!("let {}: {} = {}", self.pat, self.expr.ty, self.expr)
+    }
+
+    /// Display with the binding mode on the pattern. This doesn't make complete sense.
+    pub fn display_with_bm(&self) -> String {
+        if let Ok(bm) = self.expr.binding_mode() {
+            let expr = self.expr.reset_binding_mode().unwrap();
+            format!("{} ({}) @ {}: {}", bm.name(), self.pat, expr, expr.ty)
+        } else {
+            self.to_string()
+        }
+    }
+}
+
+impl Display for Mutability {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Mutable => f.write_str("mut "),
+            Self::Shared => Ok(()),
         }
     }
 }
@@ -97,19 +114,50 @@ impl Display for TypingPredicate<'_> {
     }
 }
 
-impl<'a> TypingPredicate<'a> {
-    /// Display as `let ...`.
-    pub fn display_as_let(&self) -> String {
-        format!("let {}: {} = {}", self.pat, self.expr.ty, self.expr)
+impl Debug for Mutability {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
     }
+}
 
-    /// Display with the binding mode on the pattern. This doesn't make complete sense.
-    pub fn display_with_bm(&self) -> String {
-        if let Ok(bm) = self.expr.binding_mode() {
-            let expr = self.expr.reset_binding_mode().unwrap();
-            format!("{} ({}) @ {}: {}", bm.name(), self.pat, expr, expr.ty)
-        } else {
-            self.to_string()
-        }
+impl Debug for BindingMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
+    }
+}
+
+impl Debug for Pattern<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
+    }
+}
+
+impl Debug for Type<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
+    }
+}
+
+impl Debug for Expression<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
+    }
+}
+
+impl Debug for ExprKind<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
+    }
+}
+
+impl Debug for TypingRequest<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
+    }
+}
+
+impl Debug for TypingPredicate<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
     }
 }

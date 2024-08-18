@@ -35,7 +35,7 @@ pub enum MutBindingOnInheritedBehavior {
 pub enum InheritedRefOnRefBehavior {
     /// Eat only the outer one.
     EatOuter,
-    /// Eat the inner one, keeping the outer one (aka binding mode). This is RFC3627 rule 2.
+    /// Eat the inner one if possible, keeping the outer one (aka binding mode). This is RFC3627 rule 2.
     EatInner,
     /// Stable rust behavior: the ref pattern consumes both layers of reference type.
     EatBoth,
@@ -267,6 +267,8 @@ impl<'a> TypingPredicate<'a> {
                                     }
                                 }
                                 InheritedRefOnRefBehavior::EatInner => {
+                                    // TODO: if there is a mutability mismatch, eat the outer one
+                                    // instead.
                                     reborrow_after = Some(t_mtbl);
                                     t_mtbl = *inner_mtbl;
                                     underlying_place.deref(a)

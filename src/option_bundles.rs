@@ -74,6 +74,8 @@ impl RuleOptions {
             Self::PERMISSIVE,
             "an even more permissive proposal than the default",
         ),
+        // TODO: add "no match ergonomics" ruleset
+        // TODO: rename "bundle" to "ruleset"
         (
             "restrictive",
             Self::RESTRICTIVE,

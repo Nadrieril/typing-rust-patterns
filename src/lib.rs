@@ -3,6 +3,7 @@
 
 mod analysis;
 mod ast;
+mod compare;
 mod compute_rules;
 mod option_bundles;
 mod parser;
@@ -12,6 +13,7 @@ mod typing_rules;
 
 pub use analysis::*;
 pub use ast::*;
+pub use compare::*;
 pub use compute_rules::*;
 pub use solver::*;
 pub use typing_rules::*;

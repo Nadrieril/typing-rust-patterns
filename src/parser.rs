@@ -49,6 +49,12 @@ impl<'a> TypingRequest<'a> {
     }
 }
 
+impl<'a> Type<'a> {
+    pub fn parse(ctx: &'a Arenas<'a>, i: &str) -> Result<Self, ErrorTree<String>> {
+        parse_complete(parse_type(ctx), i)
+    }
+}
+
 fn parse_typing_request<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, TypingRequest<'a>, E>
 where
     E: ParseError<&'i str>,

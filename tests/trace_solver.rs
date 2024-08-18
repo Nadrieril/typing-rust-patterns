@@ -151,6 +151,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
                 "[mut x]: &[T]",
                 "[&mut x]: &[&mut T]",
                 "[&mut &x]: &[&mut T]",
+                "[&mut x]: &mut [&T]", // The tricky case of rule 4
             ],
         ),
     ];
