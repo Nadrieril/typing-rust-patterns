@@ -119,7 +119,3 @@ x @ q: T
 let mut x: T = q
 ------------------------------------ "Binding"
 mut x @ q: T, binding_mode(q) = move
-
-p @ *q: T
------------------------------------- "ExprSimplification"
-p @ *q: T, binding_mode(q) = ref mut

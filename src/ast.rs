@@ -102,6 +102,16 @@ impl<'a> Expression<'a> {
         }
     }
 
+    /// Dereference, or reset the binding mode if it was mutable (this strictly removes borrow
+    /// errors).
+    pub fn deref_or_reset(&self, a: &'a Arenas<'a>) -> Self {
+        if self.binding_mode().is_ok_and(|bm| bm == ByRef(Mutable)) {
+            self.reset_binding_mode().unwrap()
+        } else {
+            self.deref(a)
+        }
+    }
+
     /// Borrow the expression.
     pub fn borrow(&self, arenas: &'a Arenas<'a>, mtbl: Mutability) -> Self {
         Expression {

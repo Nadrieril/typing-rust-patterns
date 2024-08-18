@@ -175,39 +175,15 @@ impl<'a> TypingPredicate<'a> {
     }
 
     /// Apply one step of rule to this predicate.
-    /// Note: The expression simplification rules and the `downgrade_shared_inside_shared` option
-    /// are special: they inspect `self.expr` in non-trivial ways.
-    /// All the other rules inspect exclusively: `self.pat`, `self.expr.ty`, `self.expr.binding_mode()`.
-    /// To be even more precise, they inspect:
-    /// - `self.pat` at depth <= 1;
-    /// - `self.expr.ty` at depth <= 2;
-    /// - `self.expr.binding_mode()`.
+    /// Note: The `downgrade_shared_inside_shared` option is special: it inspects `self.expr` in
+    /// non-trivial ways.
+    /// All the other rules inspect `self.pat`, `self.expr.ty`, `self.expr.binding_mode()` up to a
+    /// fixed depth. We trigger `OverlyGeneral` errors it the rules needs more information to
+    /// decide what to do. This is how we can auto-generate the rules listings.
     pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), TypeError> {
-        use ExprKind as E;
         use Pattern as P;
         use Type as T;
         let a = ctx.arenas;
-
-        if ctx.options.simplify_expressions {
-            // Expression simplification rule. We match on `*&mut e`.
-            match self.expr.kind {
-                E::Deref(Expression {
-                    kind: E::Ref(Mutable, &e),
-                    ..
-                }) => {
-                    return Ok((
-                        Rule::ExprSimplification,
-                        vec![Self {
-                            pat: self.pat,
-                            expr: e,
-                        }],
-                    ))
-                }
-                // Note: we technically should error on `Expr::Abstract` here. That would
-                // enormously complexify the rules listing however, so we don't.
-                _ => {}
-            }
-        }
 
         match (*self.pat, *self.expr.ty) {
             // Constructor rules
@@ -241,7 +217,13 @@ impl<'a> TypingPredicate<'a> {
             (P::Tuple(_), T::Ref(_, T::Tuple(_))) => Err(TypeError::TypeMismatch),
             (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
                 let mtbl = min(outer_mtbl, inner_mtbl);
-                let mut expr = self.expr.deref(a);
+                // Dereference the expression.
+                let mut expr = if ctx.options.simplify_expressions {
+                    self.expr.deref_or_reset(a)
+                } else {
+                    self.expr.deref(a)
+                };
+
                 if let Mutable = inner_mtbl {
                     // Reborrow
                     expr = expr.deref(a).borrow_cap_mutability(
@@ -266,7 +248,7 @@ impl<'a> TypingPredicate<'a> {
                 let mut expr = self.expr;
                 let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
                 let mut reborrow_after = None;
-                let mut did_reset_bm = false;
+
                 // Only inspect the binding mode if there are options that need it.
                 if !matches!(
                     ctx.options.inherited_ref_on_ref,
@@ -275,6 +257,8 @@ impl<'a> TypingPredicate<'a> {
                 {
                     let bm = self.expr.binding_mode()?;
                     if matches!(bm, ByRef(..)) {
+                        // The reference is inherited: options differ in their treatment of this
+                        // case.
                         let type_of_underlying_place = self.expr.reset_binding_mode()?.ty;
                         match type_of_underlying_place {
                             T::Ref(inner_mtbl, _) => {
@@ -283,13 +267,11 @@ impl<'a> TypingPredicate<'a> {
                                     InheritedRefOnRefBehavior::EatOuter => {}
                                     InheritedRefOnRefBehavior::EatInner => {
                                         expr = expr.reset_binding_mode()?;
-                                        did_reset_bm = true;
                                         reborrow_after = Some(t_mtbl);
                                         t_mtbl = *inner_mtbl;
                                     }
                                     InheritedRefOnRefBehavior::EatBoth => {
                                         expr = expr.reset_binding_mode()?;
-                                        did_reset_bm = true;
                                         t_mtbl = *inner_mtbl;
                                     }
                                 }
@@ -307,37 +289,32 @@ impl<'a> TypingPredicate<'a> {
                         }
                     }
                 }
+
+                // Dereference the expression.
+                let expr = if ctx.options.simplify_expressions {
+                    expr.deref_or_reset(a)
+                } else {
+                    expr.deref(a)
+                };
+
+                // Match the pattern reference against the appropriate type reference.
                 let (rule, mut pred) = match (p_mtbl, t_mtbl) {
-                    (Shared, Shared) | (Mutable, Mutable) => (
-                        Rule::Deref(rule_variant),
+                    // Dereference the expression, use the inner pattern.
+                    (Shared, Shared) | (Mutable, Mutable) => {
+                        (Rule::Deref(rule_variant), Self { pat: p_inner, expr })
+                    }
+                    // Reborrow the expression, continue with the same pattern.
+                    (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => (
+                        Rule::DerefMutWithShared(rule_variant),
                         Self {
-                            pat: p_inner,
-                            expr: expr.deref(a),
+                            pat: self.pat,
+                            expr: expr.borrow(a, Shared),
                         },
                     ),
-                    (Shared, Mutable) => {
-                        if ctx.options.allow_ref_pat_on_ref_mut {
-                            let expr = if ctx.options.simplify_expressions
-                                && !did_reset_bm
-                                && self.expr.binding_mode()? == ByRef(Mutable)
-                            {
-                                expr.reset_binding_mode()?
-                            } else {
-                                expr.deref(a)
-                            };
-                            (
-                                Rule::DerefMutWithShared(rule_variant),
-                                Self {
-                                    pat: self.pat,
-                                    expr: expr.borrow(a, Shared),
-                                },
-                            )
-                        } else {
-                            return Err(TypeError::MutabilityMismatch);
-                        }
-                    }
+                    (Shared, Mutable) => return Err(TypeError::MutabilityMismatch),
                     (Mutable, Shared) => return Err(TypeError::MutabilityMismatch),
                 };
+
                 if let Some(mtbl) = reborrow_after {
                     pred.expr = pred.expr.borrow_cap_mutability(
                         a,
@@ -345,6 +322,7 @@ impl<'a> TypingPredicate<'a> {
                         ctx.options.downgrade_shared_inside_shared,
                     );
                 }
+
                 Ok((rule, vec![pred]))
             }
             (P::Ref(..), T::Tuple(..)) => Err(TypeError::TypeMismatch),

@@ -161,10 +161,8 @@ impl<'a> Expression<'a> {
                 .into_iter()
                 .map(|e| e.borrow(a, mtbl))
                 .collect(),
-            // We never generate these.
-            ExprKind::Deref(_) | ExprKind::Field(_, _) => {
-                unreachable!()
-            }
+            ExprKind::Deref(e) => e.deepen_ty(a).into_iter().map(|e| e.deref(a)).collect(),
+            ExprKind::Field(e, n) => e.deepen_ty(a).into_iter().map(|e| e.field(a, n)).collect(),
         }
     }
 }
@@ -175,12 +173,8 @@ const TRACE: bool = false;
 /// with a dummy predicate with abstract pattern, expression and type, and recursively refine it as
 /// long as we get `OverlyGeneral` errors. This ensures we explore all possible cases.
 ///
-/// Notable exceptions are the "ExprSimplification" rules and `downgrade_shared_inside_shared`
-/// option, which don't trigger `OverlyGeneral` errors despite the fact that they inspect the
-/// expression. For the simplification rules, the alternative would be overly detailed rules
-/// (enough to be disjoint, this would entail specializing every single rule for all possible
-/// expressions until depth 2 :')). For `downgrade_shared_inside_shared`, it's not possible to
-/// describe it as a rule without tracking aditional state.
+/// Notable exception is the `downgrade_shared_inside_shared`, which is not possible to describe it
+/// as a rule without tracking additional state. As such, it won't emit `OverlyGeneral` errors.
 pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     let a = ctx.arenas;
     let mut predicates = vec![TypingPredicate {
@@ -190,19 +184,6 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
             ty: Type::Var("T").alloc(a),
         },
     }];
-
-    // Add the special expression simplification predicate because we won't explore it since it
-    // doesn't trigger `OverlyGeneralExpr` errors.
-    if ctx.options.simplify_expressions {
-        let e = &Expression {
-            kind: ExprKind::Abstract { not_a_ref: false },
-            ty: &Type::Var("T"),
-        };
-        predicates.push(TypingPredicate {
-            pat: &Pattern::Abstract("p"),
-            expr: e.borrow(a, Mutable).deref(a),
-        });
-    }
 
     let mut rules = Vec::new();
     while let Some(pred) = predicates.pop() {
