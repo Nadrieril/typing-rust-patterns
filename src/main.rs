@@ -279,11 +279,24 @@ impl inquire::Autocomplete for Autocomplete {
         if suggestion.is_some() {
             Ok(suggestion)
         } else {
-            let suggestions = self.get_suggestions(input)?;
-            if let Ok([completion]) = <Vec<_> as TryInto<[_; 1]>>::try_into(suggestions) {
-                Ok(Some(completion))
-            } else {
+            let suggestions: Vec<String> = self.get_suggestions(input)?;
+            if suggestions.is_empty() {
+                return Ok(None);
+            }
+
+            let mut longest_common_prefix = "";
+            let len = suggestions.iter().map(|s| s.len()).min().unwrap();
+            for i in 0..=len {
+                if suggestions.iter().map(|s| &s[..i]).all_equal() {
+                    longest_common_prefix = &suggestions[0][..i];
+                } else {
+                    break;
+                }
+            }
+            if longest_common_prefix.is_empty() {
                 Ok(None)
+            } else {
+                Ok(Some(longest_common_prefix.to_string()))
             }
         }
     }
