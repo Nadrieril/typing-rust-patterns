@@ -244,16 +244,21 @@ impl inquire::Autocomplete for Autocomplete {
         if input.is_empty() {
             return Ok(ret);
         }
-        let input = input.to_lowercase();
+        let input = &input.to_lowercase();
 
         for &cmd in COMMANDS {
-            if cmd.starts_with(&input) && cmd != input {
+            if cmd.starts_with(input) && cmd != input {
                 ret.push(format!("{cmd}"))
             }
         }
 
         if let Some(opt) = input.strip_prefix("set") {
             let opt = opt.trim();
+            for &(bundle, _, _) in RuleOptions::KNOWN_OPTION_BUNDLES {
+                if bundle.starts_with(opt) {
+                    ret.push(format!("set {bundle}"))
+                }
+            }
             for &(name, values, _) in RuleOptions::OPTIONS_DOC {
                 if let Some(val) = opt.strip_prefix(name) {
                     let val = val.trim();
