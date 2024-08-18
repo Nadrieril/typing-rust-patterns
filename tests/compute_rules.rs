@@ -1,6 +1,12 @@
+use serde::Serialize;
 use std::fmt::Write;
-
 use typing_rust_patterns::*;
+
+#[derive(Serialize)]
+struct TestCase {
+    bundle_name: &'static str,
+    options: RuleOptions,
+}
 
 #[test]
 fn compute_rules() -> anyhow::Result<()> {
@@ -24,9 +30,13 @@ fn compute_rules() -> anyhow::Result<()> {
             );
         }
 
+        let info = TestCase {
+            bundle_name: name,
+            options,
+        };
         insta::with_settings!({
             snapshot_suffix => name,
-            info => &name,
+            info => &info,
             omit_expression => true,
             prepend_module_to_snapshot => true,
         }, {

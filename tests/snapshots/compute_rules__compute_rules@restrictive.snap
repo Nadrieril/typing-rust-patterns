@@ -1,6 +1,16 @@
 ---
 source: tests/compute_rules.rs
-info: restrictive
+info:
+  bundle_name: restrictive
+  options:
+    ref_binding_on_inherited: Error
+    mut_binding_on_inherited: Error
+    inherited_ref_on_ref: EatOuter
+    allow_ref_pat_on_ref_mut: false
+    simplify_expressions: false
+    eat_inherited_ref_alone: false
+    downgrade_shared_inside_shared: false
+    rules_display_style: BindingMode
 ---
 p0 @ q.0: T0, p1 @ q.1: T1
 -------------------------- "Constructor"

@@ -1,6 +1,16 @@
 ---
 source: tests/compute_rules.rs
-info: permissive
+info:
+  bundle_name: permissive
+  options:
+    ref_binding_on_inherited: AllocTemporary
+    mut_binding_on_inherited: Keep
+    inherited_ref_on_ref: EatOuter
+    allow_ref_pat_on_ref_mut: true
+    simplify_expressions: true
+    eat_inherited_ref_alone: true
+    downgrade_shared_inside_shared: false
+    rules_display_style: BindingMode
 ---
 p0 @ q.0: T0, p1 @ q.1: T1
 -------------------------- "Constructor"

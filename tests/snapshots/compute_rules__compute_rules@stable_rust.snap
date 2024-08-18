@@ -1,6 +1,16 @@
 ---
 source: tests/compute_rules.rs
-info: stable_rust
+info:
+  bundle_name: stable_rust
+  options:
+    ref_binding_on_inherited: Skip
+    mut_binding_on_inherited: ResetBindingMode
+    inherited_ref_on_ref: EatBoth
+    allow_ref_pat_on_ref_mut: false
+    simplify_expressions: false
+    eat_inherited_ref_alone: false
+    downgrade_shared_inside_shared: false
+    rules_display_style: BindingMode
 ---
 p0 @ q.0: T0, p1 @ q.1: T1
 -------------------------- "Constructor"
