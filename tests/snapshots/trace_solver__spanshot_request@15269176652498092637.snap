@@ -17,11 +17,11 @@ info:
 // Applying rule `ConstructorRef`
 &x @ &mut (*p).0: &mut &T
 // Applying rule `DerefMutWithShared(EatOuter)`
-&x @ &(*p).0: &&T
+&x @ &*&mut (*p).0: &&T
 // Applying rule `Deref(EatOuter)`
-x @ *&(*p).0: &T
+x @ *&*&mut (*p).0: &T
 // Applying rule `Binding`
-let x: &T = *&(*p).0
+let x: &T = *&*&mut (*p).0
 
 // Final bindings (simplified):
 let x: &T = (*p).0

@@ -156,6 +156,7 @@ pub enum Rule {
 pub enum TypeError {
     TypeMismatch,
     MutabilityMismatch,
+    InheritedRefIsAlone,
     RefOnRef,
     MutOnRef,
     OverlyGeneralPattern,
@@ -217,13 +218,7 @@ impl<'a> TypingPredicate<'a> {
             (P::Tuple(_), T::Ref(_, T::Tuple(_))) => Err(TypeError::TypeMismatch),
             (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
                 let mtbl = min(outer_mtbl, inner_mtbl);
-                // Dereference the expression.
-                let mut expr = if ctx.options.simplify_deref_mut {
-                    self.expr.deref_or_reset(a)
-                } else {
-                    self.expr.deref(a)
-                };
-
+                let mut expr = self.expr.deref(a);
                 if let Mutable = inner_mtbl {
                     // Reborrow
                     expr = expr.deref(a).borrow_cap_mutability(
@@ -245,56 +240,56 @@ impl<'a> TypingPredicate<'a> {
 
             // Dereference rules
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
-                let mut expr = self.expr;
                 let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
                 let mut reborrow_after = None;
 
-                // Only inspect the binding mode if there are options that need it.
-                if !matches!(
+                // We only inspect the binding mode if there are options that need it.
+                let must_inspect_bm = matches!(
                     ctx.options.inherited_ref_on_ref,
-                    InheritedRefOnRefBehavior::EatOuter
-                ) || !ctx.options.eat_inherited_ref_alone
-                {
-                    let bm = self.expr.binding_mode()?;
-                    if matches!(bm, ByRef(..)) {
-                        // The reference is inherited: options differ in their treatment of this
-                        // case.
-                        let type_of_underlying_place = self.expr.reset_binding_mode()?.ty;
-                        match type_of_underlying_place {
-                            T::Ref(inner_mtbl, _) => {
-                                rule_variant = ctx.options.inherited_ref_on_ref;
-                                match ctx.options.inherited_ref_on_ref {
-                                    InheritedRefOnRefBehavior::EatOuter => {}
-                                    InheritedRefOnRefBehavior::EatInner => {
-                                        expr = expr.reset_binding_mode()?;
-                                        reborrow_after = Some(t_mtbl);
-                                        t_mtbl = *inner_mtbl;
-                                    }
-                                    InheritedRefOnRefBehavior::EatBoth => {
-                                        expr = expr.reset_binding_mode()?;
-                                        t_mtbl = *inner_mtbl;
+                    InheritedRefOnRefBehavior::EatInner | InheritedRefOnRefBehavior::EatBoth
+                ) || !ctx.options.eat_inherited_ref_alone;
+                // Construct the dereferenced expression.
+                let expr = if must_inspect_bm && let ByRef(bm_mtbl) = self.expr.binding_mode()? {
+                    // The reference is inherited; options differ in their treatment of this case.
+                    let underlying_place = self.expr.reset_binding_mode()?;
+                    match underlying_place.ty {
+                        T::Ref(inner_mtbl, _) => {
+                            rule_variant = ctx.options.inherited_ref_on_ref;
+                            match ctx.options.inherited_ref_on_ref {
+                                InheritedRefOnRefBehavior::EatOuter => {
+                                    if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
+                                        underlying_place
+                                    } else {
+                                        self.expr.deref(a)
                                     }
                                 }
+                                InheritedRefOnRefBehavior::EatInner => {
+                                    reborrow_after = Some(t_mtbl);
+                                    t_mtbl = *inner_mtbl;
+                                    underlying_place.deref(a)
+                                }
+                                InheritedRefOnRefBehavior::EatBoth => {
+                                    t_mtbl = *inner_mtbl;
+                                    underlying_place.deref(a)
+                                }
                             }
-                            T::Var(_) => {
-                                return Err(TypeError::OverlyGeneralType);
+                        }
+                        T::Tuple(_) if ctx.options.eat_inherited_ref_alone => {
+                            if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
+                                underlying_place
+                            } else {
+                                self.expr.deref(a)
                             }
-                            // The underlying place is not a reference, so we can't eat the inherited
-                            // reference.
-                            T::Tuple(_) if !ctx.options.eat_inherited_ref_alone => {
-                                return Err(TypeError::TypeMismatch);
-                            }
-                            // Continue
-                            T::Tuple(_) => {}
+                        }
+                        T::Tuple(_) => {
+                            return Err(TypeError::InheritedRefIsAlone);
+                        }
+                        T::Var(_) => {
+                            return Err(TypeError::OverlyGeneralType);
                         }
                     }
-                }
-
-                // Dereference the expression.
-                let expr = if ctx.options.simplify_deref_mut {
-                    expr.deref_or_reset(a)
                 } else {
-                    expr.deref(a)
+                    self.expr.deref(a)
                 };
 
                 // Match the pattern reference against the appropriate type reference.
@@ -316,6 +311,7 @@ impl<'a> TypingPredicate<'a> {
                 };
 
                 if let Some(mtbl) = reborrow_after {
+                    // If we were matching under the inherited reference, we restore it here.
                     pred.expr = pred.expr.borrow_cap_mutability(
                         a,
                         mtbl,

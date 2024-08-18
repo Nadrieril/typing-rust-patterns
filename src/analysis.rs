@@ -97,50 +97,60 @@ impl<'a> Expression<'a> {
 
     /// Simplify this expression without changing its semantics. In particular, this should not
     /// change borrow-checking behavior.
-    pub fn simplify(&self, a: &'a Arenas<'a>) -> Self {
-        self.simplify_inner(a, true)
+    pub fn simplify(&self, ctx: TypingCtx<'a>) -> Self {
+        self.simplify_inner(ctx, true)
     }
 
-    fn simplify_inner(&self, a: &'a Arenas<'a>, top_level: bool) -> Self {
+    fn simplify_inner(&self, ctx: TypingCtx<'a>, top_level: bool) -> Self {
         match self.kind {
             ExprKind::Scrutinee | ExprKind::Abstract { .. } => *self,
-            ExprKind::Ref(mtbl, e) => match e.kind {
-                // `&*p` with `p: &T` can be simplified, but `&mut *p` with `p: &mut T` is a
-                // re-borrow so it must stay.
-                ExprKind::Deref(inner)
-                    if mtbl == Shared && matches!(inner.ty, Type::Ref(Shared, _)) =>
-                {
-                    *inner
+            ExprKind::Ref(mtbl, e) => {
+                let e = e.simplify_inner(ctx, false);
+                match e.kind {
+                    // `&*p` with `p: &T` can be simplified, but `&mut *p` with `p: &mut T` is a
+                    // re-borrow so it must stay.
+                    ExprKind::Deref(inner)
+                        if mtbl == Shared && matches!(inner.ty, Type::Ref(Shared, _)) =>
+                    {
+                        *inner
+                    }
+                    _ => Expression {
+                        ty: self.ty,
+                        kind: ExprKind::Ref(mtbl, e.alloc(ctx.arenas)),
+                    },
                 }
-                _ => Expression {
-                    ty: self.ty,
-                    kind: ExprKind::Ref(mtbl, e.simplify_inner(a, false).alloc(a)),
-                },
-            },
-            ExprKind::Deref(e) => match e.kind {
-                ExprKind::Ref(mtbl, inner) if inner.scrutinee_access_level() == ByRef(mtbl) => {
-                    *inner
+            }
+            ExprKind::Deref(e) => {
+                let e = e.simplify_inner(ctx, false);
+                match e.kind {
+                    ExprKind::Ref(Shared, inner) if top_level && self.ty.is_copy() => *inner,
+                    ExprKind::Ref(Mutable, inner) if ctx.options.simplify_deref_mut => *inner,
+                    ExprKind::Ref(mtbl, inner) if inner.scrutinee_access_level() == ByRef(mtbl) => {
+                        *inner
+                    }
+                    _ => Expression {
+                        ty: self.ty,
+                        kind: ExprKind::Deref(e.alloc(ctx.arenas)),
+                    },
                 }
-                ExprKind::Ref(Shared, inner) if top_level && self.ty.is_copy() => *inner,
-                _ => Expression {
+            }
+            ExprKind::Field(e, n) => {
+                let e = e.simplify_inner(ctx, false);
+                Expression {
                     ty: self.ty,
-                    kind: ExprKind::Deref(e.simplify_inner(a, false).alloc(a)),
-                },
-            },
-            ExprKind::Field(e, n) => Expression {
-                ty: self.ty,
-                kind: ExprKind::Field(e.simplify_inner(a, false).alloc(a), n),
-            },
+                    kind: ExprKind::Field(e.alloc(ctx.arenas), n),
+                }
+            }
         }
     }
 }
 
 impl<'a> TypingPredicate<'a> {
     /// Simplify the expression in a semantics-preserving way, see `Expression::simplify`.
-    pub fn simplify_expr(&self, a: &'a Arenas<'a>) -> Self {
+    pub fn simplify_expr(&self, ctx: TypingCtx<'a>) -> Self {
         Self {
             pat: self.pat,
-            expr: self.expr.simplify(a),
+            expr: self.expr.simplify(ctx),
         }
     }
 }

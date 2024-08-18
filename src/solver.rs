@@ -74,7 +74,7 @@ impl<'a> TypingSolver<'a> {
         self.done_predicates
             .iter()
             .map(|p| {
-                let p = p.simplify_expr(ctx.arenas);
+                let p = p.simplify_expr(ctx);
                 let bck = p.expr.borrow_check();
                 let bck = bck
                     .err()

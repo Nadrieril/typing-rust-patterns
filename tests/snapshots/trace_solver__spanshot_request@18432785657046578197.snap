@@ -17,13 +17,13 @@ info:
 // Applying rule `ConstructorRef`
 &ref mut x @ &mut (*p).0: &mut T
 // Applying rule `DerefMutWithShared(EatOuter)`
-&ref mut x @ &(*p).0: &T
+&ref mut x @ &*&mut (*p).0: &T
 // Applying rule `Deref(EatOuter)`
-ref mut x @ *&(*p).0: T
+ref mut x @ *&*&mut (*p).0: T
 // Applying rule `BindingBorrow`
-x @ &mut *&(*p).0: &mut T
+x @ &mut *&*&mut (*p).0: &mut T
 // Applying rule `Binding`
-let x: &mut T = &mut *&(*p).0
+let x: &mut T = &mut *&*&mut (*p).0
 
 // Final bindings (simplified):
 let x: &mut T = &mut *&(*p).0 // Borrow-check error: MutBorrowBehindSharedBorrow

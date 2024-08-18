@@ -7,19 +7,13 @@ info:
     inherited_ref_on_ref: EatOuter
     allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
-    eat_inherited_ref_alone: true
+    eat_inherited_ref_alone: false
     downgrade_shared_inside_shared: false
     rules_display_style: Plain
-  bundle_name: permissive
-  request: "[&mut x]: &mut [&T]"
+  bundle_name: ~
+  request: "[&x]: &[[T]]"
 ---
-[&mut x] @ p: &mut [&T]
+[&x] @ p: &[[T]]
 // Applying rule `ConstructorRef`
-&mut x @ &mut (*p).0: &mut &T
-// Applying rule `Deref(EatOuter)`
-x @ *&mut (*p).0: &T
-// Applying rule `Binding`
-let x: &T = *&mut (*p).0
-
-// Final bindings (simplified):
-let x: &T = (*p).0
+&x @ &(*p).0: &[T]
+// Type error for `&x @ &(*p).0: &[T]`: InheritedRefIsAlone

@@ -127,6 +127,13 @@ fn test_solver_traces() -> anyhow::Result<()> {
             &["mut x: &T", "[mut x]: &[T]", "[mut ref x]: &[T]"],
         ),
         (
+            RuleOptions {
+                eat_inherited_ref_alone: false,
+                ..RuleOptions::PERMISSIVE
+            },
+            &["[&x]: &[[T]]", "[&x]: &mut [&T]", "[&mut x]: &mut [&T]"],
+        ),
+        (
             RuleOptions::STABLE_RUST,
             &[
                 "[&x]: &[T]",
