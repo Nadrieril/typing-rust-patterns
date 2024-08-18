@@ -12,6 +12,24 @@ impl Display for Mutability {
     }
 }
 
+impl BindingMode {
+    pub fn name(self) -> &'static str {
+        match self {
+            BindingMode::ByMove => "move",
+            BindingMode::ByRef(Mutability::Shared) => "ref",
+            BindingMode::ByRef(Mutability::Mutable) => "ref mut",
+        }
+    }
+
+    pub fn as_borrow(self) -> &'static str {
+        match self {
+            BindingMode::ByMove => "",
+            BindingMode::ByRef(Mutability::Shared) => "&",
+            BindingMode::ByRef(Mutability::Mutable) => "&mut ",
+        }
+    }
+}
+
 impl Display for BindingMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -83,5 +101,15 @@ impl<'a> TypingPredicate<'a> {
     /// Display as `let ...`.
     pub fn display_as_let(&self) -> String {
         format!("let {}: {} = {}", self.pat, self.expr.ty, self.expr)
+    }
+
+    /// Display with the binding mode on the pattern. This doesn't make complete sense.
+    pub fn display_with_bm(&self) -> String {
+        if let Ok(bm) = self.expr.binding_mode() {
+            let expr = self.expr.reset_binding_mode().unwrap();
+            format!("{} ({}) @ {}: {}", bm.name(), self.pat, expr, expr.ty)
+        } else {
+            self.to_string()
+        }
     }
 }

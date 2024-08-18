@@ -264,7 +264,7 @@ impl<'a> Expression<'a> {
     /// If the tail of this expression is `Abstract`, removes the binding mode on that variable and
     /// returns it. Beware: this changes the type of the variable. We must apply the same
     /// transformation to the preconditions.
-    fn extract_abstract_bm(&self, a: &'a Arenas<'a>) -> (Option<BindingMode>, Expression<'a>) {
+    fn extract_abstract_bm(&self, a: &'a Arenas<'a>) -> (Option<BindingMode>, Self) {
         match self.kind {
             ExprKind::Scrutinee => (None, *self),
             ExprKind::Abstract { not_a_ref: false } => (None, *self),
@@ -306,7 +306,7 @@ impl<'a> Expression<'a> {
     /// Changes the abstract variable to have the provided bm. Assumes that the expression was
     /// obtained from applying rules to an expression hwere the abstract variable already had that
     /// binding mode.
-    fn set_abstract_bm(&self, a: &'a Arenas<'a>, bm: Option<BindingMode>) -> Expression<'a> {
+    fn set_abstract_bm(&self, a: &'a Arenas<'a>, bm: Option<BindingMode>) -> Self {
         match (self.kind, bm) {
             (ExprKind::Scrutinee, _) => *self,
             (ExprKind::Abstract { not_a_ref: false }, None) => *self,
@@ -372,23 +372,16 @@ impl<'a> TypingRule<'a> {
     ) -> std::fmt::Result {
         let a = &Arenas::default();
 
-        let mut rule = self.clone();
+        let mut preconditions_str;
+        let mut postconditions_str;
 
-        let bm = match style {
-            TypingRuleStyle::Plain => rule.postcondition.expr.abstract_bm_constraint(),
-            TypingRuleStyle::BindingMode => {
-                // Extract the bm of the expression variable and show it on the side.
-                let (bm, new_rule) = rule.extract_abstract_bm(a);
-                rule = new_rule;
-                bm
-            }
-        };
+        match style {
+            TypingRuleStyle::Plain => {
+                let bm = self.postcondition.expr.abstract_bm_constraint();
 
-        let mut postconditions_str = rule.postcondition.to_string();
-        if let Some(bm) = bm {
-            let abstract_expr = ExprKind::Abstract { not_a_ref: true };
-            match style {
-                TypingRuleStyle::Plain => {
+                postconditions_str = self.postcondition.to_string();
+                if let Some(bm) = bm {
+                    let abstract_expr = ExprKind::Abstract { not_a_ref: true };
                     assert!(bm == ByMove);
                     let _ = write!(
                         &mut postconditions_str,
@@ -396,37 +389,49 @@ impl<'a> TypingRule<'a> {
                         abstract_expr
                     );
                 }
-                TypingRuleStyle::BindingMode => {
-                    let bm = match bm {
-                        ByRef(mtbl) => &format!("ref {mtbl}"),
-                        ByMove => "move",
-                    };
-                    let bm = bm.trim();
+
+                preconditions_str = if self.preconditions.is_empty() {
+                    self.postcondition.display_as_let()
+                } else {
+                    self.preconditions.iter().format(",  ").to_string()
+                };
+            }
+            TypingRuleStyle::BindingMode => {
+                let mut rule = self.clone();
+                // Extract the bm of the expression variable and show it on the side.
+                let (bm, new_rule) = rule.extract_abstract_bm(a);
+                rule = new_rule;
+
+                postconditions_str = rule.postcondition.to_string();
+                if let Some(bm) = bm {
+                    let abstract_expr = ExprKind::Abstract { not_a_ref: true };
+                    let bm = bm.name();
                     let _ = write!(
                         &mut postconditions_str,
                         ", binding_mode({}) = {bm}",
                         abstract_expr
                     );
                 }
-            }
-        }
 
-        let mut preconditions_str = if rule.preconditions.is_empty() {
-            rule.postcondition.display_as_let()
-        } else {
-            rule.preconditions.iter().format(",  ").to_string()
-        };
-        if style == TypingRuleStyle::BindingMode
-            && let Some(ByRef(..)) = bm
-        {
-            // In binding mode style, dereferencing the bm is called "resetting".
-            preconditions_str = preconditions_str.replace("*q", "reset(q)");
+                preconditions_str = if rule.preconditions.is_empty() {
+                    rule.postcondition.display_as_let()
+                } else {
+                    rule.preconditions
+                        .iter()
+                        .map(|pred| pred.to_string())
+                        .join(",  ")
+                };
+                if let Some(ByRef(..)) = bm {
+                    // In binding mode style, dereferencing the bm is called "resetting".
+                    preconditions_str = preconditions_str.replace("*q", "reset(q)");
+                }
+            }
         }
 
         let len = max(preconditions_str.len(), postconditions_str.len());
         let bar = "-".repeat(len);
         write!(f, "{preconditions_str}\n")?;
-        write!(f, "{bar} \"{:?}\"\n", rule.name)?;
+        write!(f, "{bar} \"{:?}\"\n", self.name)?;
         write!(f, "{postconditions_str}")?;
         Ok(())
     }

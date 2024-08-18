@@ -64,6 +64,9 @@ pub struct RuleOptions {
 
 impl RuleOptions {
     /// Documentation for the options.
+    // TODO: use `strum` to list values automatically.
+    // TODO: use the list of values to check validity, then use serde to avoid needing to list
+    // fields in `set_field`.
     pub const OPTIONS_DOC: &[(&str, &[&str], &str)] = &[
         (
             "rules_display_style",
