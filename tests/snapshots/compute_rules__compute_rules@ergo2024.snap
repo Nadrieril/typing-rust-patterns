@@ -31,16 +31,16 @@ p0 @ &mut (*q).0: &mut T0, p1 @ &mut (*q).1: &mut T1
 [p0, p1] @ q: &mut &mut T
 
 p @ *q: T
----------------------------------- "Deref(EatOuter)"
-&p @ q: &T, binding_mode(q) = move
+-------------------------------- "Deref(EatOuter)"
+&p @ q: &T, q is not a reference
 
 p @ *&q: [T0, T1]
 ------------------ "Deref(EatOuter)"
 &p @ &q: &[T0, T1]
 
 p @ *q: T
------------------------------------------- "Deref(EatOuter)"
-&mut p @ q: &mut T, binding_mode(q) = move
+---------------------------------------- "Deref(EatOuter)"
+&mut p @ q: &mut T, q is not a reference
 
 p @ *&mut q: [T0, T1]
 ------------------------------ "Deref(EatOuter)"
@@ -63,8 +63,8 @@ p @ &mut *q: &mut T
 &mut p @ &mut q: &mut &mut T
 
 &p @ &*q: &T
--------------------------------------- "DerefMutWithShared(EatOuter)"
-&p @ q: &mut T, binding_mode(q) = move
+------------------------------------ "DerefMutWithShared(EatOuter)"
+&p @ q: &mut T, q is not a reference
 
 &p @ &q: &[T0, T1]
 -------------------------- "DerefMutWithShared(EatOuter)"
@@ -95,20 +95,20 @@ x @ &mut q: &mut T
 ref mut x @ &mut q: &mut T
 
 x @ &q: &T
------------------------------------- "BindingBorrow"
-ref x @ q: T, binding_mode(q) = move
+---------------------------------- "BindingBorrow"
+ref x @ q: T, q is not a reference
 
 x @ &mut q: &mut T
----------------------------------------- "BindingBorrow"
-ref mut x @ q: T, binding_mode(q) = move
+-------------------------------------- "BindingBorrow"
+ref mut x @ q: T, q is not a reference
 
 let x: T = q
 ------------ "Binding"
 x @ q: T
 
 let mut x: T = q
------------------------------------- "Binding"
-mut x @ q: T, binding_mode(q) = move
+---------------------------------- "Binding"
+mut x @ q: T, q is not a reference
 
 p @ p: T
 -------------- "ExprSimplification"

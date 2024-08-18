@@ -379,11 +379,8 @@ impl<'a> Expression<'a> {
 }
 
 pub enum TypingRuleStyle {
-    // TODO: Rename binding mode to e.g. "is not ref"
     PlainPredicate,
     SeparateBindingMode,
-    // TODO: implement
-    HideExpr,
 }
 
 impl<'a> TypingRule<'a> {
@@ -407,7 +404,7 @@ impl<'a> TypingRule<'a> {
 
         let bm = match style {
             TypingRuleStyle::PlainPredicate => rule.postcondition.expr.abstract_bm_constraint(),
-            TypingRuleStyle::SeparateBindingMode | TypingRuleStyle::HideExpr => {
+            TypingRuleStyle::SeparateBindingMode => {
                 // Extract the bm of the expression variable and show it on the side.
                 let (bm, new_rule) = rule.extract_abstract_bm(a);
                 rule = new_rule;
@@ -417,16 +414,29 @@ impl<'a> TypingRule<'a> {
 
         let mut postconditions_str = rule.postcondition.to_string();
         if let Some(bm) = bm {
-            let bm = match bm {
-                ByRef(mtbl) => &format!("ref {mtbl}"),
-                ByMove => "move",
-            };
-            let bm = bm.trim();
-            let _ = write!(
-                &mut postconditions_str,
-                ", binding_mode({}) = {bm}",
-                ExprKind::Abstract { not_a_ref: true }
-            );
+            let abstract_expr = ExprKind::Abstract { not_a_ref: true };
+            match style {
+                TypingRuleStyle::PlainPredicate => {
+                    assert!(bm == ByMove);
+                    let _ = write!(
+                        &mut postconditions_str,
+                        ", {} is not a reference",
+                        abstract_expr
+                    );
+                }
+                TypingRuleStyle::SeparateBindingMode => {
+                    let bm = match bm {
+                        ByRef(mtbl) => &format!("ref {mtbl}"),
+                        ByMove => "move",
+                    };
+                    let bm = bm.trim();
+                    let _ = write!(
+                        &mut postconditions_str,
+                        ", binding_mode({}) = {bm}",
+                        abstract_expr
+                    );
+                }
+            }
         }
 
         let preconditions_str = if rule.preconditions.is_empty() {
