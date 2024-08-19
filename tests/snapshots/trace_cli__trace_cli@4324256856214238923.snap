@@ -32,6 +32,10 @@ Warning: option `downgrade_shared_inside_shared` is not represented in the rules
 +----------------------- "Deref(EatOuter)"
 +&mut p @ &mut q: &mut T
 
++p @ q: &T
++------------------------ "Deref(EatOuter)"
++&mut p @ &mut q: &mut &T
+
 +p @ &*q: &T
 +------------ "Deref(EatInner)"
 +&p @ &q: &&T

@@ -268,11 +268,23 @@ impl<'a> TypingPredicate<'a> {
                                     }
                                 }
                                 InheritedRefOnRefBehavior::EatInner => {
-                                    // TODO: if there is a mutability mismatch, eat the outer one
-                                    // instead.
-                                    reborrow_after = Some(t_mtbl);
-                                    t_mtbl = *inner_mtbl;
-                                    underlying_place.deref(a)
+                                    let can_eat_inner = match (p_mtbl, *inner_mtbl) {
+                                        (Shared, Shared) | (Mutable, Mutable) => true,
+                                        (Shared, Mutable) => ctx.options.allow_ref_pat_on_ref_mut,
+                                        (Mutable, Shared) => false,
+                                    };
+                                    if can_eat_inner {
+                                        reborrow_after = Some(t_mtbl);
+                                        t_mtbl = *inner_mtbl;
+                                        underlying_place.deref(a)
+                                    } else {
+                                        rule_variant = InheritedRefOnRefBehavior::EatOuter;
+                                        if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
+                                            underlying_place
+                                        } else {
+                                            self.expr.deref(a)
+                                        }
+                                    }
                                 }
                                 InheritedRefOnRefBehavior::EatBoth => {
                                     t_mtbl = *inner_mtbl;
