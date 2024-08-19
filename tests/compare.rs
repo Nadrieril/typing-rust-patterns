@@ -26,8 +26,8 @@ fn compare() -> anyhow::Result<()> {
     let compare = ["ergo2024", "stable_rust", "waffle"];
 
     let test_cases = {
-        let patterns = generate_patterns(a, 2);
-        let types = generate_types(a, 3);
+        let patterns = generate_patterns(a, 3);
+        let types = generate_types(a, 4);
         patterns
             .iter()
             .cartesian_product(types)

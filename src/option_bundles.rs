@@ -8,7 +8,7 @@ impl RuleOptions {
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
         allow_ref_pat_on_ref_mut: false,
-        simplify_deref_mut: false,
+        simplify_deref_mut: true,
         eat_inherited_ref_alone: false,
         downgrade_mut_inside_shared: false,
     };
