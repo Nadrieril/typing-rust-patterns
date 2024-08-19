@@ -1,5 +1,6 @@
 use crate::*;
-use match_ergonomics_formality::*;
+use itertools::Itertools;
+use match_ergonomics_formality::Conf;
 
 pub enum RuleSet {
     TypeBased(RuleOptions),
@@ -69,6 +70,7 @@ fn analyze_with_formality<'a>(
     conf: Conf,
     req: TypingRequest<'a>,
 ) -> anyhow::Result<AnalysisResult<'a>> {
+    use match_ergonomics_formality::*;
     let line = format!("let {} = {};", req.pat, req.ty);
     let stmt = LetStmt::from_str(&line).map_err(|e| anyhow::anyhow!("{e:?}"))?;
     let r = Reduction::from_stmt(conf, stmt);
@@ -80,4 +82,64 @@ fn analyze_with_formality<'a>(
         }
         Err(e) => TypeError(e.to_string()),
     })
+}
+
+/// Automatically generate concrete types up to a given depth.
+pub fn generate_types<'a>(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Type<'a>> {
+    pub fn generate_types_inner<'a>(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Type<'a>> {
+        if depth == 0 {
+            return vec![&Type::Abstract("T")];
+        }
+        let base_ty = Type::NonRef("T");
+        generate_types_inner(a, depth - 1)
+            .into_iter()
+            .flat_map(|ty| {
+                [ty.subst(a, base_ty)]
+                    .into_iter()
+                    .chain(ty.deepen(a, false))
+                    .map(|ty| ty.alloc(a))
+            })
+            .collect()
+    }
+    let base_ty = Type::NonRef("T");
+    generate_types_inner(a, depth)
+        .into_iter()
+        .map(|ty| ty.subst(a, base_ty))
+        .map(|ty| ty.alloc(a))
+        .collect()
+}
+
+/// Automatically generate concrete types up to a given depth.
+pub fn generate_patterns<'a>(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Pattern<'a>> {
+    pub fn generate_patterns_inner<'a>(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Pattern<'a>> {
+        if depth == 0 {
+            return vec![&Pattern::Abstract("p")];
+        }
+        generate_patterns_inner(a, depth - 1)
+            .into_iter()
+            .flat_map(|pat| {
+                pat.deepen(a, false)
+                    .into_iter()
+                    .map(|pat| pat.alloc(a))
+                    .chain((!pat.contains_abstract()).then_some(pat))
+            })
+            .collect()
+    }
+    let base_pat = Pattern::Binding(Mutability::Shared, BindingMode::ByMove, "x");
+    generate_patterns_inner(a, depth)
+        .into_iter()
+        .map(|pat| pat.subst(a, base_pat))
+        .map(|pat| pat.alloc(a))
+        .collect()
+}
+
+/// Automatically generate many requests.
+pub fn generate_requests<'a>(a: &'a Arenas<'a>, depth: usize) -> Vec<TypingRequest<'a>> {
+    let patterns = generate_patterns(a, depth);
+    let types = generate_types(a, depth);
+    patterns
+        .iter()
+        .cartesian_product(types)
+        .map(|(pat, ty)| TypingRequest { pat, ty })
+        .collect()
 }

@@ -28,7 +28,7 @@ impl BindingMode {
 }
 
 /// A pattern.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Pattern<'a> {
     /// The constructor for a type. Our only type is the tuple, represented as `[T, U]`, with its
     /// constructor `[p, q]`.
@@ -44,17 +44,17 @@ pub enum Pattern<'a> {
 }
 
 /// A type.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type<'a> {
+    /// An abstract type, meant as a placeholder for some unknown type. Used only when exploring
+    /// possible rules.
+    Abstract(&'a str),
+    /// A variable of some non-reference type. This is what `T` parses to.
+    NonRef(&'a str),
     /// Our only type is the tuple, represented as `[T, U]`, with its constructor `[p, q]`.
     Tuple(&'a [Self]),
     /// Reference type.
     Ref(Mutability, &'a Self),
-    /// A variable of some non-reference type. This is what `T` parses to.
-    NonRef(&'a str),
-    /// An abstract type, meant as a placeholder for some unknown type. Used only when exploring
-    /// possible rules.
-    Abstract(&'a str),
 }
 
 impl<'a> Type<'a> {
@@ -74,13 +74,13 @@ impl<'a> Type<'a> {
 /// that points to the place currently being matched on. At the end, each binding is given assigned
 /// to such an expression.
 /// We remember the types of inner expressions for convenience.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Expression<'a> {
     pub ty: &'a Type<'a>,
     pub kind: ExprKind<'a>,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ExprKind<'a> {
     /// The starting expression, written `p`.
     Scrutinee,

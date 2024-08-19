@@ -1,8 +1,34 @@
 use std::cmp::min;
 
 use crate::*;
+use itertools::Itertools;
 use BindingMode::*;
 use Mutability::*;
+
+impl<'a> Pattern<'a> {
+    /// Whether the pattern contains an abstract subpattern.
+    pub fn contains_abstract(&self) -> bool {
+        match *self {
+            Pattern::Tuple(pats) => pats.iter().any(|pat| pat.contains_abstract()),
+            Pattern::Ref(_, pat) => pat.contains_abstract(),
+            Pattern::Binding(..) => false,
+            Pattern::Abstract(_) => true,
+        }
+    }
+
+    /// Replace the abstract patterns (if any) with the given one.
+    pub fn subst(&self, a: &'a Arenas<'a>, replace: Self) -> Self {
+        match *self {
+            Pattern::Tuple(pats) => {
+                let pats = pats.iter().map(|pat| pat.subst(a, replace)).collect_vec();
+                Pattern::Tuple(a.pat_arena.alloc_extend(pats))
+            }
+            Pattern::Ref(mtbl, pat) => Pattern::Ref(mtbl, pat.subst(a, replace).alloc(a)),
+            Pattern::Binding(..) => *self,
+            Pattern::Abstract(_) => replace,
+        }
+    }
+}
 
 impl<'a> Type<'a> {
     /// Whether the type implements `Copy` (we assume type variables are `Copy`).
@@ -12,6 +38,29 @@ impl<'a> Type<'a> {
             Type::Ref(Shared, _) => true,
             Type::Ref(Mutable, _) => false,
             Type::NonRef(_) | Type::Abstract(_) => true,
+        }
+    }
+
+    /// Whether the type contains an abstract subtype.
+    pub fn contains_abstract(&self) -> bool {
+        match *self {
+            Type::Tuple(tys) => tys.iter().any(|ty| ty.contains_abstract()),
+            Type::Ref(_, ty) => ty.contains_abstract(),
+            Type::NonRef(..) => false,
+            Type::Abstract(_) => true,
+        }
+    }
+
+    /// Replace the abstract types (if any) with the given type.
+    pub fn subst(&self, a: &'a Arenas<'a>, replace: Self) -> Self {
+        match *self {
+            Type::Tuple(tys) => {
+                let tys = tys.iter().map(|ty| ty.subst(a, replace)).collect_vec();
+                Type::Tuple(a.type_arena.alloc_extend(tys))
+            }
+            Type::Ref(mtbl, ty) => Type::Ref(mtbl, ty.subst(a, replace).alloc(a)),
+            Type::NonRef(_) => *self,
+            Type::Abstract(_) => replace,
         }
     }
 }

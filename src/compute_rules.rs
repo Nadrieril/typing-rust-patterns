@@ -8,30 +8,22 @@ use crate::*;
 use BindingMode::*;
 use Mutability::*;
 
-impl<'a> TypingPredicate<'a> {
-    /// Compute the typing rule associated with this predicate.
-    fn typing_rule(&self, ctx: TypingCtx<'a>) -> Result<TypingRule<'a>, TypeError> {
-        let (rule, preconditions) = self.step(ctx)?;
-        Ok(TypingRule {
-            name: rule,
-            preconditions,
-            postcondition: *self,
-        })
-    }
-}
-
 impl<'a> Pattern<'a> {
     /// Replace abstract subpatterns with all the possible more-precise patterns.
-    fn deepen(&'a self, a: &'a Arenas<'a>) -> Vec<Self> {
+    pub fn deepen(&'a self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
         match *self {
             Pattern::Abstract(name) => {
                 let tuple = {
-                    // We assume no rules depend on the specific constructor. We use length 2 for
-                    // demo purposes.
-                    let subnames = [name.to_string() + "0", name.to_string() + "1"];
+                    let subnames: &[&str] = if many {
+                        // We assume no rules depend on the length. We use length 2 for demo
+                        // purposes.
+                        &[&(name.to_string() + "0"), &(name.to_string() + "1")]
+                    } else {
+                        &[name]
+                    };
                     let subpats = subnames
-                        .into_iter()
-                        .map(|name| Pattern::Abstract(a.str_arena.alloc_str(&name)));
+                        .iter()
+                        .map(|name| Pattern::Abstract(a.str_arena.alloc_str(name)));
                     Pattern::Tuple(a.pat_arena.alloc_extend(subpats))
                 };
                 [tuple]
@@ -56,52 +48,66 @@ impl<'a> Pattern<'a> {
             Pattern::Tuple(pats) => {
                 // Collect to avoid arena reentrancy problems.
                 pats.iter()
-                    .map(|p| p.deepen(a))
+                    .map(|p| p.deepen(a, many))
                     .multi_cartesian_product()
                     .map(|pats| Pattern::Tuple(a.pat_arena.alloc_extend(pats)))
                     .collect()
             }
             Pattern::Ref(mtbl, p) => p
-                .deepen(a)
+                .deepen(a, many)
                 .into_iter()
                 .map(|p| Pattern::Ref(mtbl, p.alloc(a)))
                 .collect(),
-            Pattern::Binding(_, _, _) => vec![*self],
+            Pattern::Binding(_, _, _) => vec![],
         }
     }
 }
 
 impl<'a> Type<'a> {
     /// Replace abstract subtypes with all the possible more-precise types.
-    fn deepen(&'a self, a: &'a Arenas<'a>) -> Vec<Self> {
+    // TODO: explain what's up with `many`.
+    pub fn deepen(&'a self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
+        let mk_tuple = |name: &str| {
+            let subnames: &[&str] = if many {
+                // We assume no rules depend on the length. We use length 2 for demo
+                // purposes.
+                &[&(name.to_string() + "0"), &(name.to_string() + "1")]
+            } else {
+                &[name]
+            };
+            let subtypes = subnames
+                .iter()
+                .map(|name| Type::Abstract(a.str_arena.alloc_str(&name)));
+            Type::Tuple(a.type_arena.alloc_extend(subtypes))
+        };
+
         match *self {
             Type::Abstract(name) => {
                 vec![
-                    Type::NonRef(name),
+                    if many {
+                        Type::NonRef(name)
+                    } else {
+                        mk_tuple(name)
+                    },
                     Type::Ref(Shared, self),
                     Type::Ref(Mutable, self),
                 ]
             }
             Type::NonRef(name) => {
-                let tuple = {
-                    // We assume no rules depend on the specific type beyond references. We use
-                    // length 2 for demo purposes.
-                    let subnames = [name.to_string() + "0", name.to_string() + "1"];
-                    let subtypes = subnames
-                        .into_iter()
-                        .map(|name| Type::Abstract(a.str_arena.alloc_str(&name)));
-                    Type::Tuple(a.type_arena.alloc_extend(subtypes))
-                };
-                vec![tuple]
+                if many {
+                    vec![mk_tuple(name)]
+                } else {
+                    vec![]
+                }
             }
             Type::Tuple(tys) => tys
                 .iter()
-                .map(|p| p.deepen(a))
+                .map(|p| p.deepen(a, many))
                 .multi_cartesian_product()
                 .map(|tys| Type::Tuple(a.type_arena.alloc_extend(tys)))
                 .collect(),
             Type::Ref(mtbl, p) => p
-                .deepen(a)
+                .deepen(a, many)
                 .into_iter()
                 .map(|p| Type::Ref(mtbl, p.alloc(a)))
                 .collect(),
@@ -111,7 +117,7 @@ impl<'a> Type<'a> {
 
 impl<'a> Expression<'a> {
     /// Replace abstract subexpressions with all the possible more-precise expressions.
-    fn deepen(&self, a: &'a Arenas<'a>) -> Vec<Self> {
+    pub fn deepen(&self, a: &'a Arenas<'a>) -> Vec<Self> {
         match self.kind {
             ExprKind::Scrutinee => vec![*self],
             ExprKind::Abstract { not_a_ref: false } => {
@@ -152,11 +158,11 @@ impl<'a> Expression<'a> {
     }
 
     /// Replace abstract subtypes with all the possible more-precise types.
-    fn deepen_ty(&self, a: &'a Arenas<'a>) -> Vec<Self> {
+    pub fn deepen_ty(&self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
         match self.kind {
             ExprKind::Scrutinee | ExprKind::Abstract { .. } => self
                 .ty
-                .deepen(a)
+                .deepen(a, many)
                 .into_iter()
                 .map(|ty| Expression {
                     kind: self.kind,
@@ -164,13 +170,56 @@ impl<'a> Expression<'a> {
                 })
                 .collect(),
             ExprKind::Ref(mtbl, e) => e
-                .deepen_ty(a)
+                .deepen_ty(a, many)
                 .into_iter()
                 .map(|e| e.borrow(a, mtbl))
                 .collect(),
-            ExprKind::Deref(e) => e.deepen_ty(a).into_iter().map(|e| e.deref(a)).collect(),
-            ExprKind::Field(e, n) => e.deepen_ty(a).into_iter().map(|e| e.field(a, n)).collect(),
+            ExprKind::Deref(e) => e
+                .deepen_ty(a, many)
+                .into_iter()
+                .map(|e| e.deref(a))
+                .collect(),
+            ExprKind::Field(e, n) => e
+                .deepen_ty(a, many)
+                .into_iter()
+                .map(|e| e.field(a, n))
+                .collect(),
         }
+    }
+}
+
+impl<'a> TypingPredicate<'a> {
+    /// Compute the typing rule associated with this predicate.
+    fn typing_rule(&self, ctx: TypingCtx<'a>) -> Result<TypingRule<'a>, TypeError> {
+        let (rule, preconditions) = self.step(ctx)?;
+        Ok(TypingRule {
+            name: rule,
+            preconditions,
+            postcondition: *self,
+        })
+    }
+
+    pub fn deepen_pat(self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
+        self.pat
+            .deepen(a, many)
+            .into_iter()
+            .map(|pat| pat.alloc(a))
+            .map(|pat| Self { pat, ..self })
+            .collect()
+    }
+    pub fn deepen_expr(self, a: &'a Arenas<'a>) -> Vec<Self> {
+        self.expr
+            .deepen(a)
+            .into_iter()
+            .map(|expr| Self { expr, ..self })
+            .collect()
+    }
+    pub fn deepen_ty(self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
+        self.expr
+            .deepen_ty(a, many)
+            .into_iter()
+            .map(|expr| Self { expr, ..self })
+            .collect()
     }
 }
 
@@ -207,25 +256,9 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
                 rules.push(rule);
                 vec![]
             }
-            Err(TypeError::OverlyGeneralPattern) => pred
-                .pat
-                .deepen(a)
-                .into_iter()
-                .map(|pat| pat.alloc(a))
-                .map(|pat| TypingPredicate { pat, ..pred })
-                .collect_vec(),
-            Err(TypeError::OverlyGeneralExpr) => pred
-                .expr
-                .deepen(a)
-                .into_iter()
-                .map(|expr| TypingPredicate { expr, ..pred })
-                .collect_vec(),
-            Err(TypeError::OverlyGeneralType) => pred
-                .expr
-                .deepen_ty(a)
-                .into_iter()
-                .map(|expr| TypingPredicate { expr, ..pred })
-                .collect_vec(),
+            Err(TypeError::OverlyGeneralPattern) => pred.deepen_pat(a, true),
+            Err(TypeError::OverlyGeneralExpr) => pred.deepen_expr(a),
+            Err(TypeError::OverlyGeneralType) => pred.deepen_ty(a, true),
             Err(err) => {
                 if TRACE {
                     println!("  Type error: {err:?}");
