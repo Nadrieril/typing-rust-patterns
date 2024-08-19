@@ -75,6 +75,11 @@ where
 {
     move |i| {
         parse_tuple_pattern(ctx)
+            .or(tag("(").followed_by(multispace0).precedes(
+                parse_pattern(ctx)
+                    .followed_by(tag(")"))
+                    .followed_by(multispace0),
+            ))
             .or(parse_ref_pattern(ctx))
             .or(parse_binding(ctx))
             .parse(i)
@@ -85,11 +90,11 @@ fn parse_tuple_pattern<'a, 'i, E>(ctx: ParseCtx<'a>) -> impl Parser<&'i str, Pat
 where
     E: ParseError<&'i str>,
 {
-    one_of("[(")
+    one_of("[")
         .followed_by(multispace0)
         .precedes(
             separated_list0(tag(",").followed_by(multispace1), parse_pattern(ctx))
-                .followed_by(one_of("])"))
+                .followed_by(one_of("]"))
                 .cut(),
         )
         .followed_by(multispace0)
@@ -220,6 +225,7 @@ fn test_roundtrip() {
         "&mut mut ref mut x: T",
         "&x: T",
         "&mut x: T",
+        "&(mut x): T",
         "&[x]: T",
         "&[x, y]: T",
         "x: &T",
@@ -232,8 +238,8 @@ fn test_roundtrip() {
             "&  [ ref  x  ,  mut  y ]  :  & [ & mut  T , [   U ] ]",
             "&[ref x, mut y]: &[&mut T, [U]]",
         ),
-        ("(x, y): (T, U)", "[x, y]: [T, U]"),
-        ("[x, y): (T, U]", "[x, y]: [T, U]"),
+        ("[x, y]: (T, U)", "[x, y]: [T, U]"),
+        ("[x, y]: (T, U]", "[x, y]: [T, U]"),
     ];
 
     let test_strings = idempotent_test_strings

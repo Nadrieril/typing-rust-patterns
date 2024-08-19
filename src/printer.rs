@@ -58,9 +58,17 @@ impl Display for BindingMode {
 
 impl Display for Pattern<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
+        match *self {
             Self::Tuple(pats) => write!(f, "[{}]", pats.iter().format(", ")),
-            Self::Ref(mutable, pat) => write!(f, "&{mutable}{pat}"),
+            Self::Ref(mutable, pat) => {
+                let needs_parens = mutable == Mutability::Shared
+                    && matches!(pat, Self::Binding(Mutability::Mutable, ..));
+                if needs_parens {
+                    write!(f, "&{mutable}({pat})")
+                } else {
+                    write!(f, "&{mutable}{pat}")
+                }
+            }
             Self::Binding(mutable, mode, name) => write!(f, "{mutable}{mode}{name}"),
             Self::Abstract(name) => write!(f, "{name}"),
         }
