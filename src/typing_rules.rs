@@ -278,7 +278,6 @@ impl<'a> TypingPredicate<'a> {
                                         t_mtbl = *inner_mtbl;
                                         underlying_place.deref(a)
                                     } else {
-                                        rule_variant = InheritedRefOnRefBehavior::EatOuter;
                                         if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
                                             underlying_place
                                         } else {

@@ -56,10 +56,6 @@ p @ q: T
 ----------------------- "Deref(EatOuter)"
 &mut p @ &mut q: &mut T
 
-p @ q: &T
------------------------- "Deref(EatOuter)"
-&mut p @ &mut q: &mut &T
-
 p @ &*q: &T
 ------------ "Deref(EatInner)"
 &p @ &q: &&T
@@ -71,6 +67,10 @@ p @ &*q: &T
 p @ &*q: &T
 -------------------- "Deref(EatInner)"
 &mut p @ &q: &&mut T
+
+p @ q: &T
+------------------------ "Deref(EatInner)"
+&mut p @ &mut q: &mut &T
 
 p @ &mut *q: &mut T
 ---------------------------- "Deref(EatInner)"
