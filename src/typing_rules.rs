@@ -60,6 +60,7 @@ pub struct RuleOptions {
     pub downgrade_mut_inside_shared: bool,
     /// How to display rules.
     pub rules_display_style: TypingRuleStyle,
+    // TODO: fallback_to_outer
 }
 
 impl RuleOptions {

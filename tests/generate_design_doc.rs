@@ -4,10 +4,7 @@ use typing_rust_patterns::*;
 
 #[test]
 fn generate_design_doc() -> anyhow::Result<()> {
-    let options = RuleOptions {
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
-        ..RuleOptions::PERMISSIVE
-    };
+    let options = RuleOptions::DEFAULT;
 
     let examples = [
         ("[&x]: &[&T]", "`x: &T`"),

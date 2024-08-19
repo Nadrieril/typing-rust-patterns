@@ -44,9 +44,13 @@ fn spanshot_request(test_case: TestCase<'_>) -> anyhow::Result<()> {
 
 #[test]
 fn test_solver_traces() -> anyhow::Result<()> {
+    let base = RuleOptions {
+        simplify_deref_mut: true,
+        ..RuleOptions::STATELESS
+    };
     let test_cases: &[(RuleOptions, &[_])] = &[
         (
-            RuleOptions::PERMISSIVE,
+            base,
             &[
                 "x: T",
                 "x: &T",
@@ -94,7 +98,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
         (
             RuleOptions {
                 allow_ref_pat_on_ref_mut: false,
-                ..RuleOptions::PERMISSIVE
+                ..base
             },
             &["&x: &mut T", "&[[&x]]: &[&mut [T]]"],
         ),
@@ -109,7 +113,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
         (
             RuleOptions {
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
-                ..RuleOptions::PERMISSIVE
+                ..base
             },
             &[
                 "[ref x]: &[T]",
@@ -121,14 +125,14 @@ fn test_solver_traces() -> anyhow::Result<()> {
         (
             RuleOptions {
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
-                ..RuleOptions::PERMISSIVE
+                ..base
             },
             &["mut x: &T", "[mut x]: &[T]", "[mut ref x]: &[T]"],
         ),
         (
             RuleOptions {
                 eat_inherited_ref_alone: false,
-                ..RuleOptions::PERMISSIVE
+                ..base
             },
             &["[&x]: &[[T]]", "[&x]: &mut [&T]", "[&mut x]: &mut [&T]"],
         ),

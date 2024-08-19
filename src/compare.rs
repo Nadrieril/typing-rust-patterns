@@ -135,9 +135,13 @@ pub fn generate_patterns<'a>(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Pattern
 }
 
 /// Automatically generate many requests.
-pub fn generate_requests<'a>(a: &'a Arenas<'a>, depth: usize) -> Vec<TypingRequest<'a>> {
-    let patterns = generate_patterns(a, depth);
-    let types = generate_types(a, depth);
+pub fn generate_requests<'a>(
+    a: &'a Arenas<'a>,
+    pat_depth: usize,
+    ty_depth: usize,
+) -> Vec<TypingRequest<'a>> {
+    let patterns = generate_patterns(a, pat_depth);
+    let types = generate_types(a, ty_depth);
     patterns
         .iter()
         .cartesian_product(types)

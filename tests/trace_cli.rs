@@ -17,8 +17,8 @@ fn trace_cli() -> anyhow::Result<()> {
         "set ergo2024\noptions",
         "&x: &mut T",
         "set allow_ref_pat_on_ref_mut false\n&x: &mut T",
-        "set restrictive\nrules",
-        "set restrictive\nset rules_display_style BindingMode\nrules",
+        "set structural\nrules",
+        "set structural\nset rules_display_style BindingMode\nrules",
     ];
     for &test_case in test_cases {
         let success = Command::cargo_bin("typing-rust-patterns")?

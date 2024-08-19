@@ -25,47 +25,57 @@ impl RuleOptions {
         downgrade_mut_inside_shared: true,
     };
 
-    /// A fairly permissive proposal.
-    pub const PERMISSIVE: Self = RuleOptions {
+    /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
+    /// inspect the DBM, we only follow the types.
+    pub const STATELESS: Self = RuleOptions {
         rules_display_style: TypingRuleStyle::Plain,
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::AllocTemporary,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Keep,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: true,
-        simplify_deref_mut: true,
+        simplify_deref_mut: false,
         eat_inherited_ref_alone: true,
         downgrade_mut_inside_shared: false,
-    };
-
-    /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
-    /// inspect the DBM, we only follow the types.
-    pub const STATELESS: Self = RuleOptions {
-        simplify_deref_mut: false,
-        ..Self::PERMISSIVE
     };
 
     /// The default setting for the solver. A reasonable proposal.
     pub const DEFAULT: Self = RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
-        ..Self::PERMISSIVE
+        simplify_deref_mut: true,
+        ..Self::STATELESS
     };
 
-    /// A restrictive set of rules that accepts very little. Used mainly for tests.
-    pub const RESTRICTIVE: Self = RuleOptions {
-        rules_display_style: TypingRuleStyle::Plain,
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
-        mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
-        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
+    /// Purely structural matching, with no match ergonomics.
+    pub const STRUCTURAL: Self = RuleOptions {
+        // TODO: match_constructor_through_ref: false
         allow_ref_pat_on_ref_mut: false,
-        simplify_deref_mut: false,
-        eat_inherited_ref_alone: false,
-        downgrade_mut_inside_shared: false,
+        ..Self::STATELESS
+    };
+
+    pub const RFC3627_2021: Self = RuleOptions {
+        mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
+        // TODO: fallback_to_outer: true
+        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
+        ..RuleOptions::ERGO2024
+    };
+
+    pub const ERGO2024_BREAKING_ONLY: Self = RuleOptions {
+        mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+        // TODO: fallback_to_outer: false
+        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
+        ..RuleOptions::STABLE_RUST
     };
 
     pub const WAFFLE: Self = RuleOptions {
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: false,
         ..Self::ERGO2024
+    };
+
+    pub const RPJOHNST: Self = RuleOptions {
+        // TODO: double_ref: Last | Min
+        allow_ref_pat_on_ref_mut: false,
+        ..Self::STATELESS
     };
 
     /// The known bundles, with a short explanation.
@@ -76,29 +86,34 @@ impl RuleOptions {
             "the default settings; a reasonable proposal",
         ),
         (
-            "permissive",
-            Self::PERMISSIVE,
-            "an even more permissive proposal than the default",
-        ),
-        // TODO: add "no match ergonomics" ruleset
-        // TODO: rename "bundle" to "ruleset"
-        (
-            "restrictive",
-            Self::RESTRICTIVE,
-            "a restrictive set of rules that accepts very little",
-        ),
-        (
             "stateless",
             Self::STATELESS,
             "a proposal that tracks no hidden state; purely type-based",
         ),
-        ("ergo2024", Self::ERGO2024, "wip emulation of RFC3627 rules"),
-        ("waffle", Self::WAFFLE, "a proposal by @WaffleLapkin"),
         (
             "stable_rust",
             Self::STABLE_RUST,
             "emulates the behavior of current stable rust",
         ),
+        ("ergo2024", Self::ERGO2024, "the accepted RFC3627 behavior"),
+        (
+            "rfc3627_2021",
+            Self::RFC3627_2021,
+            "(TODO) the accepted RFC3627 behavior under edition 2021",
+        ),
+        (
+            "ergo2024_breaking_only",
+            Self::ERGO2024_BREAKING_ONLY,
+            "(TODO) the breaking changes for edition 2024 planned in RFC3627",
+        ),
+        // TODO: add "no match ergonomics" ruleset
+        (
+            "structural",
+            Self::STRUCTURAL,
+            "(TODO) purely structural matching, with no match ergonomics",
+        ),
+        ("waffle", Self::WAFFLE, "(WIP) a proposal by @WaffleLapkin"),
+        ("rpjohnst", Self::RPJOHNST, "(TODO) a proposal by @rpjohnst"),
     ];
 
     pub fn get_bundle_name(self) -> Option<&'static str> {

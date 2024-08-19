@@ -1,0 +1,99 @@
+---
+source: tests/trace_cli.rs
+info: "set structural\nset rules_display_style BindingMode\nrules"
+---
+allow_ref_pat_on_ref_mut: true -> false
+ref_binding_on_inherited: "ResetBindingMode" -> "AllocTemporary"
+simplify_deref_mut: true -> false
+
+-p @ *&*q: T
+--------------- "DerefMutWithShared(EatOuter)"
+-&p @ q: &mut T
+
+-ref x @ q: T
+--------------- "RefBindingResetBindingMode"
+-ref x @ &q: &T
+
+-ref x @ q: T
+----------------------- "RefBindingResetBindingMode"
+-ref x @ &mut q: &mut T
+
+-ref mut x @ q: T
+------------------- "RefBindingResetBindingMode"
+-ref mut x @ &q: &T
+
+-ref mut x @ q: T
+--------------------------- "RefBindingResetBindingMode"
+-ref mut x @ &mut q: &mut T
+
+-x @ &q: &T
+----------------------------------- "BindingBorrow"
+-ref x @ q: T, q is not a reference
+
+-x @ &mut q: &mut T
+--------------------------------------- "BindingBorrow"
+-ref mut x @ q: T, q is not a reference
+
++x @ &q: &T
++------------ "BindingBorrow"
++ref x @ q: T
+
++x @ &mut q: &mut T
++------------------ "BindingBorrow"
++ref mut x @ q: T
+
+rules_display_style: "Plain" -> "BindingMode"
+
+The current options can be fully described as the following set of rules.
+
+p0 @ q.0: T0,  p1 @ q.1: T1
+--------------------------- "Constructor"
+[p0, p1] @ q: [T0, T1]
+
+p0 @ &(*q).0: &T0,  p1 @ &(*q).1: &T1
+------------------------------------- "ConstructorRef"
+[p0, p1] @ q: &[T0, T1]
+
+p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
+----------------------------------------------------- "ConstructorRef"
+[p0, p1] @ q: &mut [T0, T1]
+
+[p0, p1] @ *q: &T
+----------------- "ConstructorMultiRef"
+[p0, p1] @ q: &&T
+
+[p0, p1] @ &**q: &T
+--------------------- "ConstructorMultiRef"
+[p0, p1] @ q: &&mut T
+
+[p0, p1] @ *q: &T
+--------------------- "ConstructorMultiRef"
+[p0, p1] @ q: &mut &T
+
+[p0, p1] @ &mut **q: &mut T
+--------------------------- "ConstructorMultiRef"
+[p0, p1] @ q: &mut &mut T
+
+p @ *q: T
+---------- "Deref(EatOuter)"
+&p @ q: &T
+
+p @ *q: T
+------------------ "Deref(EatOuter)"
+&mut p @ q: &mut T
+
+x @ &q: &T
+------------ "BindingBorrow"
+ref x @ q: T
+
+x @ &mut q: &mut T
+------------------ "BindingBorrow"
+ref mut x @ q: T
+
+let x: T = q
+------------ "Binding"
+x @ q: T
+
+let mut x: T = q
+---------------- "Binding"
+mut x @ q: T
