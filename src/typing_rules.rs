@@ -57,7 +57,7 @@ pub struct RuleOptions {
     pub eat_inherited_ref_alone: bool,
     /// If we've dereferenced a shared reference, any subsequent `&mut` inherited reference becomes
     /// `&`. This is RFC3627 rule 3.
-    pub downgrade_shared_inside_shared: bool,
+    pub downgrade_mut_inside_shared: bool,
     /// How to display rules.
     pub rules_display_style: TypingRuleStyle,
 }
@@ -104,7 +104,7 @@ impl RuleOptions {
             "whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`",
         ),
         (
-            "downgrade_shared_inside_shared",
+            "downgrade_mut_inside_shared",
             &["true", "false"],
             "RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref",
         ),
@@ -123,9 +123,7 @@ impl RuleOptions {
             "allow_ref_pat_on_ref_mut" => self.allow_ref_pat_on_ref_mut = from_str(val)?,
             "simplify_deref_mut" => self.simplify_deref_mut = from_str(val)?,
             "eat_inherited_ref_alone" => self.eat_inherited_ref_alone = from_str(val)?,
-            "downgrade_shared_inside_shared" => {
-                self.downgrade_shared_inside_shared = from_str(val)?
-            }
+            "downgrade_mut_inside_shared" => self.downgrade_mut_inside_shared = from_str(val)?,
             _ => anyhow::bail!("unknown key `{key}`"),
         }
         Ok(())
@@ -178,7 +176,7 @@ impl<'a> TypingPredicate<'a> {
     }
 
     /// Apply one step of rule to this predicate.
-    /// Note: The `downgrade_shared_inside_shared` option is special: it inspects `self.expr` in
+    /// Note: The `downgrade_mut_inside_shared` option is special: it inspects `self.expr` in
     /// non-trivial ways.
     /// All the other rules inspect `self.pat`, `self.expr.ty`, `self.expr.binding_mode()` up to a
     /// fixed depth. We trigger `OverlyGeneral` errors it the rules needs more information to
@@ -210,7 +208,7 @@ impl<'a> TypingPredicate<'a> {
                         let expr = self.expr.deref(a).field(a, i).borrow_cap_mutability(
                             a,
                             mtbl,
-                            ctx.options.downgrade_shared_inside_shared,
+                            ctx.options.downgrade_mut_inside_shared,
                         );
                         Self { pat, expr }
                     })
@@ -226,7 +224,7 @@ impl<'a> TypingPredicate<'a> {
                     expr = expr.deref(a).borrow_cap_mutability(
                         a,
                         mtbl,
-                        ctx.options.downgrade_shared_inside_shared,
+                        ctx.options.downgrade_mut_inside_shared,
                     )
                 }
                 Ok((
@@ -326,7 +324,7 @@ impl<'a> TypingPredicate<'a> {
                     expr = expr.borrow_cap_mutability(
                         a,
                         mtbl,
-                        ctx.options.downgrade_shared_inside_shared,
+                        ctx.options.downgrade_mut_inside_shared,
                     );
                 }
 

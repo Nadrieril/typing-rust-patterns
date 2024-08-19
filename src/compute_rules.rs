@@ -229,7 +229,7 @@ const TRACE: bool = false;
 /// with a dummy predicate with abstract pattern, expression and type, and recursively refine it as
 /// long as we get `OverlyGeneral` errors. This ensures we explore all possible cases.
 ///
-/// Notable exception is the `downgrade_shared_inside_shared`, which is not possible to describe it
+/// Notable exception is the `downgrade_mut_inside_shared`, which is not possible to describe it
 /// as a rule without tracking additional state. As such, it won't emit `OverlyGeneral` errors.
 pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     let a = ctx.arenas;

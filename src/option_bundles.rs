@@ -10,7 +10,7 @@ impl RuleOptions {
         allow_ref_pat_on_ref_mut: false,
         simplify_deref_mut: false,
         eat_inherited_ref_alone: false,
-        downgrade_shared_inside_shared: false,
+        downgrade_mut_inside_shared: false,
     };
 
     /// Reproduces RFC3627 (match ergonomics 2024) behavior
@@ -22,7 +22,7 @@ impl RuleOptions {
         allow_ref_pat_on_ref_mut: true,
         simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
-        downgrade_shared_inside_shared: true,
+        downgrade_mut_inside_shared: true,
     };
 
     /// A fairly permissive proposal.
@@ -34,7 +34,7 @@ impl RuleOptions {
         allow_ref_pat_on_ref_mut: true,
         simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
-        downgrade_shared_inside_shared: false,
+        downgrade_mut_inside_shared: false,
     };
 
     /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
@@ -59,7 +59,7 @@ impl RuleOptions {
         allow_ref_pat_on_ref_mut: false,
         simplify_deref_mut: false,
         eat_inherited_ref_alone: false,
-        downgrade_shared_inside_shared: false,
+        downgrade_mut_inside_shared: false,
     };
 
     /// The known bundles, with a short explanation.

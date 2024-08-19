@@ -19,7 +19,7 @@ Options are:
     whether to simplify `*&mut expr`, which removes some borrow errors
 - eat_inherited_ref_alone: true | false
     whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`
-- downgrade_shared_inside_shared: true | false
+- downgrade_mut_inside_shared: true | false
     RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref
 
 There also exist some predefined option-bundles. Activate one with `set bundle`

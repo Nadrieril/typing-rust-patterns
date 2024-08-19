@@ -1,7 +1,0 @@
----
-source: tests/trace_cli.rs
-info: set downgrade_shared_inside_shared true
----
-downgrade_shared_inside_shared: false -> true
-
-Warning: option `downgrade_shared_inside_shared` is not represented in the rules

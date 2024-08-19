@@ -8,7 +8,7 @@ info:
     allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
     eat_inherited_ref_alone: true
-    downgrade_shared_inside_shared: false
+    downgrade_mut_inside_shared: false
     rules_display_style: Plain
   bundle_name: permissive
   request: "&[[&mut x]]: &[&mut [T]]"

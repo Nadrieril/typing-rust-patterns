@@ -9,7 +9,7 @@ info:
     allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
     eat_inherited_ref_alone: true
-    downgrade_shared_inside_shared: true
+    downgrade_mut_inside_shared: true
     rules_display_style: BindingMode
 ---
 p0 @ q.0: T0,  p1 @ q.1: T1

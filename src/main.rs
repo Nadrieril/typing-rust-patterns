@@ -131,10 +131,8 @@ fn display_rules(options: RuleOptions) {
 
     let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
-    if options.downgrade_shared_inside_shared {
-        println!(
-            "Warning: option `downgrade_shared_inside_shared` is not represented in the rules"
-        );
+    if options.downgrade_mut_inside_shared {
+        println!("Warning: option `downgrade_mut_inside_shared` is not represented in the rules");
     }
 
     println!();
@@ -202,10 +200,8 @@ fn display_rules_diff(old_options: RuleOptions, new_options: RuleOptions) {
     }
     all_rules.sort_by_key(|(_, rule)| rule.name);
 
-    if old_options.downgrade_shared_inside_shared || new_options.downgrade_shared_inside_shared {
-        println!(
-            "Warning: option `downgrade_shared_inside_shared` is not represented in the rules"
-        );
+    if old_options.downgrade_mut_inside_shared || new_options.downgrade_mut_inside_shared {
+        println!("Warning: option `downgrade_mut_inside_shared` is not represented in the rules");
         println!();
     }
     // Display the rules diff.

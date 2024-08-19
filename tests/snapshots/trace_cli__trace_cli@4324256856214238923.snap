@@ -2,11 +2,11 @@
 source: tests/trace_cli.rs
 info: "set ergo2024\noptions"
 ---
-downgrade_shared_inside_shared: false -> true
+downgrade_mut_inside_shared: false -> true
 inherited_ref_on_ref: "EatOuter" -> "EatInner"
 mut_binding_on_inherited: "Keep" -> "Error"
 
-Warning: option `downgrade_shared_inside_shared` is not represented in the rules
+Warning: option `downgrade_mut_inside_shared` is not represented in the rules
 
 -p @ *q: T
 ----------- "Deref(EatOuter)"
@@ -86,5 +86,5 @@ inherited_ref_on_ref: EatInner
 allow_ref_pat_on_ref_mut: true
 simplify_deref_mut: true
 eat_inherited_ref_alone: true
-downgrade_shared_inside_shared: true
+downgrade_mut_inside_shared: true
 rules_display_style: Plain
