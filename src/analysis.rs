@@ -68,6 +68,7 @@ impl<'a> Type<'a> {
 #[derive(Debug)]
 pub enum BorrowCheckError {
     CantCopyRefMut,
+    CantCopyNestedRefMut,
     MutBorrowBehindSharedBorrow,
 }
 
@@ -115,7 +116,13 @@ impl<'a> Expression<'a> {
             }
             ExprKind::Deref(e) | ExprKind::Field(e, _) => {
                 if top_level && !self.ty.is_copy() && self.scrutinee_access_level() != ByMove {
-                    Err(BorrowCheckError::CantCopyRefMut)
+                    // Distinguish these two cases because the nested case is not handled by
+                    // `match-ergo-formality`.
+                    if let Type::Ref(Mutable, ..) = self.ty {
+                        Err(BorrowCheckError::CantCopyRefMut)
+                    } else {
+                        Err(BorrowCheckError::CantCopyNestedRefMut)
+                    }
                 } else {
                     e.borrow_check_inner(false)
                 }

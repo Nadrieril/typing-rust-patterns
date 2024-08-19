@@ -57,7 +57,8 @@ fn analyze_with_this_crate<'a>(
             assert_eq!(solver.done_predicates.len(), 1);
             let pred = solver.done_predicates[0];
             match pred.expr.borrow_check() {
-                Ok(()) => Success(*pred.expr.ty),
+                // This error isn't handled by `match-ergo-formality` so we ignore it.
+                Ok(()) | Err(BorrowCheckError::CantCopyNestedRefMut) => Success(*pred.expr.ty),
                 Err(err) => TypeError(format!("{err:?}")),
             }
         }
