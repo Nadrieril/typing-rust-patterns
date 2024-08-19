@@ -64,7 +64,6 @@ pub struct RuleOptions {
 
 impl RuleOptions {
     /// Documentation for the options.
-    // TODO: use `strum` to list values automatically.
     // TODO: use the list of values to check validity, then use serde to avoid needing to list
     // fields in `set_field`.
     pub const OPTIONS_DOC: &[(&str, &[&str], &str)] = &[
@@ -300,18 +299,11 @@ impl<'a> TypingPredicate<'a> {
                 };
 
                 // Match the pattern reference against the appropriate type reference.
-                let (rule, mut pred) = match (p_mtbl, t_mtbl) {
-                    // Dereference the expression, use the inner pattern.
-                    (Shared, Shared) | (Mutable, Mutable) => {
-                        (Rule::Deref(rule_variant), Self { pat: p_inner, expr })
-                    }
-                    // Reborrow the expression, continue with the same pattern.
+                let (rule, mut expr) = match (p_mtbl, t_mtbl) {
+                    (Shared, Shared) | (Mutable, Mutable) => (Rule::Deref(rule_variant), expr),
                     (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => (
                         Rule::DerefMutWithShared(rule_variant),
-                        Self {
-                            pat: self.pat,
-                            expr: expr.borrow(a, Shared),
-                        },
+                        expr.borrow(a, Shared).deref(a),
                     ),
                     (Shared, Mutable) | (Mutable, Shared) => {
                         return Err(TypeError::MutabilityMismatch)
@@ -320,13 +312,14 @@ impl<'a> TypingPredicate<'a> {
 
                 if let Some(mtbl) = reborrow_after {
                     // If we were matching under the inherited reference, we restore it here.
-                    pred.expr = pred.expr.borrow_cap_mutability(
+                    expr = expr.borrow_cap_mutability(
                         a,
                         mtbl,
                         ctx.options.downgrade_shared_inside_shared,
                     );
                 }
 
+                let pred = Self { pat: p_inner, expr };
                 Ok((rule, vec![pred]))
             }
             (P::Ref(..), T::Tuple(..) | T::NonRef(..)) => Err(TypeError::TypeMismatch),

@@ -93,8 +93,6 @@ let x: &mut T = &mut (*(*p).0).0; // Borrow-check error: MutBorrowBehindSharedBo
 // Applying rule `ConstructorRef`
 &x @ &mut (*(*p).0).0: &mut T
 // Applying rule `DerefMutWithShared(EatOuter)`
-&x @ &*&mut (*(*p).0).0: &T
-// Applying rule `Deref(EatOuter)`
 x @ *&*&mut (*(*p).0).0: T
 // Applying rule `Binding`
 let x: T = *&*&mut (*(*p).0).0
@@ -127,8 +125,6 @@ let x: T = (*(*p).0).0;
 // Applying rule `ConstructorRef`
 &ref mut x @ &mut (*p).0: &mut T
 // Applying rule `DerefMutWithShared(EatOuter)`
-&ref mut x @ &*&mut (*p).0: &T
-// Applying rule `Deref(EatOuter)`
 ref mut x @ *&*&mut (*p).0: T
 // Applying rule `BindingBorrow`
 x @ &mut *&*&mut (*p).0: &mut T

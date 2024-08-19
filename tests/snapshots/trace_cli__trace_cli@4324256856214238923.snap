@@ -48,23 +48,23 @@ Warning: option `downgrade_shared_inside_shared` is not represented in the rules
 +---------------------------- "Deref(EatInner)"
 +&mut p @ &mut q: &mut &mut T
 
--&p @ &*q: &T
+-p @ *&*q: T
 --------------- "DerefMutWithShared(EatOuter)"
 -&p @ q: &mut T
 
-+&p @ &*q: &T
++p @ *&*q: T
 +------------------------------------ "DerefMutWithShared(EatOuter)"
 +&p @ q: &mut T, q is not a reference
 
-+&p @ &q: &T
++p @ *&q: T
 +------------------- "DerefMutWithShared(EatOuter)"
 +&p @ &mut q: &mut T
 
-+&p @ &&*q: &&T
++p @ &*&*q: &T
 +---------------- "DerefMutWithShared(EatInner)"
 +&p @ &q: &&mut T
 
-+&p @ &&*q: &&T
++p @ &*&*q: &T
 +------------------------ "DerefMutWithShared(EatInner)"
 +&p @ &mut q: &mut &mut T
 

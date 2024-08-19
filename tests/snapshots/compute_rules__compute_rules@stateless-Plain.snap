@@ -48,7 +48,7 @@ p @ *q: T
 ------------------ "Deref(EatOuter)"
 &mut p @ q: &mut T
 
-&p @ &*q: &T
+p @ *&*q: T
 -------------- "DerefMutWithShared(EatOuter)"
 &p @ q: &mut T
 

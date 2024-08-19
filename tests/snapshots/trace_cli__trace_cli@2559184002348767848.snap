@@ -40,7 +40,7 @@ simplify_deref_mut: true -> false
 +---------------------------- "Deref(EatOuter)"
 +&mut p @ &mut q: &mut &mut T
 
--&p @ &*q: &T
+-p @ *&*q: T
 --------------- "DerefMutWithShared(EatOuter)"
 -&p @ q: &mut T
 

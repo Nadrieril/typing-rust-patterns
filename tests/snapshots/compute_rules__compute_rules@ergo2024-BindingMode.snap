@@ -72,19 +72,19 @@ p @ &mut *reset(q): &mut T
 -------------------------------------------------- "Deref(EatInner)"
 &mut p @ q: &mut &mut T, binding_mode(q) = ref mut
 
-&p @ &*q: &T
+p @ *&*q: T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ q: &mut T, binding_mode(q) = move
 
-&p @ &reset(q): &T
+p @ *&reset(q): T
 ----------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ q: &mut T, binding_mode(q) = ref mut
 
-&p @ &&*reset(q): &&T
+p @ &*&*reset(q): &T
 -------------------------------------- "DerefMutWithShared(EatInner)"
 &p @ q: &&mut T, binding_mode(q) = ref
 
-&p @ &&*reset(q): &&T
+p @ &*&*reset(q): &T
 ---------------------------------------------- "DerefMutWithShared(EatInner)"
 &p @ q: &mut &mut T, binding_mode(q) = ref mut
 
