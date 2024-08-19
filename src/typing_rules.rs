@@ -238,8 +238,10 @@ impl<'a> TypingPredicate<'a> {
                     }],
                 ))
             }
-            (P::Tuple(_), T::Ref(_, T::Var(_))) => Err(TypeError::OverlyGeneralType),
-            (P::Tuple(_), T::Var(_)) => Err(TypeError::OverlyGeneralType),
+            (P::Tuple(_), T::Ref(_, T::Abstract(_) | T::NonRef(..))) => {
+                Err(TypeError::OverlyGeneralType)
+            }
+            (P::Tuple(_), T::Abstract(_) | T::NonRef(..)) => Err(TypeError::OverlyGeneralType),
 
             // Dereference rules
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
@@ -279,17 +281,17 @@ impl<'a> TypingPredicate<'a> {
                                 }
                             }
                         }
-                        T::Tuple(_) if ctx.options.eat_inherited_ref_alone => {
+                        T::Tuple(_) | T::NonRef(..) if ctx.options.eat_inherited_ref_alone => {
                             if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
                                 underlying_place
                             } else {
                                 self.expr.deref(a)
                             }
                         }
-                        T::Tuple(_) => {
+                        T::Tuple(_) | T::NonRef(..) => {
                             return Err(TypeError::InheritedRefIsAlone);
                         }
-                        T::Var(_) => {
+                        T::Abstract(_) => {
                             return Err(TypeError::OverlyGeneralType);
                         }
                     }
@@ -311,8 +313,9 @@ impl<'a> TypingPredicate<'a> {
                             expr: expr.borrow(a, Shared),
                         },
                     ),
-                    (Shared, Mutable) => return Err(TypeError::MutabilityMismatch),
-                    (Mutable, Shared) => return Err(TypeError::MutabilityMismatch),
+                    (Shared, Mutable) | (Mutable, Shared) => {
+                        return Err(TypeError::MutabilityMismatch)
+                    }
                 };
 
                 if let Some(mtbl) = reborrow_after {
@@ -326,8 +329,8 @@ impl<'a> TypingPredicate<'a> {
 
                 Ok((rule, vec![pred]))
             }
-            (P::Ref(..), T::Tuple(..)) => Err(TypeError::TypeMismatch),
-            (P::Ref(..), T::Var(..)) => Err(TypeError::OverlyGeneralType),
+            (P::Ref(..), T::Tuple(..) | T::NonRef(..)) => Err(TypeError::TypeMismatch),
+            (P::Ref(..), T::Abstract(..)) => Err(TypeError::OverlyGeneralType),
 
             // Binding rules
             (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _)

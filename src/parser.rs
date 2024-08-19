@@ -190,7 +190,7 @@ where
     let ident = take_while(|c: char| c.is_alphanumeric() || c == '_');
     ident.followed_by(multispace0).map(|name| {
         let name = ctx.str_arena.alloc_str(name);
-        Type::Var(name)
+        Type::NonRef(name)
     })
 }
 

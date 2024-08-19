@@ -11,7 +11,7 @@ impl<'a> Type<'a> {
             Type::Tuple(tys) => tys.iter().all(|ty| ty.is_copy()),
             Type::Ref(Shared, _) => true,
             Type::Ref(Mutable, _) => false,
-            Type::Var(_) => true,
+            Type::NonRef(_) | Type::Abstract(_) => true,
         }
     }
 }

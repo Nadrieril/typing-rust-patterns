@@ -50,8 +50,11 @@ pub enum Type<'a> {
     Tuple(&'a [Self]),
     /// Reference type.
     Ref(Mutability, &'a Self),
-    /// Type variable, representing an unknown and irrelevant type.
-    Var(&'a str),
+    /// A variable of some non-reference type. This is what `T` parses to.
+    NonRef(&'a str),
+    /// An abstract type, meant as a placeholder for some unknown type. Used only when exploring
+    /// possible rules.
+    Abstract(&'a str),
 }
 
 impl<'a> Type<'a> {

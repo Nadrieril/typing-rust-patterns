@@ -75,17 +75,24 @@ impl<'a> Type<'a> {
     /// Replace abstract subtypes with all the possible more-precise types.
     fn deepen(&'a self, a: &'a Arenas<'a>) -> Vec<Self> {
         match *self {
-            Type::Var(name) => {
+            Type::Abstract(name) => {
+                vec![
+                    Type::NonRef(name),
+                    Type::Ref(Shared, self),
+                    Type::Ref(Mutable, self),
+                ]
+            }
+            Type::NonRef(name) => {
                 let tuple = {
                     // We assume no rules depend on the specific type beyond references. We use
                     // length 2 for demo purposes.
                     let subnames = [name.to_string() + "0", name.to_string() + "1"];
                     let subtypes = subnames
                         .into_iter()
-                        .map(|name| Type::Var(a.str_arena.alloc_str(&name)));
+                        .map(|name| Type::Abstract(a.str_arena.alloc_str(&name)));
                     Type::Tuple(a.type_arena.alloc_extend(subtypes))
                 };
-                vec![tuple, Type::Ref(Shared, self), Type::Ref(Mutable, self)]
+                vec![tuple]
             }
             Type::Tuple(tys) => tys
                 .iter()
@@ -126,11 +133,11 @@ impl<'a> Expression<'a> {
                             .borrow(a, mtbl),
                         );
                     }
-                    Type::Var(..) => {
+                    Type::Abstract(..) => {
                         vec.push(self.borrow(a, Shared));
                         vec.push(self.borrow(a, Mutable));
                     }
-                    Type::Tuple(..) => {}
+                    Type::Tuple(..) | Type::NonRef(..) => {}
                 }
                 vec
             }
@@ -181,7 +188,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
         pat: &Pattern::Abstract("p"),
         expr: Expression {
             kind: ExprKind::Abstract { not_a_ref: false },
-            ty: Type::Var("T").alloc(a),
+            ty: Type::Abstract("T").alloc(a),
         },
     }];
 
@@ -375,6 +382,7 @@ impl<'a> TypingRule<'a> {
         let mut preconditions_str;
         let mut postconditions_str;
 
+        // TODO: extract the `Type::NonRef` constraints.
         match style {
             TypingRuleStyle::Plain => {
                 let bm = self.postcondition.expr.abstract_bm_constraint();
