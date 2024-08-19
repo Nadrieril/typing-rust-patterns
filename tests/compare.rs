@@ -10,16 +10,13 @@ use typing_rust_patterns::*;
 fn compare() -> anyhow::Result<()> {
     let a = &Arenas::default();
     let bm_based_map: HashMap<String, RuleSet> = [
-        ("stable_rust", Conf::rust_2021()),
-        ("ergo2024", Conf::rust_2024_proposed()),
+        ("stable_rust", Conf::rfc2005()),
+        ("ergo2024", Conf::rfc3627_2024()),
         ("waffle", {
-            let mut c = Conf::rust_2024_waffle();
+            let mut c = Conf::waffle_2024();
             c.rule3_ext1 = false; // Don't try to support this rule
             c
         }),
-        // ("stable_rust", Conf::rfc2005()),
-        // ("ergo2024", Conf::rfc3627_2024()),
-        // ("waffle", Conf::waffle_2024()),
     ]
     .into_iter()
     .map(|(name, conf)| (name.to_string(), RuleSet::BindingModeBased(conf)))
