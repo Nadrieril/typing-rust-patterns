@@ -29,4 +29,5 @@ There also exist some predefined option-bundles. Activate one with `set bundle`
 - restrictive: a restrictive set of rules that accepts very little
 - stateless: a proposal that tracks no hidden state; purely type-based
 - ergo2024: wip emulation of RFC3627 rules
+- waffle: a proposal by @WaffleLapkin
 - stable_rust: emulates the behavior of current stable rust

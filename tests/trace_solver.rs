@@ -152,6 +152,13 @@ fn test_solver_traces() -> anyhow::Result<()> {
                 "[&mut x]: &[&mut T]",
                 "[&mut &x]: &[&mut T]",
                 "[&mut x]: &mut [&T]", // The tricky case of rule 4
+                "[&mut ref mut x]: &mut [&T]",
+            ],
+        ),
+        (
+            RuleOptions::WAFFLE,
+            &[
+                "&[x]: &[&mut T]", // The tricky rule 3 variant
             ],
         ),
     ];

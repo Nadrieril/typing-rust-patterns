@@ -1,8 +1,6 @@
 ---
 source: tests/compare.rs
-info:
-  - ergo2024
-  - ergo2024
+info: ergo2024
 ---
 Difference on `[&mut x]: [&mut &mut T]`:
   type-based returned: TypeError("CantCopyRefMut")

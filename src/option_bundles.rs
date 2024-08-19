@@ -62,6 +62,12 @@ impl RuleOptions {
         downgrade_mut_inside_shared: false,
     };
 
+    pub const WAFFLE: Self = RuleOptions {
+        inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
+        allow_ref_pat_on_ref_mut: false,
+        ..Self::ERGO2024
+    };
+
     /// The known bundles, with a short explanation.
     pub const KNOWN_OPTION_BUNDLES: &[(&str, Self, &str)] = &[
         (
@@ -87,6 +93,7 @@ impl RuleOptions {
             "a proposal that tracks no hidden state; purely type-based",
         ),
         ("ergo2024", Self::ERGO2024, "wip emulation of RFC3627 rules"),
+        ("waffle", Self::WAFFLE, "a proposal by @WaffleLapkin"),
         (
             "stable_rust",
             Self::STABLE_RUST,

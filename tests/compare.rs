@@ -9,13 +9,24 @@ use typing_rust_patterns::*;
 #[test]
 fn compare() -> anyhow::Result<()> {
     let a = &Arenas::default();
-    let bm_based_map: HashMap<String, RuleSet> = [("ergo2024", Conf::rust_2024_proposed())]
-        .into_iter()
-        .map(|(name, conf)| (name.to_string(), RuleSet::BindingModeBased(conf)))
-        .collect();
+    let bm_based_map: HashMap<String, RuleSet> = [
+        ("stable_rust", Conf::rust_2021()),
+        ("ergo2024", Conf::rust_2024_proposed()),
+        ("waffle", {
+            let mut c = Conf::rust_2024_waffle();
+            c.rule3_ext1 = false; // Don't try to support this rule
+            c
+        }),
+        // ("stable_rust", Conf::rfc2005()),
+        // ("ergo2024", Conf::rfc3627_2024()),
+        // ("waffle", Conf::waffle_2024()),
+    ]
+    .into_iter()
+    .map(|(name, conf)| (name.to_string(), RuleSet::BindingModeBased(conf)))
+    .collect();
 
     // TODO: implement more equivalent rulesets.
-    let compare = [("ergo2024", "ergo2024")];
+    let compare = ["ergo2024", "stable_rust", "waffle"];
 
     let test_cases = {
         let patterns = generate_patterns(a, 2);
@@ -27,9 +38,9 @@ fn compare() -> anyhow::Result<()> {
             .collect_vec()
     };
 
-    for (ty_based_name, bm_based_name) in compare {
-        let ty_based = RuleSet::TypeBased(RuleOptions::from_bundle_name(ty_based_name).unwrap());
-        let bm_based = bm_based_map.get(bm_based_name).unwrap();
+    for name in compare {
+        let ty_based = RuleSet::TypeBased(RuleOptions::from_bundle_name(name).unwrap());
+        let bm_based = bm_based_map.get(name).unwrap();
 
         let mut trace = String::new();
         for test_case in &test_cases {
@@ -49,8 +60,8 @@ fn compare() -> anyhow::Result<()> {
         }
 
         insta::with_settings!({
-            snapshot_suffix => format!("{ty_based_name}-{bm_based_name}"),
-            info => &(ty_based_name, bm_based_name),
+            snapshot_suffix => format!("{name}"),
+            info => &name,
             omit_expression => true,
             prepend_module_to_snapshot => true,
         }, {
