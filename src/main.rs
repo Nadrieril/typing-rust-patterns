@@ -67,7 +67,7 @@ fn main() -> anyhow::Result<()> {
                         "Error: {err}\n\n\
                         Options are:\n\
                         {}\n\
-                        There also exist some predefined option-bundles. Activate one with `set bundle`\n\
+                        There also exist some predefined option-bundles. Activate one with `set <bundle>`\n\
                         {}",
                         RuleOptions::OPTIONS_DOC.iter().map(|(name, values, descr)| format!("- {name}: {}\n    {descr}\n", values.iter().format(" | "))).format(""),
                         RuleOptions::KNOWN_OPTION_BUNDLES.iter().map(|(name, _, descr)| format!("- {name}: {descr}")).format("\n")
