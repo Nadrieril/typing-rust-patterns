@@ -31,5 +31,5 @@ There also exist some predefined option-bundles. Activate one with `set <bundle>
 - rfc3627_2021: (TODO) the accepted RFC3627 behavior under edition 2021
 - ergo2024_breaking_only: (TODO) the breaking changes for edition 2024 planned in RFC3627
 - structural: (TODO) purely structural matching, with no match ergonomics
-- waffle: (WIP) a proposal by @WaffleLapkin
+- waffle: a proposal by @WaffleLapkin
 - rpjohnst: (TODO) a proposal by @rpjohnst

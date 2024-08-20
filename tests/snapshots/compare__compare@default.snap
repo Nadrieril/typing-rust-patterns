@@ -113,12 +113,6 @@ Difference on `&[&x]: &&mut [&T]`:
 Difference on `&[&x]: &mut &mut [&T]`:
   type-based returned: Success(&T)
     bm-based returned: TypeError("mismatched types")
-Difference on `&[x]: &&mut [&mut T]`:
-  type-based returned: TypeError("MutBorrowBehindSharedBorrow")
-    bm-based returned: Success(&mut &mut T)
-Difference on `&[x]: &mut &mut [&mut T]`:
-  type-based returned: TypeError("MutBorrowBehindSharedBorrow")
-    bm-based returned: Success(&mut &mut T)
 Difference on `&mut [&x]: &mut &mut [&T]`:
   type-based returned: Success(&T)
     bm-based returned: TypeError("mismatched types")

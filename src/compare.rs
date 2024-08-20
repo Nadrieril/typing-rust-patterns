@@ -13,15 +13,20 @@ use AnalysisResult::*;
 #[derive(Debug)]
 pub enum AnalysisResult<'a> {
     Success(Type<'a>),
+    BorrowError(Type<'a>, String),
     TypeError(String),
 }
 
 impl<'a> AnalysisResult<'a> {
     pub fn matches(&self, other: &Self) -> bool {
         match (self, other) {
-            (Success(lty), Success(rty)) => lty == rty,
-            (TypeError(_), TypeError(_)) => true,
-            _ => false,
+            // These borrow errors only come from this solver, whose borrow checker is more
+            // accurate. Hence if both agree on types we ignore the borrowck error.
+            (Success(lty), Success(rty))
+            | (BorrowError(lty, _), Success(rty))
+            | (Success(lty), BorrowError(rty, _)) => lty == rty,
+            (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => true,
+            (Success(_), TypeError(_)) | (TypeError(_), Success(_)) => false,
         }
     }
 }
@@ -56,10 +61,11 @@ fn analyze_with_this_crate<'a>(
         CantStep::Done => {
             assert_eq!(solver.done_predicates.len(), 1);
             let pred = solver.done_predicates[0];
+            let ty = *pred.expr.ty;
             match pred.expr.simplify(ctx).borrow_check() {
                 // This error isn't handled by `match-ergo-formality` so we ignore it.
-                Ok(()) | Err(BorrowCheckError::CantCopyNestedRefMut) => Success(*pred.expr.ty),
-                Err(err) => TypeError(format!("{err:?}")),
+                Ok(()) | Err(BorrowCheckError::CantCopyNestedRefMut) => Success(ty),
+                Err(err) => BorrowError(ty, format!("{err:?}")),
             }
         }
         CantStep::NoApplicableRule(_, err) => TypeError(format!("{err:?}")),
