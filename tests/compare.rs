@@ -70,14 +70,16 @@ fn compare() -> anyhow::Result<()> {
             let _ = writeln!(&mut trace, "    bm-based returned: {right_res:?}");
         }
 
-        insta::with_settings!({
-            snapshot_suffix => format!("{name}"),
-            info => &name,
-            omit_expression => true,
-            prepend_module_to_snapshot => true,
-        }, {
-            insta::assert_snapshot!(trace);
-        });
+        if !trace.is_empty() {
+            insta::with_settings!({
+                snapshot_suffix => format!("{name}"),
+                info => &name,
+                omit_expression => true,
+                prepend_module_to_snapshot => true,
+            }, {
+                insta::assert_snapshot!(trace);
+            });
+        }
     }
     Ok(())
 }
