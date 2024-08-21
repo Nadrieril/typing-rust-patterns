@@ -11,6 +11,7 @@ pub enum DeepeningRequest {
     Pattern,
     Type,
     BindingMode,
+    ScrutineeMutability,
 }
 
 impl<'a> Pattern<'a> {
@@ -136,12 +137,21 @@ impl<'a> Expression<'a> {
                 })
                 .collect(),
             (ExprKind::Scrutinee, D::BindingMode) => vec![*self],
-            (ExprKind::Abstract { not_a_ref: false }, D::BindingMode) => {
+            (
+                ExprKind::Abstract {
+                    not_a_ref: false,
+                    scrutinee_mutability,
+                },
+                D::BindingMode,
+            ) => {
                 // We know our rules only inspect the binding modes of expressions, so we only need
                 // to split along that dimension.
                 let mut vec = vec![Expression {
                     // Stands for any non-`Ref` expression.
-                    kind: ExprKind::Abstract { not_a_ref: true },
+                    kind: ExprKind::Abstract {
+                        not_a_ref: true,
+                        scrutinee_mutability,
+                    },
                     ty: self.ty,
                 }];
                 // Add more `Ref` expressions, following the type if relevant.
@@ -163,11 +173,36 @@ impl<'a> Expression<'a> {
                 }
                 vec
             }
-            (ExprKind::Abstract { not_a_ref: true }, D::BindingMode) => {
+            (
+                ExprKind::Abstract {
+                    not_a_ref: true, ..
+                },
+                D::BindingMode,
+            ) => {
                 // This would generate Scrutinee/Deref/Field cases but we don't need it.
                 unreachable!("A rule is inspecting expressions in unexpected ways")
             }
-            (ExprKind::Scrutinee | ExprKind::Abstract { .. }, D::Pattern) => unreachable!(),
+            (
+                ExprKind::Abstract {
+                    not_a_ref,
+                    scrutinee_mutability,
+                },
+                D::ScrutineeMutability,
+            ) => {
+                assert!(scrutinee_mutability.is_none());
+                Mutability::ALL
+                    .into_iter()
+                    .map(|mtbl| Expression {
+                        kind: ExprKind::Abstract {
+                            not_a_ref,
+                            scrutinee_mutability: Some(mtbl),
+                        },
+                        ty: self.ty,
+                    })
+                    .collect()
+            }
+            (ExprKind::Scrutinee | ExprKind::Abstract { .. }, D::Pattern)
+            | (ExprKind::Scrutinee, D::ScrutineeMutability) => unreachable!(),
             (ExprKind::Ref(mtbl, e), _) => e
                 .deepen(a, req, many)
                 .into_iter()

@@ -128,15 +128,10 @@ fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
 
 fn display_rules(options: RuleOptions) {
     println!("The current options can be fully described as the following set of rules.");
+    println!();
 
     let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
-    if options.downgrade_mut_inside_shared {
-        println!("Warning: option `downgrade_mut_inside_shared` is not represented in the rules");
-    }
-
-    println!();
-
     let typing_rules = compute_rules(ctx);
     for rule in typing_rules {
         println!("{}\n", rule.display(options.rules_display_style));
@@ -200,10 +195,6 @@ fn display_rules_diff(old_options: RuleOptions, new_options: RuleOptions) {
     }
     all_rules.sort_by_key(|(_, rule)| rule.name);
 
-    if old_options.downgrade_mut_inside_shared || new_options.downgrade_mut_inside_shared {
-        println!("Warning: option `downgrade_mut_inside_shared` is not represented in the rules");
-        println!();
-    }
     // Display the rules diff.
     for (state, rule) in all_rules {
         match state {

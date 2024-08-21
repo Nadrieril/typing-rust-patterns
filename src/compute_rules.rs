@@ -33,7 +33,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     let mut predicates = vec![TypingPredicate {
         pat: &Pattern::Abstract("p"),
         expr: Expression {
-            kind: ExprKind::Abstract { not_a_ref: false },
+            kind: ExprKind::default(),
             ty: Type::Abstract("T").alloc(a),
         },
     }];
@@ -91,6 +91,8 @@ struct SideConstraints<'a> {
     binding_mode: Option<BindingMode>,
     /// Type variables that are known not to be references.
     non_ref_types: HashSet<&'a str>,
+    /// WHat access the abstract expression has of the scrutinee.
+    scrutinee_mutability: Option<Mutability>,
 }
 
 impl<'a> Type<'a> {
@@ -124,25 +126,43 @@ impl<'a> Expression<'a> {
         self.ty.extract_side_constraints(cstrs);
         match self.kind {
             ExprKind::Scrutinee => *self,
-            ExprKind::Abstract { not_a_ref: false } => *self,
-            ExprKind::Abstract { not_a_ref: true } => {
-                cstrs.binding_mode = Some(ByMove);
-                Expression {
-                    ty: self.ty,
-                    kind: ExprKind::Abstract { not_a_ref: false },
+            ExprKind::Abstract {
+                not_a_ref,
+                scrutinee_mutability,
+            } => {
+                cstrs.scrutinee_mutability = scrutinee_mutability;
+                if not_a_ref {
+                    cstrs.binding_mode = Some(ByMove);
+                    Expression {
+                        ty: self.ty,
+                        kind: ExprKind::Abstract {
+                            not_a_ref: false,
+                            scrutinee_mutability,
+                        },
+                    }
+                } else {
+                    *self
                 }
             }
             ExprKind::Ref(
                 mtbl,
-                Expression {
-                    kind: ExprKind::Abstract { not_a_ref: false },
+                &Expression {
+                    kind:
+                        ExprKind::Abstract {
+                            not_a_ref: false,
+                            scrutinee_mutability,
+                        },
                     ..
                 },
             ) if remove_bm => {
                 cstrs.binding_mode = Some(ByRef(mtbl));
+                cstrs.scrutinee_mutability = scrutinee_mutability;
                 Expression {
                     ty: self.ty,
-                    kind: ExprKind::Abstract { not_a_ref: false },
+                    kind: ExprKind::Abstract {
+                        not_a_ref: false,
+                        scrutinee_mutability,
+                    },
                 }
             }
             ExprKind::Ref(mtbl, e) => e
@@ -159,30 +179,66 @@ impl<'a> Expression<'a> {
     fn set_abstract_bm(&self, a: &'a Arenas<'a>, bm: Option<BindingMode>) -> Self {
         match (self.kind, bm) {
             (ExprKind::Scrutinee, _) => *self,
-            (ExprKind::Abstract { not_a_ref: false }, None) => *self,
-            (ExprKind::Abstract { not_a_ref: false }, Some(ByMove)) => unreachable!(),
-            (ExprKind::Abstract { not_a_ref: false }, Some(ByRef(mtbl))) => Expression {
+            (
+                ExprKind::Abstract {
+                    not_a_ref: false, ..
+                },
+                None,
+            ) => *self,
+            (
+                ExprKind::Abstract {
+                    not_a_ref: false, ..
+                },
+                Some(ByMove),
+            ) => unreachable!(),
+            (
+                ExprKind::Abstract {
+                    not_a_ref: false, ..
+                },
+                Some(ByRef(mtbl)),
+            ) => Expression {
                 ty: Type::Ref(mtbl, self.ty).alloc(a),
                 kind: self.kind,
             }
             .deref(a),
-            (ExprKind::Abstract { not_a_ref: true }, Some(ByMove)) => Expression {
+            (
+                ExprKind::Abstract {
+                    not_a_ref: true,
+                    scrutinee_mutability,
+                },
+                Some(ByMove),
+            ) => Expression {
                 ty: self.ty,
-                kind: ExprKind::Abstract { not_a_ref: false },
+                kind: ExprKind::Abstract {
+                    not_a_ref: false,
+                    scrutinee_mutability,
+                },
             },
-            (ExprKind::Abstract { not_a_ref: true }, _) => unreachable!(),
+            (
+                ExprKind::Abstract {
+                    not_a_ref: true, ..
+                },
+                _,
+            ) => unreachable!(),
             (
                 ExprKind::Ref(
                     mtbl,
-                    Expression {
-                        kind: ExprKind::Abstract { not_a_ref: false },
+                    &Expression {
+                        kind:
+                            ExprKind::Abstract {
+                                not_a_ref: false,
+                                scrutinee_mutability,
+                            },
                         ..
                     },
                 ),
                 Some(ByRef(bm_mtbl)),
             ) if mtbl == bm_mtbl => Expression {
                 ty: self.ty,
-                kind: ExprKind::Abstract { not_a_ref: false },
+                kind: ExprKind::Abstract {
+                    not_a_ref: false,
+                    scrutinee_mutability,
+                },
             },
             (ExprKind::Ref(mtbl, e), _) => e.set_abstract_bm(a, bm).borrow(a, mtbl),
             (ExprKind::Deref(e), _) => e.set_abstract_bm(a, bm).deref(a),
@@ -232,11 +288,11 @@ impl<'a> TypingRule<'a> {
 
         let extract_bm = matches!(style, TypingRuleStyle::BindingMode);
         let (cstrs, rule) = self.extract_side_constraints(a, extract_bm);
+        let abstract_expr = ExprKind::default();
 
         let mut postconditions_str = rule.postcondition.to_string();
 
         if let Some(bm) = cstrs.binding_mode {
-            let abstract_expr = ExprKind::Abstract { not_a_ref: true };
             match style {
                 TypingRuleStyle::Plain => {
                     assert!(bm == ByMove);
@@ -259,6 +315,16 @@ impl<'a> TypingRule<'a> {
 
         for ty in cstrs.non_ref_types {
             let _ = write!(&mut postconditions_str, ", {ty} is not a reference",);
+        }
+        if let Some(mtbl) = cstrs.scrutinee_mutability {
+            let mtbl = match mtbl {
+                Mutability::Shared => "read-only",
+                Mutability::Mutable => "mutable",
+            };
+            let _ = write!(
+                &mut postconditions_str,
+                ", {abstract_expr} has {mtbl} access to the scrutinee",
+            );
         }
 
         let mut preconditions_str = if rule.preconditions.is_empty() {

@@ -7,7 +7,29 @@ fallback_to_outer: false -> true
 inherited_ref_on_ref: "EatOuter" -> "EatInner"
 mut_binding_on_inherited: "Keep" -> "Error"
 
-Warning: option `downgrade_mut_inside_shared` is not represented in the rules
+-p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
+------------------------------------------------------ "ConstructorRef"
+-[p0, p1] @ q: &mut [T0, T1]
+
++p0 @ &(*q).0: &T0,  p1 @ &(*q).1: &T1
++-------------------------------------------------------------------- "ConstructorRef"
++[p0, p1] @ q: &mut [T0, T1], q has read-only access to the scrutinee
+
++p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
++------------------------------------------------------------------ "ConstructorRef"
++[p0, p1] @ q: &mut [T0, T1], q has mutable access to the scrutinee
+
+-[p0, p1] @ &mut **q: &mut T
+---------------------------- "ConstructorMultiRef"
+-[p0, p1] @ q: &mut &mut T
+
++[p0, p1] @ &**q: &T
++------------------------------------------------------------------ "ConstructorMultiRef"
++[p0, p1] @ q: &mut &mut T, q has read-only access to the scrutinee
+
++[p0, p1] @ &mut **q: &mut T
++---------------------------------------------------------------- "ConstructorMultiRef"
++[p0, p1] @ q: &mut &mut T, q has mutable access to the scrutinee
 
 -p @ *q: T
 ----------- "Deref(EatOuter)"
@@ -49,9 +71,13 @@ Warning: option `downgrade_mut_inside_shared` is not represented in the rules
 +------------------------ "Deref(EatInner)"
 +&mut p @ &mut q: &mut &T
 
++p @ &*q: &T
++--------------------------------------------------------------------- "Deref(EatInner)"
++&mut p @ &mut q: &mut &mut T, q has read-only access to the scrutinee
+
 +p @ &mut *q: &mut T
-+---------------------------- "Deref(EatInner)"
-+&mut p @ &mut q: &mut &mut T
++------------------------------------------------------------------- "Deref(EatInner)"
++&mut p @ &mut q: &mut &mut T, q has mutable access to the scrutinee
 
 -p @ *&*q: T
 --------------- "DerefMutWithShared(EatOuter)"

@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 
@@ -232,10 +233,10 @@ impl<'a> TypingPredicate<'a> {
                             a,
                             mtbl,
                             ctx.options.downgrade_mut_inside_shared,
-                        );
-                        Self { pat, expr }
+                        )?;
+                        Ok(Self { pat, expr })
                     })
-                    .collect();
+                    .try_collect()?;
                 Ok((Rule::ConstructorRef, preds))
             }
             (P::Tuple(_), T::Ref(_, T::Tuple(_))) => Err(TypeError::TypeMismatch),
@@ -250,7 +251,7 @@ impl<'a> TypingPredicate<'a> {
                         a,
                         mtbl,
                         ctx.options.downgrade_mut_inside_shared,
-                    )
+                    )?
                 }
                 Ok((
                     Rule::ConstructorMultiRef,
@@ -364,7 +365,7 @@ impl<'a> TypingPredicate<'a> {
                         a,
                         mtbl,
                         ctx.options.downgrade_mut_inside_shared,
-                    );
+                    )?;
                 }
 
                 let pred = Self { pat: p_inner, expr };

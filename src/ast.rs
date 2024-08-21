@@ -2,10 +2,10 @@
 //!
 //! Note: we arena-allocate everything to make pattern-matching easy.
 
-use std::cmp::min;
-
 use BindingMode::*;
 use Mutability::*;
+
+use crate::TypeError;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Mutability {
@@ -91,10 +91,14 @@ pub enum ExprKind<'a> {
     /// Field access.
     Field(&'a Expression<'a>, usize),
     /// An abstract expression, meant as a placeholder for some unknown expression. Used only when
-    /// exploring possible rules. The binding mode may be known or unknown. If `not_a_ref` is true,
-    /// this is a placeholder for any non-`Ref` expression. If it is false, this stands for any
-    /// expression at all.
-    Abstract { not_a_ref: bool },
+    /// exploring possible rules.
+    Abstract {
+        /// If true, this is a placeholder for any non-`Ref` expression. If it is false, this
+        /// stands for any expression.
+        not_a_ref: bool,
+        /// If `Some`, we know that we have the given access level to the scrutinee.
+        scrutinee_mutability: Option<Mutability>,
+    },
 }
 
 impl<'a> Expression<'a> {
@@ -120,11 +124,11 @@ impl<'a> Expression<'a> {
         arenas: &'a Arenas<'a>,
         mut mtbl: Mutability,
         cap_mutability: bool,
-    ) -> Self {
-        if cap_mutability && let ByRef(cap) = self.scrutinee_access_level() {
-            mtbl = min(mtbl, cap);
+    ) -> Result<Self, TypeError> {
+        if cap_mutability && mtbl == Mutable {
+            mtbl = self.scrutinee_mutability()?;
         }
-        self.borrow(arenas, mtbl)
+        Ok(self.borrow(arenas, mtbl))
     }
 
     pub fn field(&self, arenas: &'a Arenas<'a>, n: usize) -> Self {
@@ -134,6 +138,15 @@ impl<'a> Expression<'a> {
         Expression {
             ty: &tys[n],
             kind: ExprKind::Field(self.alloc(arenas), n),
+        }
+    }
+}
+
+impl Default for ExprKind<'_> {
+    fn default() -> Self {
+        ExprKind::Abstract {
+            not_a_ref: false,
+            scrutinee_mutability: None,
         }
     }
 }
