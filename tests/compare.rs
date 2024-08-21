@@ -42,7 +42,9 @@ fn compare() -> anyhow::Result<()> {
         ),
         ("waffle", RuleOptions::WAFFLE, {
             let mut c = Conf::waffle_2024();
-            c.rule3_ext1 = false; // Don't try to support this rule
+            // Supporting the rule3 extension is too complicated.
+            c.rule3_ext1 = false;
+            c.rule3 = true;
             c
         }),
         ("rpjohnst", RuleOptions::RPJOHNST, Conf::rpjohnst_2024()),

@@ -117,7 +117,11 @@ impl RuleOptions {
             Self::STRUCTURAL,
             "purely structural matching, with no match ergonomics",
         ),
-        ("waffle", Self::WAFFLE, "a proposal by @WaffleLapkin"),
+        (
+            "waffle",
+            Self::WAFFLE,
+            "a proposal by @WaffleLapkin (excluding the proposed rule3 extension)",
+        ),
         ("rpjohnst", Self::RPJOHNST, "(TODO) a proposal by @rpjohnst"),
     ];
 
