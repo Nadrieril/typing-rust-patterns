@@ -7,6 +7,8 @@ Error: unknown key `mistyped`
 Options are:
 - rules_display_style: Plain | BindingMode
     how to display typing rules (in the `rules` command)
+- match_constructor_through_ref: true | false
+    whether `[p]` can match on `&[T]`; the heart of match ergonomics.
 - ref_binding_on_inherited: ResetBindingMode | AllocTemporary | Error
     how to handle a `ref x` binding on an inherited reference
 - mut_binding_on_inherited: ResetBindingMode | Keep | Error
@@ -29,6 +31,6 @@ There also exist some predefined option-bundles. Activate one with `set <bundle>
 - ergo2024: the accepted RFC3627 behavior
 - rfc3627_2021: (TODO) the accepted RFC3627 behavior under edition 2021
 - ergo2024_breaking_only: (TODO) the breaking changes for edition 2024 planned in RFC3627
-- structural: (TODO) purely structural matching, with no match ergonomics
+- structural: purely structural matching, with no match ergonomics
 - waffle: a proposal by @WaffleLapkin
 - rpjohnst: (TODO) a proposal by @rpjohnst

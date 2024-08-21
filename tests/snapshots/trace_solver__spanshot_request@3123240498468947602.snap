@@ -1,0 +1,30 @@
+---
+source: tests/trace_solver.rs
+info:
+  options:
+    match_constructor_through_ref: true
+    ref_binding_on_inherited: AllocTemporary
+    mut_binding_on_inherited: Keep
+    inherited_ref_on_ref: EatOuter
+    allow_ref_pat_on_ref_mut: true
+    simplify_deref_mut: true
+    eat_inherited_ref_alone: true
+    downgrade_mut_inside_shared: false
+    rules_display_style: Plain
+  bundle_name: ~
+  request: "&[[&x]]: &[&mut [T]]"
+---
+&[[&x]] @ p: &[&mut [T]]
+// Applying rule `Deref(EatOuter)`
+[[&x]] @ *p: [&mut [T]]
+// Applying rule `Constructor`
+[&x] @ (*p).0: &mut [T]
+// Applying rule `ConstructorRef`
+&x @ &mut (*(*p).0).0: &mut T
+// Applying rule `DerefMutWithShared(EatOuter)`
+x @ *&*&mut (*(*p).0).0: T
+// Applying rule `Binding`
+let x: T = *&*&mut (*(*p).0).0
+
+// Final bindings (simplified):
+let x: T = (*(*p).0).0;

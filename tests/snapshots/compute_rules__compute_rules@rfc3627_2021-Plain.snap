@@ -3,6 +3,7 @@ source: tests/compute_rules.rs
 info:
   bundle_name: rfc3627_2021
   options:
+    match_constructor_through_ref: true
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: ResetBindingMode
     inherited_ref_on_ref: EatBoth

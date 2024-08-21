@@ -3,6 +3,7 @@ source: tests/compute_rules.rs
 info:
   bundle_name: rpjohnst
   options:
+    match_constructor_through_ref: true
     ref_binding_on_inherited: AllocTemporary
     mut_binding_on_inherited: Keep
     inherited_ref_on_ref: EatOuter

@@ -2,6 +2,7 @@
 source: tests/trace_cli.rs
 info: options
 ---
+match_constructor_through_ref: true
 ref_binding_on_inherited: ResetBindingMode
 mut_binding_on_inherited: Keep
 inherited_ref_on_ref: EatOuter

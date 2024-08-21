@@ -44,6 +44,8 @@ pub enum InheritedRefOnRefBehavior {
 /// Choice of typing rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RuleOptions {
+    /// Whether `[p]` can match on `&[T]`. The heart of match ergonomics.
+    pub match_constructor_through_ref: bool,
     pub ref_binding_on_inherited: RefBindingOnInheritedBehavior,
     pub mut_binding_on_inherited: MutBindingOnInheritedBehavior,
     pub inherited_ref_on_ref: InheritedRefOnRefBehavior,
@@ -61,6 +63,7 @@ pub struct RuleOptions {
     /// How to display rules.
     pub rules_display_style: TypingRuleStyle,
     // TODO: fallback_to_outer
+    // TODO: double_ref: Last | Min
 }
 
 impl RuleOptions {
@@ -72,6 +75,11 @@ impl RuleOptions {
             "rules_display_style",
             &["Plain", "BindingMode"],
             "how to display typing rules (in the `rules` command)",
+        ),
+        (
+            "match_constructor_through_ref",
+            &["true", "false"],
+            "whether `[p]` can match on `&[T]`; the heart of match ergonomics.",
         ),
         (
             "ref_binding_on_inherited",
@@ -118,6 +126,7 @@ impl RuleOptions {
         }
         match key {
             "rules_display_style" => self.rules_display_style = from_str(val)?,
+            "match_constructor_through_ref" => self.match_constructor_through_ref = from_str(val)?,
             "ref_binding_on_inherited" => self.ref_binding_on_inherited = from_str(val)?,
             "mut_binding_on_inherited" => self.mut_binding_on_inherited = from_str(val)?,
             "inherited_ref_on_ref" => self.inherited_ref_on_ref = from_str(val)?,
@@ -186,6 +195,7 @@ impl<'a> TypingPredicate<'a> {
         use Pattern as P;
         use Type as T;
         let a = ctx.arenas;
+        let o = ctx.options;
 
         match (*self.pat, *self.expr.ty) {
             // Constructor rules
@@ -201,7 +211,9 @@ impl<'a> TypingPredicate<'a> {
                 Ok((Rule::Constructor, preds))
             }
             (P::Tuple(_), T::Tuple(_)) => Err(TypeError::TypeMismatch),
-            (P::Tuple(pats), T::Ref(mtbl, T::Tuple(tys))) if pats.len() == tys.len() => {
+            (P::Tuple(pats), T::Ref(mtbl, T::Tuple(tys)))
+                if pats.len() == tys.len() && o.match_constructor_through_ref =>
+            {
                 let preds = pats
                     .iter()
                     .enumerate()
@@ -217,7 +229,9 @@ impl<'a> TypingPredicate<'a> {
                 Ok((Rule::ConstructorRef, preds))
             }
             (P::Tuple(_), T::Ref(_, T::Tuple(_))) => Err(TypeError::TypeMismatch),
-            (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _))) => {
+            (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _)))
+                if o.match_constructor_through_ref =>
+            {
                 let mtbl = min(outer_mtbl, inner_mtbl);
                 let mut expr = self.expr.deref(a);
                 if let Mutable = inner_mtbl {
@@ -236,6 +250,7 @@ impl<'a> TypingPredicate<'a> {
                     }],
                 ))
             }
+            (P::Tuple(_), T::Ref(_, T::Ref(..))) => Err(TypeError::TypeMismatch),
             (P::Tuple(_), T::Ref(_, T::Abstract(_) | T::NonRef(..))) => {
                 Err(TypeError::OverlyGeneralType)
             }

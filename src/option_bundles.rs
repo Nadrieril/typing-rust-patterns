@@ -4,6 +4,7 @@ impl RuleOptions {
     /// Reproduces stable rust behavior.
     pub const STABLE_RUST: Self = RuleOptions {
         rules_display_style: TypingRuleStyle::Plain,
+        match_constructor_through_ref: true,
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
@@ -16,6 +17,7 @@ impl RuleOptions {
     /// Reproduces RFC3627 (match ergonomics 2024) behavior
     pub const ERGO2024: Self = RuleOptions {
         rules_display_style: TypingRuleStyle::Plain,
+        match_constructor_through_ref: true,
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
@@ -29,6 +31,7 @@ impl RuleOptions {
     /// inspect the DBM, we only follow the types.
     pub const STATELESS: Self = RuleOptions {
         rules_display_style: TypingRuleStyle::Plain,
+        match_constructor_through_ref: true,
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::AllocTemporary,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Keep,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
@@ -47,7 +50,7 @@ impl RuleOptions {
 
     /// Purely structural matching, with no match ergonomics.
     pub const STRUCTURAL: Self = RuleOptions {
-        // TODO: match_constructor_through_ref: false
+        match_constructor_through_ref: false,
         allow_ref_pat_on_ref_mut: false,
         ..Self::STATELESS
     };
@@ -106,11 +109,10 @@ impl RuleOptions {
             Self::ERGO2024_BREAKING_ONLY,
             "(TODO) the breaking changes for edition 2024 planned in RFC3627",
         ),
-        // TODO: add "no match ergonomics" ruleset
         (
             "structural",
             Self::STRUCTURAL,
-            "(TODO) purely structural matching, with no match ergonomics",
+            "purely structural matching, with no match ergonomics",
         ),
         ("waffle", Self::WAFFLE, "a proposal by @WaffleLapkin"),
         ("rpjohnst", Self::RPJOHNST, "(TODO) a proposal by @rpjohnst"),

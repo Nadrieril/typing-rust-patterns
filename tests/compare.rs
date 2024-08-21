@@ -28,6 +28,7 @@ fn compare() -> anyhow::Result<()> {
             },
         ),
         ("stable_rust", RuleOptions::STABLE_RUST, Conf::rfc2005()),
+        ("structural", RuleOptions::STRUCTURAL, Conf::pre_rfc2005()),
         ("ergo2024", RuleOptions::ERGO2024, Conf::rfc3627_2024()),
         (
             "rfc3627_2021",

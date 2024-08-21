@@ -80,6 +80,7 @@ Warning: option `downgrade_mut_inside_shared` is not represented in the rules
 +---------------------------------- "Binding"
 +mut x @ q: T, q is not a reference
 
+match_constructor_through_ref: true
 ref_binding_on_inherited: ResetBindingMode
 mut_binding_on_inherited: Error
 inherited_ref_on_ref: EatInner

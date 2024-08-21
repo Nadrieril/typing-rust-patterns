@@ -3,6 +3,7 @@ source: tests/compute_rules.rs
 info:
   bundle_name: structural
   options:
+    match_constructor_through_ref: false
     ref_binding_on_inherited: AllocTemporary
     mut_binding_on_inherited: Keep
     inherited_ref_on_ref: EatOuter
@@ -15,30 +16,6 @@ info:
 p0 @ q.0: T0,  p1 @ q.1: T1
 --------------------------- "Constructor"
 [p0, p1] @ q: [T0, T1]
-
-p0 @ &(*q).0: &T0,  p1 @ &(*q).1: &T1
-------------------------------------- "ConstructorRef"
-[p0, p1] @ q: &[T0, T1]
-
-p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
------------------------------------------------------ "ConstructorRef"
-[p0, p1] @ q: &mut [T0, T1]
-
-[p0, p1] @ *q: &T
------------------ "ConstructorMultiRef"
-[p0, p1] @ q: &&T
-
-[p0, p1] @ &**q: &T
---------------------- "ConstructorMultiRef"
-[p0, p1] @ q: &&mut T
-
-[p0, p1] @ *q: &T
---------------------- "ConstructorMultiRef"
-[p0, p1] @ q: &mut &T
-
-[p0, p1] @ &mut **q: &mut T
---------------------------- "ConstructorMultiRef"
-[p0, p1] @ q: &mut &mut T
 
 p @ *q: T
 ---------- "Deref(EatOuter)"

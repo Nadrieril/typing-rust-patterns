@@ -3,6 +3,7 @@ source: tests/compute_rules.rs
 info:
   bundle_name: ergo2024_breaking_only
   options:
+    match_constructor_through_ref: true
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: Error
     inherited_ref_on_ref: EatInner
