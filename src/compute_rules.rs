@@ -3,10 +3,17 @@ use std::collections::HashSet;
 use std::fmt::Write;
 use std::{cmp::max, fmt::Display};
 
-use itertools::Itertools;
+use itertools::{EitherOrBoth, Itertools};
 
 use crate::*;
 use BindingMode::*;
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct TypingRule<'a> {
+    pub name: Rule,
+    pub preconditions: Vec<TypingPredicate<'a>>,
+    pub postcondition: TypingPredicate<'a>,
+}
 
 impl<'a> TypingPredicate<'a> {
     /// Compute the typing rule associated with this predicate.
@@ -18,6 +25,17 @@ impl<'a> TypingPredicate<'a> {
             postcondition: *self,
         })
     }
+
+    /// A predicate with abstract patterns, type and expression.
+    fn new_abstract(a: &'a Arenas<'a>) -> Self {
+        TypingPredicate {
+            pat: &Pattern::Abstract("p"),
+            expr: Expression {
+                kind: ExprKind::default(),
+                ty: Type::Abstract("T").alloc(a),
+            },
+        }
+    }
 }
 
 const TRACE: bool = false;
@@ -25,25 +43,16 @@ const TRACE: bool = false;
 /// Compute all the rules that describe the behavior of the solver with the given options. We start
 /// with a dummy predicate with abstract pattern, expression and type, and recursively refine it as
 /// long as we get `OverlyGeneral` errors. This ensures we explore all possible cases.
-///
-/// Notable exception is the `downgrade_mut_inside_shared`, which is not possible to describe it
-/// as a rule without tracking additional state. As such, it won't emit `OverlyGeneral` errors.
 pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     let a = ctx.arenas;
-    let mut predicates = vec![TypingPredicate {
-        pat: &Pattern::Abstract("p"),
-        expr: Expression {
-            kind: ExprKind::default(),
-            ty: Type::Abstract("T").alloc(a),
-        },
-    }];
+    let mut predicates = vec![TypingPredicate::new_abstract(a)];
 
     let mut rules = Vec::new();
     while let Some(pred) = predicates.pop() {
         if TRACE {
             println!("Analyzing pred: {pred}");
         }
-        let new_preds = match pred.typing_rule(ctx) {
+        match pred.typing_rule(ctx) {
             Ok(rule) => {
                 if TRACE {
                     let rule_str = rule.display(TypingRuleStyle::Plain).to_string();
@@ -51,23 +60,23 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
                     println!("  Pushing rule:\n    {rule_str}");
                 }
                 rules.push(rule);
-                vec![]
             }
-            Err(TypeError::OverlyGeneral(req)) => pred.deepen(a, req, true),
+            Err(TypeError::OverlyGeneral(req)) => {
+                let new_preds = pred.deepen(a, req, true);
+                if TRACE {
+                    print!(
+                        "  Pushing new preds:\n{}",
+                        new_preds.iter().map(|p| format!("    {p}\n")).format("")
+                    );
+                }
+                predicates.extend(new_preds);
+            }
             Err(err) => {
                 if TRACE {
                     println!("  Type error: {err:?}");
                 }
-                vec![]
             }
-        };
-        if TRACE && !new_preds.is_empty() {
-            print!(
-                "  Pushing new preds:\n{}",
-                new_preds.iter().map(|p| format!("    {p}\n")).format("")
-            );
         }
-        predicates.extend(new_preds);
     }
 
     // We generate the deepenings in the order we'd like to see them, so we reverse to restore that
@@ -77,11 +86,44 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     rules
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-pub struct TypingRule<'a> {
-    pub name: Rule,
-    pub preconditions: Vec<TypingPredicate<'a>>,
-    pub postcondition: TypingPredicate<'a>,
+/// Compute rules for two sets of options simultaneously, such that they both have the same set of
+/// starting predicates.
+pub fn compute_joint_rules<'a>(
+    a: &'a Arenas<'a>,
+    left: RuleOptions,
+    right: RuleOptions,
+) -> Vec<EitherOrBoth<TypingRule<'a>>> {
+    use EitherOrBoth::*;
+    let mut predicates = vec![TypingPredicate::new_abstract(a)];
+    let left = TypingCtx {
+        arenas: a,
+        options: left,
+    };
+    let right = TypingCtx {
+        arenas: a,
+        options: right,
+    };
+
+    let mut rules = Vec::new();
+    while let Some(pred) = predicates.pop() {
+        match (pred.typing_rule(left), pred.typing_rule(right)) {
+            (Ok(left), Ok(right)) => rules.push(Both(left, right)),
+            (Err(TypeError::OverlyGeneral(req)), _) | (_, Err(TypeError::OverlyGeneral(req))) => {
+                predicates.extend(pred.deepen(a, req, true))
+            }
+            (Ok(left), Err(_)) => rules.push(Left(left)),
+            (Err(_), Ok(right)) => rules.push(Right(right)),
+            (Err(_), Err(_)) => {}
+        }
+    }
+
+    // We generate the deepenings in the order we'd like to see them, so we reverse to restore that
+    // order.
+    rules.reverse();
+    rules.sort_by_key(|joint_rule| match joint_rule {
+        Both(x, _) | Left(x) | Right(x) => x.name,
+    });
+    rules
 }
 
 /// Extra constraints to display as preconditions.
@@ -321,10 +363,7 @@ impl<'a> TypingRule<'a> {
                 Mutability::Shared => "read-only",
                 Mutability::Mutable => "mutable",
             };
-            let _ = write!(
-                &mut postconditions_str,
-                ", {abstract_expr} has {mtbl} access to the scrutinee",
-            );
+            let _ = write!(&mut postconditions_str, ", {abstract_expr} {mtbl}",);
         }
 
         let mut preconditions_str = if rule.preconditions.is_empty() {

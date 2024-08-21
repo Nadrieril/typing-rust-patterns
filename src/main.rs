@@ -2,8 +2,10 @@ use std::{collections::HashSet, fmt::Display, io::IsTerminal};
 
 use anyhow::bail;
 use colored::Color;
+use indoc::indoc;
 use inquire::{history::SimpleHistory, CustomUserError, Text};
 use itertools::Itertools;
+
 use typing_rust_patterns::*;
 
 static COMMANDS: &[&str] = &["help", "options", "set", "rules", "quit"];
@@ -22,6 +24,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     let mut options = RuleOptions::DEFAULT;
+    let mut compare_with = None;
 
     let mut history = Vec::new();
     let prompt = |history: &[_]| {
@@ -44,7 +47,7 @@ fn main() -> anyhow::Result<()> {
     while let Some(request) = prompt(&history)? {
         let request = request.trim();
         if request == "?" || request == "help" {
-            println!("Commands: options, set, rules, quit");
+            println!("Commands: {}", COMMANDS.iter().format(", "));
         } else if request == "q" || request == "quit" {
             break;
         } else if request == "options" {
@@ -52,6 +55,35 @@ fn main() -> anyhow::Result<()> {
             print!("{options}");
         } else if request == "rules" {
             display_rules(options)
+        } else if request == "compare" {
+            // TODO: `compare <ruleset>`, `compare <ruleset> <ruleset>`
+            // TODO: maybe `compare saved`, plus save/unsave
+            // TODO: would give a good name to the thing: current vs saved
+            // TODO: maybe `previous` even
+            // but then harder to justify side-by-side solver
+            if let Some(compare_with) = compare_with {
+                if compare_with == options {
+                    println!(indoc!(
+                        "
+                        This ruleset is the same as the one that was previously saved. Change some
+                        settings and run `compare` again.
+                        "
+                    ))
+                } else {
+                    // TODO
+                    // TODO: show sets of options at the top
+                    display_joint_rules(compare_with, options);
+                }
+            } else {
+                println!(indoc!(
+                    "
+                    Entering compare mode: the current options have been saved. You can now change
+                    to another ruleset of interest and run `compare` again. TODO: add a way to
+                    unset the comparison.
+                    "
+                ));
+                compare_with = Some(options);
+            }
         } else if let Some(cmd) = request.strip_prefix("set") {
             history.push(request.to_string());
             let old_options = options;
@@ -75,6 +107,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         } else {
+            // TODO: run in parallel if compare mode
             history.push(request.to_string());
             match trace_solver(&request, options) {
                 Ok(trace) => println!("{trace}"),
@@ -163,6 +196,49 @@ impl DiffState {
                 }
             })
             .format("\n")
+    }
+
+    fn color_line<'a>(&self, line: &'a str) -> impl Display + 'a {
+        use colored::Colorize;
+        let color = match self {
+            Self::New => Some(Color::Green),
+            Self::Old => Some(Color::Red),
+            Self::Both => None,
+        };
+        if let Some(color) = color {
+            line.color(color)
+        } else {
+            <&str as Colorize>::clear(line)
+        }
+    }
+}
+
+fn display_joint_rules(left: RuleOptions, right: RuleOptions) {
+    use DiffState::*;
+    println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
+    println!();
+
+    let arenas = &Arenas::default();
+    let style = left.rules_display_style;
+    let joint_rules = compute_joint_rules(arenas, left, right);
+    for joint_rule in joint_rules {
+        let (left, right) = joint_rule.left_and_right();
+        let left = left
+            .map(|r| r.display(style).to_string())
+            .unwrap_or_default();
+        let right = right
+            .map(|r| r.display(style).to_string())
+            .unwrap_or_default();
+        let same = left == right;
+        for x in left.lines().zip_longest(right.lines()) {
+            let l_state = if same { Both } else { Old };
+            let r_state = if same { Both } else { New };
+            let (l, r) = x.or(" ", " ");
+            let l = l_state.color_line(l);
+            let r = r_state.color_line(r);
+            println!(" {l:80} | {r}");
+        }
+        println!();
     }
 }
 
