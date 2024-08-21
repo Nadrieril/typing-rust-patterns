@@ -16,6 +16,5 @@ pub use analysis::*;
 pub use ast::*;
 pub use compare::*;
 pub use compute_rules::*;
-pub use explore::*;
 pub use solver::*;
 pub use typing_rules::*;

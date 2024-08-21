@@ -50,7 +50,7 @@ fn compare() -> anyhow::Result<()> {
         ("rpjohnst", RuleOptions::RPJOHNST, Conf::rpjohnst_2024()),
     ];
 
-    let test_cases = generate_requests(a, 3, 4);
+    let test_cases = TypingRequest::generate(a, 3, 4);
 
     for (name, ty_based, bm_based) in compare {
         let ty_based = RuleSet::TypeBased(ty_based);
