@@ -6,11 +6,11 @@ use Mutability::*;
 
 //--- Deepening ---
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeepeningRequest {
     Pattern,
     Type,
-    Expression,
+    BindingMode,
 }
 
 impl<'a> Pattern<'a> {
@@ -121,11 +121,22 @@ impl<'a> Type<'a> {
 }
 
 impl<'a> Expression<'a> {
-    /// Replace abstract subexpressions with all the possible more-precise expressions.
-    pub fn deepen(&self, a: &'a Arenas<'a>) -> Vec<Self> {
-        match self.kind {
-            ExprKind::Scrutinee => vec![*self],
-            ExprKind::Abstract { not_a_ref: false } => {
+    /// Replace abstract subexpressions/subtypes with all the possible more-precise
+    /// expressions/types.
+    pub fn deepen(&self, a: &'a Arenas<'a>, req: DeepeningRequest, many: bool) -> Vec<Self> {
+        use DeepeningRequest as D;
+        match (self.kind, req) {
+            (ExprKind::Scrutinee | ExprKind::Abstract { .. }, D::Type) => self
+                .ty
+                .deepen(a, many)
+                .into_iter()
+                .map(|ty| Expression {
+                    kind: self.kind,
+                    ty: ty.alloc(a),
+                })
+                .collect(),
+            (ExprKind::Scrutinee, D::BindingMode) => vec![*self],
+            (ExprKind::Abstract { not_a_ref: false }, D::BindingMode) => {
                 // We know our rules only inspect the binding modes of expressions, so we only need
                 // to split along that dimension.
                 let mut vec = vec![Expression {
@@ -152,40 +163,23 @@ impl<'a> Expression<'a> {
                 }
                 vec
             }
-            // We never generate these.
-            ExprKind::Deref(_) | ExprKind::Field(_, _) => {
-                unreachable!()
-            }
-            ExprKind::Ref(..) | ExprKind::Abstract { not_a_ref: true } => {
+            (ExprKind::Abstract { not_a_ref: true }, D::BindingMode) => {
+                // This would generate Scrutinee/Deref/Field cases but we don't need it.
                 unreachable!("A rule is inspecting expressions in unexpected ways")
             }
-        }
-    }
-
-    /// Replace abstract subtypes with all the possible more-precise types.
-    pub fn deepen_ty(&self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
-        match self.kind {
-            ExprKind::Scrutinee | ExprKind::Abstract { .. } => self
-                .ty
-                .deepen(a, many)
-                .into_iter()
-                .map(|ty| Expression {
-                    kind: self.kind,
-                    ty: ty.alloc(a),
-                })
-                .collect(),
-            ExprKind::Ref(mtbl, e) => e
-                .deepen_ty(a, many)
+            (ExprKind::Scrutinee | ExprKind::Abstract { .. }, D::Pattern) => unreachable!(),
+            (ExprKind::Ref(mtbl, e), _) => e
+                .deepen(a, req, many)
                 .into_iter()
                 .map(|e| e.borrow(a, mtbl))
                 .collect(),
-            ExprKind::Deref(e) => e
-                .deepen_ty(a, many)
+            (ExprKind::Deref(e), _) => e
+                .deepen(a, req, many)
                 .into_iter()
                 .map(|e| e.deref(a))
                 .collect(),
-            ExprKind::Field(e, n) => e
-                .deepen_ty(a, many)
+            (ExprKind::Field(e, n), _) => e
+                .deepen(a, req, many)
                 .into_iter()
                 .map(|e| e.field(a, n))
                 .collect(),
@@ -202,16 +196,9 @@ impl<'a> TypingPredicate<'a> {
             .map(|pat| Self { pat, ..self })
             .collect()
     }
-    pub fn deepen_expr(self, a: &'a Arenas<'a>) -> Vec<Self> {
+    pub fn deepen_expr(self, a: &'a Arenas<'a>, req: DeepeningRequest, many: bool) -> Vec<Self> {
         self.expr
-            .deepen(a)
-            .into_iter()
-            .map(|expr| Self { expr, ..self })
-            .collect()
-    }
-    pub fn deepen_ty(self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
-        self.expr
-            .deepen_ty(a, many)
+            .deepen(a, req, many)
             .into_iter()
             .map(|expr| Self { expr, ..self })
             .collect()
@@ -220,8 +207,7 @@ impl<'a> TypingPredicate<'a> {
     pub fn deepen(self, a: &'a Arenas<'a>, req: DeepeningRequest, many: bool) -> Vec<Self> {
         match req {
             DeepeningRequest::Pattern => self.deepen_pat(a, many),
-            DeepeningRequest::Type => self.deepen_ty(a, many),
-            DeepeningRequest::Expression => self.deepen_expr(a),
+            _ => self.deepen_expr(a, req, many),
         }
     }
 }
