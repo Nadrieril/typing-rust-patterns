@@ -180,9 +180,7 @@ pub enum TypeError {
     InheritedRefIsAlone,
     RefOnRef,
     MutOnRef,
-    OverlyGeneralPattern,
-    OverlyGeneralType,
-    OverlyGeneralExpr,
+    OverlyGeneral(DeepeningRequest),
 }
 
 impl<'a> TypingPredicate<'a> {
@@ -203,6 +201,7 @@ impl<'a> TypingPredicate<'a> {
     /// fixed depth. We trigger `OverlyGeneral` errors it the rules needs more information to
     /// decide what to do. This is how we can auto-generate the rules listings.
     pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), TypeError> {
+        use DeepeningRequest as D;
         use Pattern as P;
         use Type as T;
         let a = ctx.arenas;
@@ -263,9 +262,9 @@ impl<'a> TypingPredicate<'a> {
             }
             (P::Tuple(_), T::Ref(_, T::Ref(..))) => Err(TypeError::TypeMismatch),
             (P::Tuple(_), T::Ref(_, T::Abstract(_) | T::NonRef(..))) => {
-                Err(TypeError::OverlyGeneralType)
+                Err(TypeError::OverlyGeneral(D::Type))
             }
-            (P::Tuple(_), T::Abstract(_) | T::NonRef(..)) => Err(TypeError::OverlyGeneralType),
+            (P::Tuple(_), T::Abstract(_) | T::NonRef(..)) => Err(TypeError::OverlyGeneral(D::Type)),
 
             // Dereference rules
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
@@ -340,7 +339,7 @@ impl<'a> TypingPredicate<'a> {
                             return Err(TypeError::InheritedRefIsAlone);
                         }
                         T::Abstract(_) => {
-                            return Err(TypeError::OverlyGeneralType);
+                            return Err(TypeError::OverlyGeneral(D::Type));
                         }
                     }
                 } else {
@@ -372,7 +371,7 @@ impl<'a> TypingPredicate<'a> {
                 Ok((rule, vec![pred]))
             }
             (P::Ref(..), T::Tuple(..) | T::NonRef(..)) => Err(TypeError::TypeMismatch),
-            (P::Ref(..), T::Abstract(..)) => Err(TypeError::OverlyGeneralType),
+            (P::Ref(..), T::Abstract(..)) => Err(TypeError::OverlyGeneral(D::Type)),
 
             // Binding rules
             (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _)
@@ -450,7 +449,7 @@ impl<'a> TypingPredicate<'a> {
             }
             (P::Binding(Shared, ByMove, _), _) => Ok((Rule::Binding, vec![])),
 
-            (P::Abstract(..), _) => Err(TypeError::OverlyGeneralPattern),
+            (P::Abstract(..), _) => Err(TypeError::OverlyGeneral(D::Pattern)),
         }
     }
 }

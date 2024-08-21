@@ -6,6 +6,13 @@ use Mutability::*;
 
 //--- Deepening ---
 
+#[derive(Debug, Clone, Copy)]
+pub enum DeepeningRequest {
+    Pattern,
+    Type,
+    Expression,
+}
+
 impl<'a> Pattern<'a> {
     /// Replace abstract subpatterns with all the possible more-precise patterns.
     pub fn deepen(&'a self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
@@ -208,6 +215,14 @@ impl<'a> TypingPredicate<'a> {
             .into_iter()
             .map(|expr| Self { expr, ..self })
             .collect()
+    }
+
+    pub fn deepen(self, a: &'a Arenas<'a>, req: DeepeningRequest, many: bool) -> Vec<Self> {
+        match req {
+            DeepeningRequest::Pattern => self.deepen_pat(a, many),
+            DeepeningRequest::Type => self.deepen_ty(a, many),
+            DeepeningRequest::Expression => self.deepen_expr(a),
+        }
     }
 }
 

@@ -81,7 +81,9 @@ impl<'a> Expression<'a> {
             | ExprKind::Deref(_)
             | ExprKind::Field(_, _)
             | ExprKind::Abstract { not_a_ref: true } => ByMove,
-            ExprKind::Abstract { not_a_ref: false } => return Err(TypeError::OverlyGeneralExpr),
+            ExprKind::Abstract { not_a_ref: false } => {
+                return Err(TypeError::OverlyGeneral(DeepeningRequest::Expression))
+            }
             ExprKind::Ref(mtbl, _) => ByRef(mtbl),
         })
     }
@@ -93,7 +95,9 @@ impl<'a> Expression<'a> {
             | ExprKind::Deref(_)
             | ExprKind::Field(_, _)
             | ExprKind::Abstract { not_a_ref: true } => Ok(*self),
-            ExprKind::Abstract { not_a_ref: false } => Err(TypeError::OverlyGeneralExpr),
+            ExprKind::Abstract { not_a_ref: false } => {
+                Err(TypeError::OverlyGeneral(DeepeningRequest::Expression))
+            }
             ExprKind::Ref(_, e) => Ok(*e),
         }
     }

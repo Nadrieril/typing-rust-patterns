@@ -52,9 +52,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
                 rules.push(rule);
                 vec![]
             }
-            Err(TypeError::OverlyGeneralPattern) => pred.deepen_pat(a, true),
-            Err(TypeError::OverlyGeneralExpr) => pred.deepen_expr(a),
-            Err(TypeError::OverlyGeneralType) => pred.deepen_ty(a, true),
+            Err(TypeError::OverlyGeneral(req)) => pred.deepen(a, req, true),
             Err(err) => {
                 if TRACE {
                     println!("  Type error: {err:?}");
