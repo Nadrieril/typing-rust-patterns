@@ -8,6 +8,7 @@ impl RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
+        fallback_to_outer: false,
         allow_ref_pat_on_ref_mut: false,
         simplify_deref_mut: true,
         eat_inherited_ref_alone: false,
@@ -21,6 +22,7 @@ impl RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
+        fallback_to_outer: true,
         allow_ref_pat_on_ref_mut: true,
         simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
@@ -35,6 +37,7 @@ impl RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::AllocTemporary,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Keep,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
+        fallback_to_outer: false,
         allow_ref_pat_on_ref_mut: true,
         simplify_deref_mut: false,
         eat_inherited_ref_alone: true,
@@ -57,15 +60,15 @@ impl RuleOptions {
 
     pub const RFC3627_2021: Self = RuleOptions {
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
-        // TODO: fallback_to_outer: true
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
+        fallback_to_outer: true,
         ..RuleOptions::ERGO2024
     };
 
     pub const ERGO2024_BREAKING_ONLY: Self = RuleOptions {
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
-        // TODO: fallback_to_outer: false
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
+        fallback_to_outer: false,
         ..RuleOptions::STABLE_RUST
     };
 
@@ -102,12 +105,12 @@ impl RuleOptions {
         (
             "rfc3627_2021",
             Self::RFC3627_2021,
-            "(TODO) the accepted RFC3627 behavior under edition 2021",
+            "the accepted RFC3627 behavior under edition 2021",
         ),
         (
             "ergo2024_breaking_only",
             Self::ERGO2024_BREAKING_ONLY,
-            "(TODO) the breaking changes for edition 2024 planned in RFC3627",
+            "the breaking changes for edition 2024 planned in RFC3627",
         ),
         (
             "structural",

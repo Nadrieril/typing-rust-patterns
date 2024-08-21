@@ -35,10 +35,10 @@ pub enum MutBindingOnInheritedBehavior {
 pub enum InheritedRefOnRefBehavior {
     /// Eat only the outer one.
     EatOuter,
-    /// Eat the inner one if possible, keeping the outer one (aka binding mode). This is RFC3627 rule 2.
-    EatInner,
     /// Stable rust behavior: the ref pattern consumes both layers of reference type.
     EatBoth,
+    /// Eat the inner one if possible, keeping the outer one (aka binding mode). This is RFC3627 rule 2.
+    EatInner,
 }
 
 /// Choice of typing rules.
@@ -46,23 +46,29 @@ pub enum InheritedRefOnRefBehavior {
 pub struct RuleOptions {
     /// Whether `[p]` can match on `&[T]`. The heart of match ergonomics.
     pub match_constructor_through_ref: bool,
-    pub ref_binding_on_inherited: RefBindingOnInheritedBehavior,
-    pub mut_binding_on_inherited: MutBindingOnInheritedBehavior,
+    /// If false, a reference pattern can only consider eating an inherited reference if the
+    /// underlying place is of reference type.
+    pub eat_inherited_ref_alone: bool,
+    /// What happens with a `&mut?p` pattern matching on `&mut?&mut?T` where the outer reference is
+    /// inherited.
     pub inherited_ref_on_ref: InheritedRefOnRefBehavior,
+    /// In the `EatBoth` and `EatInner` cases, if matching against the underlying place fails this
+    /// determines whether we try again in `EatOuter` mode.
+    pub fallback_to_outer: bool,
     /// Whether a `&p` pattern is allowed on `&mut T`. This is RFC3627 rule 5.
     pub allow_ref_pat_on_ref_mut: bool,
     /// Whether to simplify some expressions, which removes some borrow errors involving mixes of
     /// `&mut` and `&`.
     pub simplify_deref_mut: bool,
-    /// If false, a reference pattern is only allowed if the _underlying place_ has a compatible
-    /// reference type. This is RFC3627 rule 4.
-    pub eat_inherited_ref_alone: bool,
     /// If we've dereferenced a shared reference, any subsequent `&mut` inherited reference becomes
     /// `&`. This is RFC3627 rule 3.
     pub downgrade_mut_inside_shared: bool,
+    /// What happens with a `ref mut? x` binding and an inherited reference.
+    pub ref_binding_on_inherited: RefBindingOnInheritedBehavior,
+    /// What happens with a `mut x` binding and an inherited reference.
+    pub mut_binding_on_inherited: MutBindingOnInheritedBehavior,
     /// How to display rules.
     pub rules_display_style: TypingRuleStyle,
-    // TODO: fallback_to_outer
     // TODO: double_ref: Last | Min
 }
 
@@ -82,20 +88,20 @@ impl RuleOptions {
             "whether `[p]` can match on `&[T]`; the heart of match ergonomics.",
         ),
         (
-            "ref_binding_on_inherited",
-            &["ResetBindingMode", "AllocTemporary", "Error"],
-            "how to handle a `ref x` binding on an inherited reference",
-        ),
-        (
-            "mut_binding_on_inherited",
-            &["ResetBindingMode", "Keep", "Error"],
-            "how to handle a `mut x` binding on an inherited reference",
+            "eat_inherited_ref_alone",
+            &["true", "false"],
+            "whether `&p`/`&mut p` is allowed on an inherited reference if the underlying type isn't also a reference type",
         ),
         (
             "inherited_ref_on_ref",
             &["EatOuter", "EatInner", "EatBoth"],
             "how to handle a reference pattern on a \
              double reference when the outer one is inherited",
+        ),
+        (
+            "fallback_to_outer",
+            &["true", "false"],
+            "whether to try again in `EatOuter` mode when a `EatBoth` or `EatInner` case has a mutability mismatch",
         ),
         (
             "allow_ref_pat_on_ref_mut",
@@ -108,14 +114,19 @@ impl RuleOptions {
             "whether to simplify `*&mut expr`, which removes some borrow errors",
         ),
         (
-            "eat_inherited_ref_alone",
-            &["true", "false"],
-            "whether `&p: &T` is allowed if the reference is inherited and `T` isn't some `&U`",
-        ),
-        (
             "downgrade_mut_inside_shared",
             &["true", "false"],
             "RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref",
+        ),
+        (
+            "ref_binding_on_inherited",
+            &["ResetBindingMode", "AllocTemporary", "Error"],
+            "how to handle a `ref x` binding on an inherited reference",
+        ),
+        (
+            "mut_binding_on_inherited",
+            &["ResetBindingMode", "Keep", "Error"],
+            "how to handle a `mut x` binding on an inherited reference",
         ),
     ];
 
@@ -287,7 +298,7 @@ impl<'a> TypingPredicate<'a> {
                                         (Shared, Mutable) => ctx.options.allow_ref_pat_on_ref_mut,
                                         (Mutable, Shared) => false,
                                     };
-                                    if can_eat_inner {
+                                    if can_eat_inner || !o.fallback_to_outer {
                                         reborrow_after = Some(t_mtbl);
                                         t_mtbl = *inner_mtbl;
                                         underlying_place.deref(a)
@@ -300,8 +311,21 @@ impl<'a> TypingPredicate<'a> {
                                     }
                                 }
                                 InheritedRefOnRefBehavior::EatBoth => {
-                                    t_mtbl = *inner_mtbl;
-                                    underlying_place.deref(a)
+                                    let can_eat_inner = match (p_mtbl, *inner_mtbl) {
+                                        (Shared, Shared) | (Mutable, Mutable) => true,
+                                        (Shared, Mutable) => ctx.options.allow_ref_pat_on_ref_mut,
+                                        (Mutable, Shared) => false,
+                                    };
+                                    if can_eat_inner || !o.fallback_to_outer {
+                                        t_mtbl = *inner_mtbl;
+                                        underlying_place.deref(a)
+                                    } else {
+                                        if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
+                                            underlying_place
+                                        } else {
+                                            self.expr.deref(a)
+                                        }
+                                    }
                                 }
                             }
                         }

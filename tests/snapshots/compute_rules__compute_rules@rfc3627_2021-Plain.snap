@@ -4,13 +4,14 @@ info:
   bundle_name: rfc3627_2021
   options:
     match_constructor_through_ref: true
-    ref_binding_on_inherited: ResetBindingMode
-    mut_binding_on_inherited: ResetBindingMode
+    eat_inherited_ref_alone: true
     inherited_ref_on_ref: EatBoth
+    fallback_to_outer: true
     allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
-    eat_inherited_ref_alone: true
     downgrade_mut_inside_shared: true
+    ref_binding_on_inherited: ResetBindingMode
+    mut_binding_on_inherited: ResetBindingMode
     rules_display_style: Plain
 ---
 p0 @ q.0: T0,  p1 @ q.1: T1
@@ -68,6 +69,10 @@ p @ *q: T
 p @ *q: T
 -------------------- "Deref(EatBoth)"
 &mut p @ &q: &&mut T
+
+p @ q: &T
+------------------------ "Deref(EatBoth)"
+&mut p @ &mut q: &mut &T
 
 p @ *q: T
 ---------------------------- "Deref(EatBoth)"
