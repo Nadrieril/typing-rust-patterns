@@ -47,16 +47,16 @@ p @ *q: T
 &p @ q: &T, binding_mode(q) = move
 
 p @ reset(q): T
---------------------------------- "Deref(EatOuter)"
-&p @ q: &T, binding_mode(q) = ref
+------------------------------------------------------- "Deref(EatOuter)"
+&p @ q: &T, binding_mode(q) = ref, T is not a reference
 
 p @ *q: T
 ------------------------------------------ "Deref(EatOuter)"
 &mut p @ q: &mut T, binding_mode(q) = move
 
 p @ reset(q): T
---------------------------------------------- "Deref(EatOuter)"
-&mut p @ q: &mut T, binding_mode(q) = ref mut
+------------------------------------------------------------------- "Deref(EatOuter)"
+&mut p @ q: &mut T, binding_mode(q) = ref mut, T is not a reference
 
 p @ &*reset(q): &T
 ---------------------------------- "Deref(EatInner)"
@@ -83,8 +83,8 @@ p @ *&*q: T
 &p @ q: &mut T, binding_mode(q) = move
 
 p @ *&reset(q): T
------------------------------------------ "DerefMutWithShared(EatOuter)"
-&p @ q: &mut T, binding_mode(q) = ref mut
+--------------------------------------------------------------- "DerefMutWithShared(EatOuter)"
+&p @ q: &mut T, binding_mode(q) = ref mut, T is not a reference
 
 p @ &*&*reset(q): &T
 -------------------------------------- "DerefMutWithShared(EatInner)"

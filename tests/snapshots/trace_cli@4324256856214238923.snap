@@ -22,16 +22,16 @@ Warning: option `downgrade_mut_inside_shared` is not represented in the rules
 +&p @ q: &T, q is not a reference
 
 +p @ *&q: T
-+----------- "Deref(EatOuter)"
-+&p @ &q: &T
++--------------------------------- "Deref(EatOuter)"
++&p @ &q: &T, T is not a reference
 
 +p @ *q: T
 +---------------------------------------- "Deref(EatOuter)"
 +&mut p @ q: &mut T, q is not a reference
 
 +p @ q: T
-+----------------------- "Deref(EatOuter)"
-+&mut p @ &mut q: &mut T
++--------------------------------------------- "Deref(EatOuter)"
++&mut p @ &mut q: &mut T, T is not a reference
 
 +p @ &*q: &T
 +------------ "Deref(EatInner)"
@@ -62,8 +62,8 @@ Warning: option `downgrade_mut_inside_shared` is not represented in the rules
 +&p @ q: &mut T, q is not a reference
 
 +p @ *&q: T
-+------------------- "DerefMutWithShared(EatOuter)"
-+&p @ &mut q: &mut T
++----------------------------------------- "DerefMutWithShared(EatOuter)"
++&p @ &mut q: &mut T, T is not a reference
 
 +p @ &*&*q: &T
 +---------------- "DerefMutWithShared(EatInner)"

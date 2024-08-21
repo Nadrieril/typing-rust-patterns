@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::fmt::Write;
 use std::{cmp::max, fmt::Display};
 
@@ -83,57 +84,72 @@ pub struct TypingRule<'a> {
     pub postcondition: TypingPredicate<'a>,
 }
 
-impl<'a> Expression<'a> {
-    /// Whether the abstract variable requires a `binding_mode` constaint.
-    fn abstract_bm_constraint(self) -> Option<BindingMode> {
-        match self.kind {
-            ExprKind::Scrutinee => None,
-            ExprKind::Abstract { not_a_ref } => not_a_ref.then_some(ByMove),
-            ExprKind::Ref(_, e) | ExprKind::Deref(e) | ExprKind::Field(e, _) => {
-                e.abstract_bm_constraint()
+/// Extra constraints to display as preconditions.
+#[derive(Default)]
+struct SideConstraints<'a> {
+    /// The binding mode of the abstract expression.
+    binding_mode: Option<BindingMode>,
+    /// Type variables that are known not to be references.
+    non_ref_types: HashSet<&'a str>,
+}
+
+impl<'a> Type<'a> {
+    /// Collect the names of types known to not be references.
+    fn extract_side_constraints(&self, cstrs: &mut SideConstraints<'a>) {
+        match *self {
+            Type::Abstract(_) => {}
+            Type::NonRef(var) => {
+                cstrs.non_ref_types.insert(var);
             }
+            Type::Tuple(tys) => {
+                for ty in tys {
+                    ty.extract_side_constraints(cstrs)
+                }
+            }
+            Type::Ref(_, ty) => ty.extract_side_constraints(cstrs),
         }
     }
+}
 
-    /// If the tail of this expression is `Abstract`, removes the binding mode on that variable and
-    /// returns it. Beware: this changes the type of the variable. We must apply the same
-    /// transformation to the preconditions.
-    fn extract_abstract_bm(&self, a: &'a Arenas<'a>) -> (Option<BindingMode>, Self) {
+impl<'a> Expression<'a> {
+    /// Collects constraints on the abstract variables of this expression. If `remove_bm` is true,
+    /// this counts the whole binding mode of the abstract var as a constraint and removes it from
+    /// the expression.
+    fn extract_side_constraints(
+        &self,
+        a: &'a Arenas<'a>,
+        cstrs: &mut SideConstraints<'a>,
+        remove_bm: bool,
+    ) -> Self {
+        self.ty.extract_side_constraints(cstrs);
         match self.kind {
-            ExprKind::Scrutinee => (None, *self),
-            ExprKind::Abstract { not_a_ref: false } => (None, *self),
-            ExprKind::Abstract { not_a_ref: true } => (
-                Some(ByMove),
+            ExprKind::Scrutinee => *self,
+            ExprKind::Abstract { not_a_ref: false } => *self,
+            ExprKind::Abstract { not_a_ref: true } => {
+                cstrs.binding_mode = Some(ByMove);
                 Expression {
                     ty: self.ty,
                     kind: ExprKind::Abstract { not_a_ref: false },
-                },
-            ),
+                }
+            }
             ExprKind::Ref(
                 mtbl,
                 Expression {
                     kind: ExprKind::Abstract { not_a_ref: false },
                     ..
                 },
-            ) => (
-                Some(ByRef(mtbl)),
+            ) if remove_bm => {
+                cstrs.binding_mode = Some(ByRef(mtbl));
                 Expression {
                     ty: self.ty,
                     kind: ExprKind::Abstract { not_a_ref: false },
-                },
-            ),
-            ExprKind::Ref(mtbl, e) => {
-                let (bm, e) = e.extract_abstract_bm(a);
-                (bm, e.borrow(a, mtbl))
+                }
             }
-            ExprKind::Deref(e) => {
-                let (bm, e) = e.extract_abstract_bm(a);
-                (bm, e.deref(a))
-            }
-            ExprKind::Field(e, n) => {
-                let (bm, e) = e.extract_abstract_bm(a);
-                (bm, e.field(a, n))
-            }
+            ExprKind::Ref(mtbl, e) => e
+                .extract_side_constraints(a, cstrs, remove_bm)
+                .borrow(a, mtbl),
+            ExprKind::Deref(e) => e.extract_side_constraints(a, cstrs, remove_bm).deref(a),
+            ExprKind::Field(e, n) => e.extract_side_constraints(a, cstrs, remove_bm).field(a, n),
         }
     }
 
@@ -184,15 +200,23 @@ pub enum TypingRuleStyle {
 impl<'a> TypingRule<'a> {
     /// If the postcondition expression contains an abstract variable with a known binding mode,
     /// extract it and reset the binding mode of the variable.
-    fn extract_abstract_bm(&self, a: &'a Arenas<'a>) -> (Option<BindingMode>, Self) {
+    fn extract_side_constraints(
+        &self,
+        a: &'a Arenas<'a>,
+        remove_bm: bool,
+    ) -> (SideConstraints, Self) {
+        let mut cstrs = SideConstraints::default();
         let mut ret = self.clone();
-        let (bm, expr) = ret.postcondition.expr.extract_abstract_bm(a);
+        let expr = ret
+            .postcondition
+            .expr
+            .extract_side_constraints(a, &mut cstrs, remove_bm);
         ret.postcondition.expr = expr;
         // If we changed the type of `q` above, we must change it here too.
         for pred in &mut ret.preconditions {
-            pred.expr = pred.expr.set_abstract_bm(a, bm);
+            pred.expr = pred.expr.set_abstract_bm(a, cstrs.binding_mode);
         }
-        (bm, ret)
+        (cstrs, ret)
     }
 
     pub fn display(&self, style: TypingRuleStyle) -> impl Display + '_ {
@@ -206,17 +230,15 @@ impl<'a> TypingRule<'a> {
     ) -> std::fmt::Result {
         let a = &Arenas::default();
 
-        let mut preconditions_str;
-        let mut postconditions_str;
+        let extract_bm = matches!(style, TypingRuleStyle::BindingMode);
+        let (cstrs, rule) = self.extract_side_constraints(a, extract_bm);
 
-        // TODO: extract the `Type::NonRef` constraints.
-        match style {
-            TypingRuleStyle::Plain => {
-                let bm = self.postcondition.expr.abstract_bm_constraint();
+        let mut postconditions_str = rule.postcondition.to_string();
 
-                postconditions_str = self.postcondition.to_string();
-                if let Some(bm) = bm {
-                    let abstract_expr = ExprKind::Abstract { not_a_ref: true };
+        if let Some(bm) = cstrs.binding_mode {
+            let abstract_expr = ExprKind::Abstract { not_a_ref: true };
+            match style {
+                TypingRuleStyle::Plain => {
                     assert!(bm == ByMove);
                     let _ = write!(
                         &mut postconditions_str,
@@ -224,22 +246,7 @@ impl<'a> TypingRule<'a> {
                         abstract_expr
                     );
                 }
-
-                preconditions_str = if self.preconditions.is_empty() {
-                    self.postcondition.display_as_let()
-                } else {
-                    self.preconditions.iter().format(",  ").to_string()
-                };
-            }
-            TypingRuleStyle::BindingMode => {
-                let mut rule = self.clone();
-                // Extract the bm of the expression variable and show it on the side.
-                let (bm, new_rule) = rule.extract_abstract_bm(a);
-                rule = new_rule;
-
-                postconditions_str = rule.postcondition.to_string();
-                if let Some(bm) = bm {
-                    let abstract_expr = ExprKind::Abstract { not_a_ref: true };
+                TypingRuleStyle::BindingMode => {
                     let bm = bm.name();
                     let _ = write!(
                         &mut postconditions_str,
@@ -247,20 +254,24 @@ impl<'a> TypingRule<'a> {
                         abstract_expr
                     );
                 }
-
-                preconditions_str = if rule.preconditions.is_empty() {
-                    rule.postcondition.display_as_let()
-                } else {
-                    rule.preconditions
-                        .iter()
-                        .map(|pred| pred.to_string())
-                        .join(",  ")
-                };
-                if let Some(ByRef(..)) = bm {
-                    // In binding mode style, dereferencing the bm is called "resetting".
-                    preconditions_str = preconditions_str.replace("*q", "reset(q)");
-                }
             }
+        }
+
+        for ty in cstrs.non_ref_types {
+            let _ = write!(&mut postconditions_str, ", {ty} is not a reference",);
+        }
+
+        let mut preconditions_str = if rule.preconditions.is_empty() {
+            rule.postcondition.display_as_let()
+        } else {
+            rule.preconditions.iter().format(",  ").to_string()
+        };
+
+        if let TypingRuleStyle::BindingMode = style
+            && let Some(ByRef(..)) = cstrs.binding_mode
+        {
+            // In binding mode style, dereferencing the bm is called "resetting".
+            preconditions_str = preconditions_str.replace("*q", "reset(q)");
         }
 
         let len = max(preconditions_str.len(), postconditions_str.len());
