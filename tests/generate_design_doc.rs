@@ -34,10 +34,10 @@ fn generate_design_doc() -> anyhow::Result<()> {
     }
 
     insta::with_settings!({
-        snapshot_suffix => "",
-        info => &(),
-        omit_expression => true,
         prepend_module_to_snapshot => false,
+        snapshot_suffix => "",
+        omit_expression => true,
+        info => &(),
     }, {
         insta::assert_snapshot!(doc);
     });

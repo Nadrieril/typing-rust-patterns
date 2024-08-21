@@ -1,18 +1,18 @@
 ---
-source: tests/compute_rules.rs
+source: src/compute_rules.rs
 info:
-  bundle_name: rpjohnst
+  bundle_name: waffle
   options:
     match_constructor_through_ref: true
     eat_inherited_ref_alone: true
     inherited_ref_on_ref: EatOuter
-    fallback_to_outer: false
+    fallback_to_outer: true
     allow_ref_pat_on_ref_mut: false
-    simplify_deref_mut: false
-    downgrade_mut_inside_shared: false
-    ref_binding_on_inherited: AllocTemporary
-    mut_binding_on_inherited: Keep
-    rules_display_style: Plain
+    simplify_deref_mut: true
+    downgrade_mut_inside_shared: true
+    ref_binding_on_inherited: ResetBindingMode
+    mut_binding_on_inherited: Error
+    rules_display_style: BindingMode
 ---
 p0 @ q.0: T0,  p1 @ q.1: T1
 --------------------------- "Constructor"
@@ -50,18 +50,34 @@ p @ *q: T
 ------------------ "Deref(EatOuter)"
 &mut p @ q: &mut T
 
+ref x @ reset(q): T
+------------------------------------ "RefBindingResetBindingMode"
+ref x @ q: &T, binding_mode(q) = ref
+
+ref x @ reset(q): T
+-------------------------------------------- "RefBindingResetBindingMode"
+ref x @ q: &mut T, binding_mode(q) = ref mut
+
+ref mut x @ reset(q): T
+---------------------------------------- "RefBindingResetBindingMode"
+ref mut x @ q: &T, binding_mode(q) = ref
+
+ref mut x @ reset(q): T
+------------------------------------------------ "RefBindingResetBindingMode"
+ref mut x @ q: &mut T, binding_mode(q) = ref mut
+
 x @ &q: &T
------------- "BindingBorrow"
-ref x @ q: T
+------------------------------------ "BindingBorrow"
+ref x @ q: T, binding_mode(q) = move
 
 x @ &mut q: &mut T
------------------- "BindingBorrow"
-ref mut x @ q: T
+---------------------------------------- "BindingBorrow"
+ref mut x @ q: T, binding_mode(q) = move
 
 let x: T = q
 ------------ "Binding"
 x @ q: T
 
 let mut x: T = q
----------------- "Binding"
-mut x @ q: T
+------------------------------------ "Binding"
+mut x @ q: T, binding_mode(q) = move

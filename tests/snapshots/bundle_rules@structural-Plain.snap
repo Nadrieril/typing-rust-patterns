@@ -1,0 +1,43 @@
+---
+source: src/compute_rules.rs
+info:
+  bundle_name: structural
+  options:
+    match_constructor_through_ref: false
+    eat_inherited_ref_alone: true
+    inherited_ref_on_ref: EatOuter
+    fallback_to_outer: false
+    allow_ref_pat_on_ref_mut: false
+    simplify_deref_mut: false
+    downgrade_mut_inside_shared: false
+    ref_binding_on_inherited: AllocTemporary
+    mut_binding_on_inherited: Keep
+    rules_display_style: Plain
+---
+p0 @ q.0: T0,  p1 @ q.1: T1
+--------------------------- "Constructor"
+[p0, p1] @ q: [T0, T1]
+
+p @ *q: T
+---------- "Deref(EatOuter)"
+&p @ q: &T
+
+p @ *q: T
+------------------ "Deref(EatOuter)"
+&mut p @ q: &mut T
+
+x @ &q: &T
+------------ "BindingBorrow"
+ref x @ q: T
+
+x @ &mut q: &mut T
+------------------ "BindingBorrow"
+ref mut x @ q: T
+
+let x: T = q
+------------ "Binding"
+x @ q: T
+
+let mut x: T = q
+---------------- "Binding"
+mut x @ q: T

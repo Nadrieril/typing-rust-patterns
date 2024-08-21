@@ -37,9 +37,9 @@ fn trace_cli() -> anyhow::Result<()> {
         };
         insta::with_settings!({
             snapshot_suffix => req_hash,
-            info => &test_case,
+            prepend_module_to_snapshot => false,
             omit_expression => true,
-            prepend_module_to_snapshot => true,
+            info => &test_case,
         }, {
             insta::assert_snapshot!(out);
         });

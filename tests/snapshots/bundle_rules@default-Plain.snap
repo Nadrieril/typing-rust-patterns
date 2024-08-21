@@ -1,17 +1,17 @@
 ---
-source: tests/compute_rules.rs
+source: src/compute_rules.rs
 info:
-  bundle_name: rfc3627_2021
+  bundle_name: default
   options:
     match_constructor_through_ref: true
     eat_inherited_ref_alone: true
-    inherited_ref_on_ref: EatBoth
-    fallback_to_outer: true
+    inherited_ref_on_ref: EatOuter
+    fallback_to_outer: false
     allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
-    downgrade_mut_inside_shared: true
+    downgrade_mut_inside_shared: false
     ref_binding_on_inherited: ResetBindingMode
-    mut_binding_on_inherited: ResetBindingMode
+    mut_binding_on_inherited: Keep
     rules_display_style: Plain
 ---
 p0 @ q.0: T0,  p1 @ q.1: T1
@@ -43,56 +43,16 @@ p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
 [p0, p1] @ q: &mut &mut T
 
 p @ *q: T
--------------------------------- "Deref(EatOuter)"
-&p @ q: &T, q is not a reference
-
-p @ *&q: T
------------ "Deref(EatOuter)"
-&p @ &q: &T
+---------- "Deref(EatOuter)"
+&p @ q: &T
 
 p @ *q: T
----------------------------------------- "Deref(EatOuter)"
-&mut p @ q: &mut T, q is not a reference
-
-p @ q: T
------------------------ "Deref(EatOuter)"
-&mut p @ &mut q: &mut T
-
-p @ *q: T
------------- "Deref(EatBoth)"
-&p @ &q: &&T
-
-p @ *q: T
--------------------- "Deref(EatBoth)"
-&p @ &mut q: &mut &T
-
-p @ *q: T
--------------------- "Deref(EatBoth)"
-&mut p @ &q: &&mut T
-
-p @ q: &T
------------------------- "Deref(EatBoth)"
-&mut p @ &mut q: &mut &T
-
-p @ *q: T
----------------------------- "Deref(EatBoth)"
-&mut p @ &mut q: &mut &mut T
+------------------ "Deref(EatOuter)"
+&mut p @ q: &mut T
 
 p @ *&*q: T
------------------------------------- "DerefMutWithShared(EatOuter)"
-&p @ q: &mut T, q is not a reference
-
-p @ *&q: T
-------------------- "DerefMutWithShared(EatOuter)"
-&p @ &mut q: &mut T
-
-p @ *&*q: T
----------------- "DerefMutWithShared(EatBoth)"
-&p @ &q: &&mut T
-
-p @ *&*q: T
------------------------- "DerefMutWithShared(EatBoth)"
-&p @ &mut q: &mut &mut T
+-------------- "DerefMutWithShared(EatOuter)"
+&p @ q: &mut T
 
 ref x @ q: T
 -------------- "RefBindingResetBindingMode"
@@ -110,14 +70,6 @@ ref mut x @ q: T
 -------------------------- "RefBindingResetBindingMode"
 ref mut x @ &mut q: &mut T
 
-mut x @ q: T
--------------- "MutBindingResetBindingMode"
-mut x @ &q: &T
-
-mut x @ q: T
----------------------- "MutBindingResetBindingMode"
-mut x @ &mut q: &mut T
-
 x @ &q: &T
 ---------------------------------- "BindingBorrow"
 ref x @ q: T, q is not a reference
@@ -131,5 +83,5 @@ let x: T = q
 x @ q: T
 
 let mut x: T = q
----------------------------------- "Binding"
-mut x @ q: T, q is not a reference
+---------------- "Binding"
+mut x @ q: T

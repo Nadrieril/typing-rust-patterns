@@ -1,17 +1,17 @@
 ---
-source: tests/compute_rules.rs
+source: src/compute_rules.rs
 info:
-  bundle_name: ergo2024
+  bundle_name: rfc3627_2021
   options:
     match_constructor_through_ref: true
     eat_inherited_ref_alone: true
-    inherited_ref_on_ref: EatInner
+    inherited_ref_on_ref: EatBoth
     fallback_to_outer: true
     allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
     downgrade_mut_inside_shared: true
     ref_binding_on_inherited: ResetBindingMode
-    mut_binding_on_inherited: Error
+    mut_binding_on_inherited: ResetBindingMode
     rules_display_style: Plain
 ---
 p0 @ q.0: T0,  p1 @ q.1: T1
@@ -58,24 +58,24 @@ p @ q: T
 ----------------------- "Deref(EatOuter)"
 &mut p @ &mut q: &mut T
 
-p @ &*q: &T
------------- "Deref(EatInner)"
+p @ *q: T
+------------ "Deref(EatBoth)"
 &p @ &q: &&T
 
-p @ &*q: &T
--------------------- "Deref(EatInner)"
+p @ *q: T
+-------------------- "Deref(EatBoth)"
 &p @ &mut q: &mut &T
 
-p @ &*q: &T
--------------------- "Deref(EatInner)"
+p @ *q: T
+-------------------- "Deref(EatBoth)"
 &mut p @ &q: &&mut T
 
 p @ q: &T
------------------------- "Deref(EatInner)"
+------------------------ "Deref(EatBoth)"
 &mut p @ &mut q: &mut &T
 
-p @ &mut *q: &mut T
----------------------------- "Deref(EatInner)"
+p @ *q: T
+---------------------------- "Deref(EatBoth)"
 &mut p @ &mut q: &mut &mut T
 
 p @ *&*q: T
@@ -86,12 +86,12 @@ p @ *&q: T
 ------------------- "DerefMutWithShared(EatOuter)"
 &p @ &mut q: &mut T
 
-p @ &*&*q: &T
----------------- "DerefMutWithShared(EatInner)"
+p @ *&*q: T
+---------------- "DerefMutWithShared(EatBoth)"
 &p @ &q: &&mut T
 
-p @ &*&*q: &T
------------------------- "DerefMutWithShared(EatInner)"
+p @ *&*q: T
+------------------------ "DerefMutWithShared(EatBoth)"
 &p @ &mut q: &mut &mut T
 
 ref x @ q: T
@@ -109,6 +109,14 @@ ref mut x @ &q: &T
 ref mut x @ q: T
 -------------------------- "RefBindingResetBindingMode"
 ref mut x @ &mut q: &mut T
+
+mut x @ q: T
+-------------- "MutBindingResetBindingMode"
+mut x @ &q: &T
+
+mut x @ q: T
+---------------------- "MutBindingResetBindingMode"
+mut x @ &mut q: &mut T
 
 x @ &q: &T
 ---------------------------------- "BindingBorrow"

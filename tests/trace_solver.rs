@@ -20,7 +20,7 @@ impl<'a> TestCase<'a> {
     }
 }
 
-fn spanshot_request(test_case: TestCase<'_>) -> anyhow::Result<()> {
+fn trace_solver(test_case: TestCase<'_>) -> anyhow::Result<()> {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
@@ -30,12 +30,12 @@ fn spanshot_request(test_case: TestCase<'_>) -> anyhow::Result<()> {
         test_case.hash(&mut hasher);
         hasher.finish().to_string()
     };
-    let trace = trace_solver(test_case.request, test_case.options)?;
+    let trace = typing_rust_patterns::trace_solver(test_case.request, test_case.options)?;
     insta::with_settings!({
+        prepend_module_to_snapshot => false,
+        omit_expression => true,
         snapshot_suffix => req_hash,
         info => &test_case,
-        omit_expression => true,
-        prepend_module_to_snapshot => true,
     }, {
         insta::assert_snapshot!(trace);
     });
@@ -170,7 +170,7 @@ fn test_solver_traces() -> anyhow::Result<()> {
     for &(options, requests) in test_cases {
         for request in requests {
             let test_case = TestCase::new(request, options);
-            spanshot_request(test_case)?;
+            trace_solver(test_case)?;
         }
     }
 

@@ -1,5 +1,5 @@
 ---
-source: tests/compute_rules.rs
+source: src/compute_rules.rs
 info:
   bundle_name: ergo2024
   options:

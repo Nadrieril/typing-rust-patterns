@@ -1,5 +1,5 @@
 ---
-source: tests/compute_rules.rs
+source: src/compute_rules.rs
 info:
   bundle_name: waffle
   options:
@@ -12,7 +12,7 @@ info:
     downgrade_mut_inside_shared: true
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: Error
-    rules_display_style: BindingMode
+    rules_display_style: Plain
 ---
 p0 @ q.0: T0,  p1 @ q.1: T1
 --------------------------- "Constructor"
@@ -50,34 +50,34 @@ p @ *q: T
 ------------------ "Deref(EatOuter)"
 &mut p @ q: &mut T
 
-ref x @ reset(q): T
------------------------------------- "RefBindingResetBindingMode"
-ref x @ q: &T, binding_mode(q) = ref
+ref x @ q: T
+-------------- "RefBindingResetBindingMode"
+ref x @ &q: &T
 
-ref x @ reset(q): T
--------------------------------------------- "RefBindingResetBindingMode"
-ref x @ q: &mut T, binding_mode(q) = ref mut
+ref x @ q: T
+---------------------- "RefBindingResetBindingMode"
+ref x @ &mut q: &mut T
 
-ref mut x @ reset(q): T
----------------------------------------- "RefBindingResetBindingMode"
-ref mut x @ q: &T, binding_mode(q) = ref
+ref mut x @ q: T
+------------------ "RefBindingResetBindingMode"
+ref mut x @ &q: &T
 
-ref mut x @ reset(q): T
------------------------------------------------- "RefBindingResetBindingMode"
-ref mut x @ q: &mut T, binding_mode(q) = ref mut
+ref mut x @ q: T
+-------------------------- "RefBindingResetBindingMode"
+ref mut x @ &mut q: &mut T
 
 x @ &q: &T
------------------------------------- "BindingBorrow"
-ref x @ q: T, binding_mode(q) = move
+---------------------------------- "BindingBorrow"
+ref x @ q: T, q is not a reference
 
 x @ &mut q: &mut T
----------------------------------------- "BindingBorrow"
-ref mut x @ q: T, binding_mode(q) = move
+-------------------------------------- "BindingBorrow"
+ref mut x @ q: T, q is not a reference
 
 let x: T = q
 ------------ "Binding"
 x @ q: T
 
 let mut x: T = q
------------------------------------- "Binding"
-mut x @ q: T, binding_mode(q) = move
+---------------------------------- "Binding"
+mut x @ q: T, q is not a reference

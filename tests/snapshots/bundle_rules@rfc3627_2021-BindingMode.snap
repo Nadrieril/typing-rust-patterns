@@ -1,15 +1,15 @@
 ---
-source: tests/compute_rules.rs
+source: src/compute_rules.rs
 info:
-  bundle_name: stable_rust
+  bundle_name: rfc3627_2021
   options:
     match_constructor_through_ref: true
-    eat_inherited_ref_alone: false
+    eat_inherited_ref_alone: true
     inherited_ref_on_ref: EatBoth
-    fallback_to_outer: false
-    allow_ref_pat_on_ref_mut: false
+    fallback_to_outer: true
+    allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
-    downgrade_mut_inside_shared: false
+    downgrade_mut_inside_shared: true
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: ResetBindingMode
     rules_display_style: BindingMode
@@ -46,9 +46,17 @@ p @ *q: T
 ---------------------------------- "Deref(EatOuter)"
 &p @ q: &T, binding_mode(q) = move
 
+p @ reset(q): T
+--------------------------------- "Deref(EatOuter)"
+&p @ q: &T, binding_mode(q) = ref
+
 p @ *q: T
 ------------------------------------------ "Deref(EatOuter)"
 &mut p @ q: &mut T, binding_mode(q) = move
+
+p @ reset(q): T
+--------------------------------------------- "Deref(EatOuter)"
+&mut p @ q: &mut T, binding_mode(q) = ref mut
 
 p @ *reset(q): T
 ---------------------------------- "Deref(EatBoth)"
@@ -62,9 +70,29 @@ p @ *reset(q): T
 ------------------------------------------ "Deref(EatBoth)"
 &mut p @ q: &&mut T, binding_mode(q) = ref
 
+p @ reset(q): &T
+---------------------------------------------- "Deref(EatBoth)"
+&mut p @ q: &mut &T, binding_mode(q) = ref mut
+
 p @ *reset(q): T
 -------------------------------------------------- "Deref(EatBoth)"
 &mut p @ q: &mut &mut T, binding_mode(q) = ref mut
+
+p @ *&*q: T
+-------------------------------------- "DerefMutWithShared(EatOuter)"
+&p @ q: &mut T, binding_mode(q) = move
+
+p @ *&reset(q): T
+----------------------------------------- "DerefMutWithShared(EatOuter)"
+&p @ q: &mut T, binding_mode(q) = ref mut
+
+p @ *&*reset(q): T
+-------------------------------------- "DerefMutWithShared(EatBoth)"
+&p @ q: &&mut T, binding_mode(q) = ref
+
+p @ *&*reset(q): T
+---------------------------------------------- "DerefMutWithShared(EatBoth)"
+&p @ q: &mut &mut T, binding_mode(q) = ref mut
 
 ref x @ reset(q): T
 ------------------------------------ "RefBindingResetBindingMode"

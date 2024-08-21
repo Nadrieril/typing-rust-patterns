@@ -1,5 +1,5 @@
 ---
-source: tests/compare.rs
+source: src/compare.rs
 info: default
 ---
 Difference on `[[&x]]: [&mut [&T]]`:
