@@ -1,6 +1,9 @@
+use std::cmp::Ordering;
+
 use crate::*;
 use match_ergonomics_formality::Conf;
 
+#[derive(Debug, Clone, Copy)]
 pub enum RuleSet {
     TypeBased(RuleOptions),
     BindingModeBased(Conf),
@@ -17,15 +20,22 @@ pub enum AnalysisResult<'a> {
 }
 
 impl<'a> AnalysisResult<'a> {
-    pub fn matches(&self, other: &Self) -> bool {
+    pub fn cmp(&self, other: &Self) -> Option<Ordering> {
+        use Ordering::*;
         match (self, other) {
             // These borrow errors only come from this solver, whose borrow checker is more
             // accurate. Hence if both agree on types we ignore the borrowck error.
             (Success(lty), Success(rty))
             | (BorrowError(lty, _), Success(rty))
-            | (Success(lty), BorrowError(rty, _)) => lty == rty,
-            (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => true,
-            (Success(_), TypeError(_)) | (TypeError(_), Success(_)) => false,
+            | (Success(lty), BorrowError(rty, _))
+                if lty == rty =>
+            {
+                Some(Equal)
+            }
+            (Success(_), Success(_)) => None,
+            (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => Some(Equal),
+            (TypeError(_) | BorrowError(..), Success(_)) => Some(Less),
+            (Success(_), TypeError(_) | BorrowError(..)) => Some(Greater),
         }
     }
 }
@@ -95,68 +105,116 @@ fn analyze_with_formality<'a>(
 fn compare() -> anyhow::Result<()> {
     use anyhow::Context;
     use std::fmt::Write;
+    use Ordering::*;
+    use RuleSet::*;
 
     let a = &Arenas::default();
-    let compare = [
+    let compare: &[(&str, RuleSet, Ordering, RuleSet)] = &[
         (
             "default",
-            RuleOptions {
+            TypeBased(RuleOptions {
                 // `ergo-formality` doesn't support the `Keep` option.
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
                 ..RuleOptions::DEFAULT
-            },
-            {
+            }),
+            Equal,
+            BindingModeBased({
                 let mut c = Conf::default();
                 c.rule1 = true;
                 c.rule4_early = true;
                 c.rule5 = true;
                 c
-            },
+            }),
         ),
-        ("stable_rust", RuleOptions::STABLE_RUST, Conf::rfc2005()),
-        ("structural", RuleOptions::STRUCTURAL, Conf::pre_rfc2005()),
-        ("ergo2024", RuleOptions::ERGO2024, Conf::rfc3627_2024()),
+        (
+            "stable_rust",
+            TypeBased(RuleOptions::STABLE_RUST),
+            Equal,
+            BindingModeBased(Conf::rfc2005()),
+        ),
+        (
+            "structural",
+            TypeBased(RuleOptions::STRUCTURAL),
+            Equal,
+            BindingModeBased(Conf::pre_rfc2005()),
+        ),
+        (
+            "ergo2024",
+            TypeBased(RuleOptions::ERGO2024),
+            Equal,
+            BindingModeBased(Conf::rfc3627_2024()),
+        ),
         (
             "rfc3627_2021",
-            RuleOptions::RFC3627_2021,
-            Conf::rfc3627_2021(),
+            TypeBased(RuleOptions::RFC3627_2021),
+            Equal,
+            BindingModeBased(Conf::rfc3627_2021()),
         ),
         (
             "ergo2024_breaking_only",
-            RuleOptions::ERGO2024_BREAKING_ONLY,
-            Conf::rfc_3627_2024_min(),
+            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
+            Equal,
+            BindingModeBased(Conf::rfc_3627_2024_min()),
         ),
-        ("waffle", RuleOptions::WAFFLE, {
-            let mut c = Conf::waffle_2024();
-            // Supporting the rule3 extension is too complicated.
-            c.rule3_ext1 = false;
-            c.rule3 = true;
-            c
-        }),
-        ("rpjohnst", RuleOptions::RPJOHNST, Conf::rpjohnst_2024()),
+        (
+            "waffle",
+            TypeBased(RuleOptions::WAFFLE),
+            Equal,
+            BindingModeBased({
+                let mut c = Conf::waffle_2024();
+                // Supporting the rule3 extension is too complicated.
+                c.rule3_ext1 = false;
+                c.rule3 = true;
+                c
+            }),
+        ),
+        (
+            "rpjohnst",
+            TypeBased(RuleOptions::RPJOHNST),
+            Equal,
+            BindingModeBased(Conf::rpjohnst_2024()),
+        ),
+        (
+            "ergo2024_nonbreaking_transition_bm_based",
+            BindingModeBased(Conf::rfc_3627_2024_min()),
+            Less,
+            BindingModeBased(Conf::rfc3627_2024()),
+        ),
+        (
+            "ergo2024_nonbreaking_transition_type_based",
+            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
+            Less,
+            TypeBased(RuleOptions::ERGO2024),
+        ),
+        (
+            "ergo2024_nonbreaking_transition_to_default",
+            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
+            Less,
+            TypeBased(RuleOptions::DEFAULT),
+        ),
     ];
 
     let test_cases = TypingRequest::generate(a, 3, 4);
 
-    for (name, ty_based, bm_based) in compare {
-        let ty_based = RuleSet::TypeBased(ty_based);
-        let bm_based = RuleSet::BindingModeBased(bm_based);
-
+    for &(name, left_ruleset, expected_order, right_ruleset) in compare {
         let mut trace = String::new();
         for test_case in &test_cases {
             let test_case_str = test_case.to_string();
-            let left_res = &ty_based
+            let left_res = &left_ruleset
                 .analyze(a, *test_case)
                 .context(test_case_str.clone())?;
-            let right_res = &bm_based
+            let right_res = &right_ruleset
                 .analyze(a, *test_case)
                 .context(test_case_str.clone())?;
-            if left_res.matches(right_res) {
-                continue;
+            match (left_res.cmp(right_res), expected_order) {
+                (Some(Equal), _) => continue,
+                (Some(Less), Less) => continue,
+                (Some(Greater), Greater) => continue,
+                _ => {}
             }
             let _ = writeln!(&mut trace, "Difference on `{test_case_str}`:");
-            let _ = writeln!(&mut trace, "  type-based returned: {left_res:?}");
-            let _ = writeln!(&mut trace, "    bm-based returned: {right_res:?}");
+            let _ = writeln!(&mut trace, "   left returned: {left_res:?}");
+            let _ = writeln!(&mut trace, "  right returned: {right_res:?}");
         }
 
         if !trace.is_empty() {

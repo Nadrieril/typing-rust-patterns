@@ -1,0 +1,136 @@
+---
+source: src/compare.rs
+info: ergo2024_nonbreaking_transition_to_default
+---
+Difference on `[[&mut x]]: [&[&mut T]]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[[&mut x]]: &[[&mut T]]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&&mut x]: &[&&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&ref x]: &[&T]`:
+   left returned: Success(&T)
+  right returned: Success(&&T)
+Difference on `[&ref x]: &[&[T]]`:
+   left returned: Success(&[T])
+  right returned: Success(&&[T])
+Difference on `[&ref x]: &[&&T]`:
+   left returned: Success(&&T)
+  right returned: Success(&&&T)
+Difference on `[&ref x]: &[&&mut T]`:
+   left returned: Success(&&mut T)
+  right returned: Success(&&&mut T)
+Difference on `[&ref x]: &&[&T]`:
+   left returned: Success(&T)
+  right returned: Success(&&T)
+Difference on `[&ref x]: &&mut [&T]`:
+   left returned: Success(&T)
+  right returned: Success(&&T)
+Difference on `[&ref x]: &mut [&T]`:
+   left returned: Success(&T)
+  right returned: Success(&&T)
+Difference on `[&ref x]: &mut [&[T]]`:
+   left returned: Success(&[T])
+  right returned: Success(&&[T])
+Difference on `[&ref x]: &mut [&&T]`:
+   left returned: Success(&&T)
+  right returned: Success(&&&T)
+Difference on `[&ref x]: &mut [&&mut T]`:
+   left returned: Success(&&mut T)
+  right returned: Success(&&&mut T)
+Difference on `[&ref x]: &mut &[&T]`:
+   left returned: Success(&T)
+  right returned: Success(&&T)
+Difference on `[&ref x]: &mut &mut [&T]`:
+   left returned: Success(&T)
+  right returned: Success(&&T)
+Difference on `[&mut [x]]: &[&mut [T]]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut &x]: &[&mut &T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut &mut x]: &[&mut &mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &[&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &[&mut [T]]`:
+   left returned: Success(&[T])
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &[&mut &T]`:
+   left returned: Success(&&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &[&mut &mut T]`:
+   left returned: Success(&&mut T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &&[&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &&mut [&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &mut &[&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut ref x]: &[&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut ref x]: &[&mut [T]]`:
+   left returned: Success(&[T])
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut ref x]: &[&mut &T]`:
+   left returned: Success(&&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut ref x]: &[&mut &mut T]`:
+   left returned: Success(&&mut T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut ref x]: &&[&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut ref x]: &&mut [&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut ref x]: &mut [&mut T]`:
+   left returned: Success(&T)
+  right returned: Success(&&mut T)
+Difference on `[&mut ref x]: &mut [&mut [T]]`:
+   left returned: Success(&[T])
+  right returned: Success(&&mut [T])
+Difference on `[&mut ref x]: &mut [&mut &T]`:
+   left returned: Success(&&T)
+  right returned: Success(&&mut &T)
+Difference on `[&mut ref x]: &mut [&mut &mut T]`:
+   left returned: Success(&&mut T)
+  right returned: Success(&&mut &mut T)
+Difference on `[&mut ref x]: &mut &[&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut ref x]: &mut &mut [&mut T]`:
+   left returned: Success(&T)
+  right returned: Success(&&mut T)
+Difference on `[&mut ref mut x]: &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: Success(&mut &mut T)
+Difference on `[&mut ref mut x]: &mut [&mut [T]]`:
+   left returned: Success(&mut [T])
+  right returned: Success(&mut &mut [T])
+Difference on `[&mut ref mut x]: &mut [&mut &T]`:
+   left returned: Success(&mut &T)
+  right returned: Success(&mut &mut &T)
+Difference on `[&mut ref mut x]: &mut [&mut &mut T]`:
+   left returned: Success(&mut &mut T)
+  right returned: Success(&mut &mut &mut T)
+Difference on `[&mut ref mut x]: &mut &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: Success(&mut &mut T)
+Difference on `&[&mut x]: &&[&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `&mut [&mut x]: &mut &[&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")

@@ -3,116 +3,116 @@ source: src/compare.rs
 info: default
 ---
 Difference on `[[&x]]: [&mut [&T]]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[[&x]]: &mut [[&T]]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&[x]]: &mut [&[T]]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut [&T]`:
-  type-based returned: Success(T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut [&[T]]`:
-  type-based returned: Success([T])
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success([T])
+  right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut [&&T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut [&mut T]`:
-  type-based returned: Success(T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut [&mut [T]]`:
-  type-based returned: Success([T])
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success([T])
+  right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut [&mut &T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut &mut [&T]`:
-  type-based returned: Success(T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut &mut [&mut T]`:
-  type-based returned: Success(T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&mut x]: &mut [&mut T]`:
-  type-based returned: Success(T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&mut x]: &mut [&mut [T]]`:
-  type-based returned: Success([T])
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success([T])
+  right returned: TypeError("mismatched types")
 Difference on `[&&mut x]: &mut [&mut &T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&mut x]: &mut &mut [&mut T]`:
-  type-based returned: Success(T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(T)
+  right returned: TypeError("mismatched types")
 Difference on `[&x]: &mut [&T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&x]: &mut [&[T]]`:
-  type-based returned: Success(&[T])
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&[T])
+  right returned: TypeError("mismatched types")
 Difference on `[&x]: &mut [&&T]`:
-  type-based returned: Success(&&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&x]: &mut [&&mut T]`:
-  type-based returned: Success(&&mut T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&mut T)
+  right returned: TypeError("mismatched types")
 Difference on `[&x]: &mut &mut [&T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&(mut x)]: &mut [&T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&(mut x)]: &mut [&[T]]`:
-  type-based returned: Success(&[T])
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&[T])
+  right returned: TypeError("mismatched types")
 Difference on `[&(mut x)]: &mut [&&T]`:
-  type-based returned: Success(&&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&(mut x)]: &mut [&&mut T]`:
-  type-based returned: Success(&&mut T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&mut T)
+  right returned: TypeError("mismatched types")
 Difference on `[&(mut x)]: &mut &mut [&T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&T]`:
-  type-based returned: Success(&&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&[T]]`:
-  type-based returned: Success(&&[T])
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&[T])
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&&T]`:
-  type-based returned: Success(&&&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&&mut T]`:
-  type-based returned: Success(&&&mut T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&&mut T)
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&mut T]`:
-  type-based returned: Success(&&mut T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&mut T)
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&mut [T]]`:
-  type-based returned: Success(&&mut [T])
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&mut [T])
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&mut &T]`:
-  type-based returned: Success(&&mut &T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&mut &T)
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&mut &mut T]`:
-  type-based returned: Success(&&mut &mut T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&mut &mut T)
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut &mut [&T]`:
-  type-based returned: Success(&&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut &mut [&mut T]`:
-  type-based returned: Success(&&mut T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&&mut T)
+  right returned: TypeError("mismatched types")
 Difference on `&[&x]: &&mut [&T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `&[&x]: &mut &mut [&T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `&mut [&x]: &mut &mut [&T]`:
-  type-based returned: Success(&T)
-    bm-based returned: TypeError("mismatched types")
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
