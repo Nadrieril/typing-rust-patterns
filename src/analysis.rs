@@ -6,6 +6,15 @@ use BindingMode::*;
 use Mutability::*;
 
 impl<'a> Pattern<'a> {
+    pub fn depth(&self) -> usize {
+        match self {
+            Pattern::Abstract(_) => 0,
+            Pattern::Binding(..) => 0,
+            Pattern::Tuple(pats) => pats.iter().map(|pat| pat.depth() + 1).max().unwrap_or(0),
+            Pattern::Ref(_, pat) => 1 + pat.depth(),
+        }
+    }
+
     /// Whether the pattern contains an abstract subpattern.
     pub fn contains_abstract(&self) -> bool {
         match *self {
@@ -31,6 +40,15 @@ impl<'a> Pattern<'a> {
 }
 
 impl<'a> Type<'a> {
+    pub fn depth(&self) -> usize {
+        match self {
+            Type::Abstract(_) => 0,
+            Type::NonRef(_) => 0,
+            Type::Tuple(tys) => tys.iter().map(|ty| ty.depth() + 1).max().unwrap_or(0),
+            Type::Ref(_, ty) => 1 + ty.depth(),
+        }
+    }
+
     /// Whether the type implements `Copy` (we assume type variables are `Copy`).
     pub fn is_copy(&self) -> bool {
         match self {
@@ -62,6 +80,12 @@ impl<'a> Type<'a> {
             Type::NonRef(_) => *self,
             Type::Abstract(_) => replace,
         }
+    }
+}
+
+impl<'a> TypingRequest<'a> {
+    pub fn depth(&self) -> usize {
+        std::cmp::max(self.pat.depth(), self.ty.depth())
     }
 }
 

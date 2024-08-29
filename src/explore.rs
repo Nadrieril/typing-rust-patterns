@@ -307,10 +307,12 @@ impl<'a> TypingRequest<'a> {
     pub fn generate(a: &'a Arenas<'a>, pat_depth: usize, ty_depth: usize) -> Vec<Self> {
         let patterns = Pattern::generate(a, pat_depth);
         let types = Type::generate(a, ty_depth);
-        patterns
+        let mut out = patterns
             .iter()
             .cartesian_product(types)
             .map(|(pat, ty)| TypingRequest { pat, ty })
-            .collect()
+            .collect_vec();
+        out.sort_by_key(|req| req.depth());
+        out
     }
 }

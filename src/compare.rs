@@ -100,11 +100,41 @@ fn analyze_with_formality<'a>(
     })
 }
 
+pub fn compare_rulesets<'a>(
+    a: &'a Arenas<'a>,
+    test_cases: &[TypingRequest<'a>],
+    left_ruleset: RuleSet,
+    expected_order: Ordering,
+    right_ruleset: RuleSet,
+) -> anyhow::Result<String> {
+    use anyhow::Context;
+    use std::fmt::Write;
+    use Ordering::*;
+    let mut trace = String::new();
+    for test_case in test_cases {
+        let test_case_str = test_case.to_string();
+        let left_res = &left_ruleset
+            .analyze(a, *test_case)
+            .context(test_case_str.clone())?;
+        let right_res = &right_ruleset
+            .analyze(a, *test_case)
+            .context(test_case_str.clone())?;
+        match (left_res.cmp(right_res), expected_order) {
+            (Some(Equal), _) => continue,
+            (Some(Less), Less) => continue,
+            (Some(Greater), Greater) => continue,
+            _ => {}
+        }
+        let _ = writeln!(&mut trace, "Difference on `{test_case_str}`:");
+        let _ = writeln!(&mut trace, "   left returned: {left_res:?}");
+        let _ = writeln!(&mut trace, "  right returned: {right_res:?}");
+    }
+    Ok(trace)
+}
+
 #[test]
 /// Compare rulesets with the `ergo-formality` reference implementation.
 fn compare() -> anyhow::Result<()> {
-    use anyhow::Context;
-    use std::fmt::Write;
     use Ordering::*;
     use RuleSet::*;
 
@@ -192,29 +222,68 @@ fn compare() -> anyhow::Result<()> {
             Less,
             TypeBased(RuleOptions::DEFAULT),
         ),
+        (
+            "non_breaking_on_stable",
+            TypeBased(RuleOptions::STABLE_RUST),
+            Less,
+            TypeBased(RuleOptions::RFC3627_2021),
+        ),
+        (
+            "stable_vs_stateless",
+            TypeBased(RuleOptions {
+                ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+                mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+                ..RuleOptions::STABLE_RUST
+            }),
+            Equal,
+            TypeBased(RuleOptions {
+                ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+                mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+                allow_ref_pat_on_ref_mut: false,
+                eat_inherited_ref_alone: false,
+                ..RuleOptions::STATELESS
+            }),
+        ),
+        (
+            "rfc3627_vs_stateless",
+            TypeBased(RuleOptions {
+                ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+                mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+                allow_ref_pat_on_ref_mut: false,
+                downgrade_mut_inside_shared: false,
+                ..RuleOptions::ERGO2024
+            }),
+            Equal,
+            TypeBased(RuleOptions {
+                ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+                mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+                allow_ref_pat_on_ref_mut: false,
+                ..RuleOptions::STATELESS
+            }),
+        ),
     ];
 
     let test_cases = TypingRequest::generate(a, 3, 4);
+    let (shallow_test_cases, deep_test_cases): (Vec<_>, Vec<_>) =
+        test_cases.into_iter().partition(|req| req.depth() <= 3);
 
     for &(name, left_ruleset, expected_order, right_ruleset) in compare {
-        let mut trace = String::new();
-        for test_case in &test_cases {
-            let test_case_str = test_case.to_string();
-            let left_res = &left_ruleset
-                .analyze(a, *test_case)
-                .context(test_case_str.clone())?;
-            let right_res = &right_ruleset
-                .analyze(a, *test_case)
-                .context(test_case_str.clone())?;
-            match (left_res.cmp(right_res), expected_order) {
-                (Some(Equal), _) => continue,
-                (Some(Less), Less) => continue,
-                (Some(Greater), Greater) => continue,
-                _ => {}
-            }
-            let _ = writeln!(&mut trace, "Difference on `{test_case_str}`:");
-            let _ = writeln!(&mut trace, "   left returned: {left_res:?}");
-            let _ = writeln!(&mut trace, "  right returned: {right_res:?}");
+        let mut trace = compare_rulesets(
+            a,
+            &shallow_test_cases,
+            left_ruleset,
+            expected_order,
+            right_ruleset,
+        )?;
+        if trace.is_empty() {
+            // Try deeper patterns.
+            trace = compare_rulesets(
+                a,
+                &deep_test_cases,
+                left_ruleset,
+                expected_order,
+                right_ruleset,
+            )?
         }
 
         if !trace.is_empty() {
