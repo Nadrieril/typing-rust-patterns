@@ -142,8 +142,8 @@ impl<'a> Expression<'a> {
     }
 }
 
-impl Default for ExprKind<'_> {
-    fn default() -> Self {
+impl ExprKind<'_> {
+    pub fn new_abstract() -> Self {
         ExprKind::Abstract {
             not_a_ref: false,
             scrutinee_mutability: None,

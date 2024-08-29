@@ -22,6 +22,10 @@ impl BindingMode {
 }
 
 impl<'a> TypingPredicate<'a> {
+    pub fn display(&self) -> String {
+        format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty)
+    }
+
     /// Display as `let ...`.
     pub fn display_as_let(&self) -> String {
         format!("let {}: {} = {}", self.pat, self.expr.ty, self.expr)
@@ -35,6 +39,14 @@ impl<'a> TypingPredicate<'a> {
         } else {
             self.to_string()
         }
+    }
+
+    pub fn display_as_let_without_expr(&self) -> String {
+        format!("let {}: {}", self.pat, self.expr.ty)
+    }
+
+    pub fn display_without_expr(&self) -> String {
+        format!("{}: {}", self.pat, self.expr.ty)
     }
 }
 
@@ -119,7 +131,7 @@ impl Display for TypingRequest<'_> {
 
 impl Display for TypingPredicate<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} @ {}: {}", self.pat, self.expr, self.expr.ty)
+        write!(f, "{}", self.display())
     }
 }
 

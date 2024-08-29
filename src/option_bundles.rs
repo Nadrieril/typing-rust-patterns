@@ -131,6 +131,7 @@ impl RuleOptions {
             .find(|(_, bundle, _)| *bundle == self)
             .map(|(name, _, _)| *name)
     }
+
     pub fn from_bundle_name(name: &str) -> Option<Self> {
         Self::KNOWN_OPTION_BUNDLES
             .iter()

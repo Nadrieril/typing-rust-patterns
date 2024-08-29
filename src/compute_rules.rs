@@ -31,7 +31,7 @@ impl<'a> TypingPredicate<'a> {
         TypingPredicate {
             pat: &Pattern::Abstract("p"),
             expr: Expression {
-                kind: ExprKind::default(),
+                kind: ExprKind::new_abstract(),
                 ty: Type::Abstract("T").alloc(a),
             },
         }
@@ -293,6 +293,8 @@ impl<'a> Expression<'a> {
 pub enum TypingRuleStyle {
     Plain,
     BindingMode,
+    /// Doesn't draw the expression.
+    Stateless,
 }
 
 impl<'a> TypingRule<'a> {
@@ -326,17 +328,22 @@ impl<'a> TypingRule<'a> {
         f: &mut std::fmt::Formatter<'_>,
         style: TypingRuleStyle,
     ) -> std::fmt::Result {
+        use TypingRuleStyle::*;
         let a = &Arenas::default();
 
-        let extract_bm = matches!(style, TypingRuleStyle::BindingMode);
+        let extract_bm = matches!(style, BindingMode);
         let (cstrs, rule) = self.extract_side_constraints(a, extract_bm);
-        let abstract_expr = ExprKind::default();
+        let abstract_expr = ExprKind::new_abstract();
 
-        let mut postconditions_str = rule.postcondition.to_string();
+        let mut postconditions_str = if matches!(style, Stateless) {
+            rule.postcondition.display_without_expr()
+        } else {
+            rule.postcondition.display()
+        };
 
         if let Some(bm) = cstrs.binding_mode {
             match style {
-                TypingRuleStyle::Plain => {
+                Plain => {
                     assert!(bm == ByMove);
                     let _ = write!(
                         &mut postconditions_str,
@@ -344,13 +351,16 @@ impl<'a> TypingRule<'a> {
                         abstract_expr
                     );
                 }
-                TypingRuleStyle::BindingMode => {
+                BindingMode => {
                     let bm = bm.name();
                     let _ = write!(
                         &mut postconditions_str,
                         ", binding_mode({}) = {bm}",
                         abstract_expr
                     );
+                }
+                Stateless => {
+                    panic!("stateless style cannot describe a binding mode")
                 }
             }
         }
@@ -367,12 +377,25 @@ impl<'a> TypingRule<'a> {
         }
 
         let mut preconditions_str = if rule.preconditions.is_empty() {
-            rule.postcondition.display_as_let()
+            if matches!(style, Stateless) {
+                rule.postcondition.display_as_let_without_expr()
+            } else {
+                rule.postcondition.display_as_let()
+            }
         } else {
-            rule.preconditions.iter().format(",  ").to_string()
+            rule.preconditions
+                .iter()
+                .map(|pred| {
+                    if matches!(style, Stateless) {
+                        pred.display_without_expr()
+                    } else {
+                        pred.display()
+                    }
+                })
+                .join(",  ")
         };
 
-        if let TypingRuleStyle::BindingMode = style
+        if let BindingMode = style
             && let Some(ByRef(..)) = cstrs.binding_mode
         {
             // In binding mode style, dereferencing the bm is called "resetting".
@@ -408,9 +431,14 @@ fn bundle_rules() -> anyhow::Result<()> {
 
     // Try both styles
     let bundles = RuleOptions::KNOWN_OPTION_BUNDLES
-        .iter()
+        .into_iter()
+        .copied()
         .cartesian_product([TypingRuleStyle::Plain, TypingRuleStyle::BindingMode])
-        .map(|(&(name, options, _), style)| {
+        .chain([(
+            ("stateless", RuleOptions::STATELESS, ""),
+            TypingRuleStyle::Stateless,
+        )])
+        .map(|((name, options, _), style)| {
             let options = RuleOptions {
                 rules_display_style: style,
                 ..options
