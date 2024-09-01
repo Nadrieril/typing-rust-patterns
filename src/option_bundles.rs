@@ -122,7 +122,7 @@ impl RuleOptions {
             Self::WAFFLE,
             "a proposal by @WaffleLapkin (excluding the proposed rule3 extension)",
         ),
-        ("rpjohnst", Self::RPJOHNST, "(TODO) a proposal by @rpjohnst"),
+        // ("rpjohnst", Self::RPJOHNST, "(TODO) a proposal by @rpjohnst"),
     ];
 
     pub fn get_bundle_name(self) -> Option<&'static str> {

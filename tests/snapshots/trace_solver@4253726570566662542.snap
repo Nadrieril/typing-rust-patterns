@@ -12,14 +12,8 @@ info:
     ref_binding_on_inherited: AllocTemporary
     mut_binding_on_inherited: Keep
     rules_display_style: Plain
-  bundle_name: rpjohnst
-  request: "&[[&x]]: &[&mut [T]]"
+  bundle_name: ~
+  request: "&x: &mut T"
 ---
-&[[&x]] @ p: &[&mut [T]]
-// Applying rule `Deref(EatOuter)`
-[[&x]] @ *p: [&mut [T]]
-// Applying rule `Constructor`
-[&x] @ (*p).0: &mut [T]
-// Applying rule `ConstructorRef`
-&x @ &mut (*(*p).0).0: &mut T
-// Type error for `&x @ &mut (*(*p).0).0: &mut T`: MutabilityMismatch
+&x @ p: &mut T
+// Type error for `&x @ p: &mut T`: MutabilityMismatch
