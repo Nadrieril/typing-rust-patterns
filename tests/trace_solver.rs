@@ -44,10 +44,7 @@ fn trace_solver(test_case: TestCase<'_>) -> anyhow::Result<()> {
 
 #[test]
 fn test_solver_traces() -> anyhow::Result<()> {
-    let base = RuleOptions {
-        simplify_deref_mut: true,
-        ..RuleOptions::STATELESS
-    };
+    let base = RuleOptions::STATELESS;
     let test_cases: &[(RuleOptions, &[_])] = &[
         (
             base,
@@ -103,7 +100,10 @@ fn test_solver_traces() -> anyhow::Result<()> {
             &["&x: &mut T", "&[[&x]]: &[&mut [T]]"],
         ),
         (
-            RuleOptions::STATELESS,
+            RuleOptions {
+                simplify_deref_mut: false,
+                ..RuleOptions::STATELESS
+            },
             &[
                 "&[[&x]]: &[&mut [T]]",
                 "&[[&mut x]]: &[&mut [T]]",

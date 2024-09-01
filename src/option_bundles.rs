@@ -39,7 +39,7 @@ impl RuleOptions {
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
         fallback_to_outer: false,
         allow_ref_pat_on_ref_mut: true,
-        simplify_deref_mut: false,
+        simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
         downgrade_mut_inside_shared: false,
     };
@@ -47,7 +47,6 @@ impl RuleOptions {
     /// The default setting for the solver. A reasonable proposal.
     pub const DEFAULT: Self = RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
-        simplify_deref_mut: true,
         ..Self::STATELESS
     };
 
@@ -55,6 +54,7 @@ impl RuleOptions {
     pub const STRUCTURAL: Self = RuleOptions {
         match_constructor_through_ref: false,
         allow_ref_pat_on_ref_mut: false,
+        simplify_deref_mut: false,
         ..Self::STATELESS
     };
 
