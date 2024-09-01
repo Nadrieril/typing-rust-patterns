@@ -145,6 +145,8 @@ fn compare() -> anyhow::Result<()> {
             TypeBased(RuleOptions {
                 // `ergo-formality` doesn't support the `Keep` option.
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+                // `ergo-formality` doesn't support any option.
+                ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
                 ..RuleOptions::DEFAULT
             }),
             Equal,
@@ -217,10 +219,10 @@ fn compare() -> anyhow::Result<()> {
             TypeBased(RuleOptions::ERGO2024),
         ),
         (
-            "ergo2024_nonbreaking_transition_to_default",
+            "ergo2024_nonbreaking_transition_to_stateless",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
             Less,
-            TypeBased(RuleOptions::DEFAULT),
+            TypeBased(RuleOptions::STATELESS),
         ),
         (
             "non_breaking_on_stable",

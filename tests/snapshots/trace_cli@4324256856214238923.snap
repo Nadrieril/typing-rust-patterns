@@ -6,6 +6,7 @@ downgrade_mut_inside_shared: false -> true
 fallback_to_outer: false -> true
 inherited_ref_on_ref: "EatOuter" -> "EatInner"
 mut_binding_on_inherited: "Keep" -> "Error"
+ref_binding_on_inherited: "Error" -> "ResetBindingMode"
 
 -p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
 ------------------------------------------------------ "ConstructorRef"
@@ -98,6 +99,22 @@ mut_binding_on_inherited: "Keep" -> "Error"
 +p @ &*&*q: &T
 +------------------------ "DerefMutWithShared(EatInner)"
 +&p @ &mut q: &mut &mut T
+
++ref x @ q: T
++-------------- "RefBindingResetBindingMode"
++ref x @ &q: &T
+
++ref x @ q: T
++---------------------- "RefBindingResetBindingMode"
++ref x @ &mut q: &mut T
+
++ref mut x @ q: T
++------------------ "RefBindingResetBindingMode"
++ref mut x @ &q: &T
+
++ref mut x @ q: T
++-------------------------- "RefBindingResetBindingMode"
++ref mut x @ &mut q: &mut T
 
 -let mut x: T = q
 ----------------- "Binding"

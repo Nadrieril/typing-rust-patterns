@@ -12,7 +12,7 @@ info:
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: Keep
     rules_display_style: Plain
-  bundle_name: default
+  bundle_name: ~
   request: "[ref mut x]: &mut [T]"
 ---
 [ref mut x] @ p: &mut [T]

@@ -46,7 +46,7 @@ impl RuleOptions {
 
     /// The default setting for the solver. A reasonable proposal.
     pub const DEFAULT: Self = RuleOptions {
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
         ..Self::STATELESS
     };
 
@@ -89,7 +89,7 @@ impl RuleOptions {
         (
             "default",
             Self::DEFAULT,
-            "the default settings; a reasonable proposal",
+            "a reasonable proposal; like `stateless` but forbids `ref` bindings that create temporaries",
         ),
         (
             "stateless",

@@ -12,18 +12,18 @@ info:
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: Keep
     rules_display_style: Plain
-  bundle_name: default
-  request: "[ref mut x]: &[T]"
+  bundle_name: ~
+  request: "[ref x]: &[T]"
 ---
-[ref mut x] @ p: &[T]
+[ref x] @ p: &[T]
 // Applying rule `ConstructorRef`
-ref mut x @ &(*p).0: &T
+ref x @ &(*p).0: &T
 // Applying rule `RefBindingResetBindingMode`
-ref mut x @ (*p).0: T
+ref x @ (*p).0: T
 // Applying rule `BindingBorrow`
-x @ &mut (*p).0: &mut T
+x @ &(*p).0: &T
 // Applying rule `Binding`
-let x: &mut T = &mut (*p).0
+let x: &T = &(*p).0
 
 // Final bindings (simplified):
-let x: &mut T = &mut (*p).0; // Borrow-check error: MutBorrowBehindSharedBorrow
+let x: &T = &(*p).0;

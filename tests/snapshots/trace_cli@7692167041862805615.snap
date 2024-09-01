@@ -4,7 +4,7 @@ info: "set structural\nset rules_display_style BindingMode\nrules"
 ---
 allow_ref_pat_on_ref_mut: true -> false
 match_constructor_through_ref: true -> false
-ref_binding_on_inherited: "ResetBindingMode" -> "AllocTemporary"
+ref_binding_on_inherited: "Error" -> "AllocTemporary"
 simplify_deref_mut: true -> false
 
 -p0 @ &(*q).0: &T0,  p1 @ &(*q).1: &T1
@@ -34,22 +34,6 @@ simplify_deref_mut: true -> false
 -p @ *&*q: T
 --------------- "DerefMutWithShared(EatOuter)"
 -&p @ q: &mut T
-
--ref x @ q: T
---------------- "RefBindingResetBindingMode"
--ref x @ &q: &T
-
--ref x @ q: T
------------------------ "RefBindingResetBindingMode"
--ref x @ &mut q: &mut T
-
--ref mut x @ q: T
-------------------- "RefBindingResetBindingMode"
--ref mut x @ &q: &T
-
--ref mut x @ q: T
---------------------------- "RefBindingResetBindingMode"
--ref mut x @ &mut q: &mut T
 
 -x @ &q: &T
 ----------------------------------- "BindingBorrow"
