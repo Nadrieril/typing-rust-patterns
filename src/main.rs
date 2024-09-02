@@ -10,30 +10,22 @@ use typing_rust_patterns::*;
 
 static COMMANDS: &[&str] = &["help", "options", "set", "rules", "quit"];
 
-fn main() -> anyhow::Result<()> {
-    let is_interactive = std::io::stdin().is_terminal();
+struct CliState {
+    history: Vec<String>,
+    options: RuleOptions,
+    compare_with: Option<RuleOptions>,
+}
 
-    if is_interactive {
-        println!("Welcome to the interactive pattern typer!");
-        println!("Write `pattern: type` on the prompt line and I will attempt to type it.");
-        println!("Example: `&[ref x]: &[T]`");
-        println!(
-        "Type `help` for a list of available commands. Type the command for usage instructions."
-    );
-        println!("");
-    }
-
-    let mut options = RuleOptions::DEFAULT;
-    let mut compare_with = None;
-
-    let mut history = Vec::new();
-    let prompt = |history: &[_]| {
-        if is_interactive {
-            Text::new("")
+impl CliState {
+    fn prompt(&self, interactive: bool) -> anyhow::Result<Option<String>> {
+        if interactive {
+            Ok(Text::new("")
                 .with_placeholder("[&x]: &mut [&T]")
                 .with_autocomplete(Autocomplete)
-                .with_history(SimpleHistory::new(history.iter().rev().cloned().collect()))
-                .prompt_skippable()
+                .with_history(SimpleHistory::new(
+                    self.history.iter().rev().cloned().collect(),
+                ))
+                .prompt_skippable()?)
         } else {
             let mut buffer = String::new();
             std::io::stdin().read_line(&mut buffer)?;
@@ -43,26 +35,46 @@ fn main() -> anyhow::Result<()> {
                 Some(buffer)
             })
         }
+    }
+}
+
+fn main() -> anyhow::Result<()> {
+    let mut state = CliState {
+        history: Vec::new(),
+        options: RuleOptions::DEFAULT,
+        compare_with: None,
     };
-    while let Some(request) = prompt(&history)? {
+
+    let is_interactive = std::io::stdin().is_terminal();
+    if is_interactive {
+        println!("Welcome to the interactive pattern typer!");
+        println!("Write `pattern: type` on the prompt line and I will attempt to type it.");
+        println!("Example: `&[ref x]: &[T]`");
+        println!(
+            "Type `help` for a list of available commands. Type the command for usage instructions."
+        );
+        println!("");
+    }
+
+    while let Some(request) = state.prompt(is_interactive)? {
         let request = request.trim();
         if request == "?" || request == "help" {
             println!("Commands: {}", COMMANDS.iter().format(", "));
         } else if request == "q" || request == "quit" {
             break;
         } else if request == "options" {
-            let options = serde_yaml::to_string(&options)?;
+            let options = serde_yaml::to_string(&state.options)?;
             print!("{options}");
         } else if request == "rules" {
-            display_rules(options)
+            display_rules(state.options)
         } else if request == "compare" {
             // TODO: `compare <ruleset>`, `compare <ruleset> <ruleset>`
             // TODO: maybe `compare saved`, plus save/unsave
             // TODO: would give a good name to the thing: current vs saved
             // TODO: maybe `previous` even
             // but then harder to justify side-by-side solver
-            if let Some(compare_with) = compare_with {
-                if compare_with == options {
+            if let Some(compare_with) = state.compare_with {
+                if compare_with == state.options {
                     println!(indoc!(
                         "
                         This ruleset is the same as the one that was previously saved. Change some
@@ -72,7 +84,7 @@ fn main() -> anyhow::Result<()> {
                 } else {
                     // TODO
                     // TODO: show sets of options at the top
-                    display_joint_rules(compare_with, options);
+                    display_joint_rules(compare_with, state.options);
                 }
             } else {
                 println!(indoc!(
@@ -82,17 +94,17 @@ fn main() -> anyhow::Result<()> {
                     unset the comparison.
                     "
                 ));
-                compare_with = Some(options);
+                state.compare_with = Some(state.options);
             }
         } else if let Some(cmd) = request.strip_prefix("set") {
-            history.push(request.to_string());
-            let old_options = options;
-            match parse_set_cmd(cmd, &mut options) {
+            state.history.push(request.to_string());
+            let old_options = state.options;
+            match parse_set_cmd(cmd, &mut state.options) {
                 // Display what changed.
                 Ok(_) => {
-                    display_options_diff(old_options, options);
+                    display_options_diff(old_options, state.options);
                     println!();
-                    display_rules_diff(old_options, options);
+                    display_rules_diff(old_options, state.options);
                 }
                 Err(err) => {
                     println!(
@@ -108,8 +120,8 @@ fn main() -> anyhow::Result<()> {
             }
         } else {
             // TODO: run in parallel if compare mode
-            history.push(request.to_string());
-            match trace_solver(&request, options) {
+            state.history.push(request.to_string());
+            match trace_solver(&request, state.options) {
                 Ok(trace) => println!("{trace}"),
                 Err(err) => {
                     println!(
