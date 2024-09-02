@@ -8,12 +8,14 @@ use itertools::Itertools;
 
 use typing_rust_patterns::*;
 
-static COMMANDS: &[&str] = &["help", "options", "set", "rules", "quit"];
+static COMMANDS: &[&str] = &[
+    "help", "options", "set", "rules", "save", "unsave", "compare", "swap", "quit",
+];
 
 struct CliState {
     history: Vec<String>,
     options: RuleOptions,
-    compare_with: Option<RuleOptions>,
+    saved: Option<RuleOptions>,
 }
 
 impl CliState {
@@ -42,7 +44,7 @@ fn main() -> anyhow::Result<()> {
     let mut state = CliState {
         history: Vec::new(),
         options: RuleOptions::DEFAULT,
-        compare_with: None,
+        saved: None,
     };
 
     let is_interactive = std::io::stdin().is_terminal();
@@ -67,14 +69,25 @@ fn main() -> anyhow::Result<()> {
             print!("{options}");
         } else if request == "rules" {
             display_rules(state.options)
+        } else if request == "save" {
+            println!("Current ruleset was saved");
+            state.saved = Some(state.options);
+        } else if request == "unsave" {
+            println!("Saved ruleset was forgotten");
+            state.saved = None;
+        } else if request == "swap" {
+            if let Some(saved) = &mut state.saved {
+                println!("Current and saved rulesets were swapped");
+                std::mem::swap(saved, &mut state.options);
+                display_options_diff(*saved, state.options);
+                println!();
+                display_rules_diff(*saved, state.options);
+            } else {
+                println!("Can't swap saved and current ruleset because there is no saved ruleset. Use `save` to save one.");
+            }
         } else if request == "compare" {
-            // TODO: `compare <ruleset>`, `compare <ruleset> <ruleset>`
-            // TODO: maybe `compare saved`, plus save/unsave
-            // TODO: would give a good name to the thing: current vs saved
-            // TODO: maybe `previous` even
-            // but then harder to justify side-by-side solver
-            if let Some(compare_with) = state.compare_with {
-                if compare_with == state.options {
+            if let Some(saved) = state.saved {
+                if saved == state.options {
                     println!(indoc!(
                         "
                         This ruleset is the same as the one that was previously saved. Change some
@@ -84,17 +97,10 @@ fn main() -> anyhow::Result<()> {
                 } else {
                     // TODO
                     // TODO: show sets of options at the top
-                    display_joint_rules(compare_with, state.options);
+                    display_joint_rules(saved, state.options);
                 }
             } else {
-                println!(indoc!(
-                    "
-                    Entering compare mode: the current options have been saved. You can now change
-                    to another ruleset of interest and run `compare` again. TODO: add a way to
-                    unset the comparison.
-                    "
-                ));
-                state.compare_with = Some(state.options);
+                println!("Can't compare rulesets because there is no saved ruleset. Use `save` to save one.");
             }
         } else if let Some(cmd) = request.strip_prefix("set") {
             state.history.push(request.to_string());

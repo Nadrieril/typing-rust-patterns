@@ -19,6 +19,7 @@ fn trace_cli() -> anyhow::Result<()> {
         "set allow_ref_pat_on_ref_mut false\n&x: &mut T",
         "set structural\nrules",
         "set structural\nset rules_display_style BindingMode\nrules",
+        "save\nset structural\nswap\ncompare",
     ];
     for &test_case in test_cases {
         let success = Command::cargo_bin("typing-rust-patterns")?

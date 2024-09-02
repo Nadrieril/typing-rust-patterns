@@ -2,4 +2,4 @@
 source: tests/trace_cli.rs
 info: help
 ---
-Commands: help, options, set, rules, quit
+Commands: help, options, set, rules, save, unsave, compare, swap, quit
