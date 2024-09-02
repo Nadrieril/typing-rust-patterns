@@ -4,9 +4,9 @@ info: "set allow_ref_pat_on_ref_mut false\n&x: &mut T"
 ---
 allow_ref_pat_on_ref_mut: true -> false
 
--p @ *&*q: T
+-p @ *&*e: T
 --------------- "DerefMutWithShared(EatOuter)"
--&p @ q: &mut T
+-&p @ e: &mut T
 
-&x @ p: &mut T
-// Type error for `&x @ p: &mut T`: MutabilityMismatch
+&x @ s: &mut T
+// Type error for `&x @ s: &mut T`: MutabilityMismatch

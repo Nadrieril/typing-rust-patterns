@@ -2,11 +2,11 @@
 source: tests/trace_cli.rs
 info: "&x: &mut T"
 ---
-&x @ p: &mut T
+&x @ s: &mut T
 // Applying rule `DerefMutWithShared(EatOuter)`
-x @ *&*p: T
+x @ *&*s: T
 // Applying rule `Binding`
-let x: T = *&*p
+let x: T = *&*s
 
 // Final bindings (simplified):
-let x: T = *p;
+let x: T = *s;

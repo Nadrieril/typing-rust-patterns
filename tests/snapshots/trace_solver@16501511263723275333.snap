@@ -15,13 +15,13 @@ info:
   bundle_name: stateless
   request: "[ref mut x]: &mut [T]"
 ---
-[ref mut x] @ p: &mut [T]
+[ref mut x] @ s: &mut [T]
 // Applying rule `ConstructorRef`
-ref mut x @ &mut (*p).0: &mut T
+ref mut x @ &mut (*s).0: &mut T
 // Applying rule `BindingBorrow`
-x @ &mut &mut (*p).0: &mut &mut T
+x @ &mut &mut (*s).0: &mut &mut T
 // Applying rule `Binding`
-let x: &mut &mut T = &mut &mut (*p).0
+let x: &mut &mut T = &mut &mut (*s).0
 
 // Final bindings (simplified):
-let x: &mut &mut T = &mut &mut (*p).0;
+let x: &mut &mut T = &mut &mut (*s).0;

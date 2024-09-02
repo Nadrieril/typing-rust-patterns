@@ -15,7 +15,7 @@ info:
   bundle_name: ~
   request: "[&x]: &[[T]]"
 ---
-[&x] @ p: &[[T]]
+[&x] @ s: &[[T]]
 // Applying rule `ConstructorRef`
-&x @ &(*p).0: &[T]
-// Type error for `&x @ &(*p).0: &[T]`: InheritedRefIsAlone
+&x @ &(*s).0: &[T]
+// Type error for `&x @ &(*s).0: &[T]`: InheritedRefIsAlone

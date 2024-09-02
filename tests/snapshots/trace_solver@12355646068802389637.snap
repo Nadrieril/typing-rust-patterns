@@ -15,15 +15,15 @@ info:
   bundle_name: ~
   request: "[ref x]: &[T]"
 ---
-[ref x] @ p: &[T]
+[ref x] @ s: &[T]
 // Applying rule `ConstructorRef`
-ref x @ &(*p).0: &T
+ref x @ &(*s).0: &T
 // Applying rule `RefBindingResetBindingMode`
-ref x @ (*p).0: T
+ref x @ (*s).0: T
 // Applying rule `BindingBorrow`
-x @ &(*p).0: &T
+x @ &(*s).0: &T
 // Applying rule `Binding`
-let x: &T = &(*p).0
+let x: &T = &(*s).0
 
 // Final bindings (simplified):
-let x: &T = &(*p).0;
+let x: &T = &(*s).0;

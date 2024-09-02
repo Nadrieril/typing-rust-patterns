@@ -15,7 +15,7 @@ info:
   bundle_name: ergo2024
   request: "[mut x]: &[T]"
 ---
-[mut x] @ p: &[T]
+[mut x] @ s: &[T]
 // Applying rule `ConstructorRef`
-mut x @ &(*p).0: &T
-// Type error for `mut x @ &(*p).0: &T`: MutOnRef
+mut x @ &(*s).0: &T
+// Type error for `mut x @ &(*s).0: &T`: MutOnRef

@@ -15,11 +15,11 @@ info:
   bundle_name: stateless
   request: "&x: &T"
 ---
-&x @ p: &T
+&x @ s: &T
 // Applying rule `Deref(EatOuter)`
-x @ *p: T
+x @ *s: T
 // Applying rule `Binding`
-let x: T = *p
+let x: T = *s
 
 // Final bindings (simplified):
-let x: T = *p;
+let x: T = *s;

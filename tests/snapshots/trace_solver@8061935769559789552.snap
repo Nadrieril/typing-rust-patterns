@@ -15,13 +15,13 @@ info:
   bundle_name: ergo2024
   request: "&[x]: &&mut [T]"
 ---
-&[x] @ p: &&mut [T]
+&[x] @ s: &&mut [T]
 // Applying rule `Deref(EatOuter)`
-[x] @ *p: &mut [T]
+[x] @ *s: &mut [T]
 // Applying rule `ConstructorRef`
-x @ &(**p).0: &T
+x @ &(**s).0: &T
 // Applying rule `Binding`
-let x: &T = &(**p).0
+let x: &T = &(**s).0
 
 // Final bindings (simplified):
-let x: &T = &(**p).0;
+let x: &T = &(**s).0;

@@ -15,7 +15,7 @@ info:
   bundle_name: stateless
   request: "[&mut x]: &[&mut T]"
 ---
-[&mut x] @ p: &[&mut T]
+[&mut x] @ s: &[&mut T]
 // Applying rule `ConstructorRef`
-&mut x @ &(*p).0: &&mut T
-// Type error for `&mut x @ &(*p).0: &&mut T`: MutabilityMismatch
+&mut x @ &(*s).0: &&mut T
+// Type error for `&mut x @ &(*s).0: &&mut T`: MutabilityMismatch

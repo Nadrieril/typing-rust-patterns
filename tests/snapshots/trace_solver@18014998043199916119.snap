@@ -15,15 +15,15 @@ info:
   bundle_name: ergo2024
   request: "[&mut ref mut x]: &mut [&T]"
 ---
-[&mut ref mut x] @ p: &mut [&T]
+[&mut ref mut x] @ s: &mut [&T]
 // Applying rule `ConstructorRef`
-&mut ref mut x @ &mut (*p).0: &mut &T
+&mut ref mut x @ &mut (*s).0: &mut &T
 // Applying rule `Deref(EatInner)`
-ref mut x @ (*p).0: &T
+ref mut x @ (*s).0: &T
 // Applying rule `BindingBorrow`
-x @ &mut (*p).0: &mut &T
+x @ &mut (*s).0: &mut &T
 // Applying rule `Binding`
-let x: &mut &T = &mut (*p).0
+let x: &mut &T = &mut (*s).0
 
 // Final bindings (simplified):
-let x: &mut &T = &mut (*p).0;
+let x: &mut &T = &mut (*s).0;

@@ -32,7 +32,7 @@ rule applied (this means the input was a type error), or everything has been res
 A query to the tool looks like `<pattern>: <type>`, which the tool will then attempt to typecheck.
 The rules however are presented in terms of a more complex predicate, that looks like `<pattern>
 @ <expression> : <type>`. The expression is a clever way to track what the current subpattern is
-accessing. The initial expression (written `p`) is called "the scrutinee". As we apply rules, the
+accessing. The initial expression (written `s`) is called "the scrutinee". As we apply rules, the
 expression makes it possible to know the current binding mode, to speak about whether the scrutinee
 is accessible mutably or not, and to borrow-check the final result.
 

@@ -15,13 +15,13 @@ info:
   bundle_name: stable_rust
   request: "[&x]: &[&&T]"
 ---
-[&x] @ p: &[&&T]
+[&x] @ s: &[&&T]
 // Applying rule `ConstructorRef`
-&x @ &(*p).0: &&&T
+&x @ &(*s).0: &&&T
 // Applying rule `Deref(EatBoth)`
-x @ *(*p).0: &T
+x @ *(*s).0: &T
 // Applying rule `Binding`
-let x: &T = *(*p).0
+let x: &T = *(*s).0
 
 // Final bindings (simplified):
-let x: &T = *(*p).0;
+let x: &T = *(*s).0;

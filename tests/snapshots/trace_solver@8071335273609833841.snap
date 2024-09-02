@@ -15,11 +15,11 @@ info:
   bundle_name: stateless
   request: "mut ref mut x: T"
 ---
-mut ref mut x @ p: T
+mut ref mut x @ s: T
 // Applying rule `BindingBorrow`
-mut x @ &mut p: &mut T
+mut x @ &mut s: &mut T
 // Applying rule `Binding`
-let mut x: &mut T = &mut p
+let mut x: &mut T = &mut s
 
 // Final bindings (simplified):
-let mut x: &mut T = &mut p;
+let mut x: &mut T = &mut s;

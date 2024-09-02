@@ -15,5 +15,5 @@ info:
   bundle_name: stateless
   request: "&x: T"
 ---
-&x @ p: T
-// Type error for `&x @ p: T`: TypeMismatch
+&x @ s: T
+// Type error for `&x @ s: T`: TypeMismatch

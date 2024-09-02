@@ -4,26 +4,26 @@ info: set downgrade_mut_inside_shared true
 ---
 downgrade_mut_inside_shared: false -> true
 
--p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
+-p0 @ &mut (*e).0: &mut T0,  p1 @ &mut (*e).1: &mut T1
 ------------------------------------------------------ "ConstructorRef"
--[p0, p1] @ q: &mut [T0, T1]
+-[p0, p1] @ e: &mut [T0, T1]
 
-+p0 @ &(*q).0: &T0,  p1 @ &(*q).1: &T1
++p0 @ &(*e).0: &T0,  p1 @ &(*e).1: &T1
 +---------------------------------------- "ConstructorRef"
-+[p0, p1] @ q: &mut [T0, T1], q read-only
++[p0, p1] @ e: &mut [T0, T1], e read-only
 
-+p0 @ &mut (*q).0: &mut T0,  p1 @ &mut (*q).1: &mut T1
++p0 @ &mut (*e).0: &mut T0,  p1 @ &mut (*e).1: &mut T1
 +----------------------------------------------------- "ConstructorRef"
-+[p0, p1] @ q: &mut [T0, T1], q mutable
++[p0, p1] @ e: &mut [T0, T1], e mutable
 
--[p0, p1] @ &mut **q: &mut T
+-[p0, p1] @ &mut **e: &mut T
 ---------------------------- "ConstructorMultiRef"
--[p0, p1] @ q: &mut &mut T
+-[p0, p1] @ e: &mut &mut T
 
-+[p0, p1] @ &**q: &T
++[p0, p1] @ &**e: &T
 +-------------------------------------- "ConstructorMultiRef"
-+[p0, p1] @ q: &mut &mut T, q read-only
++[p0, p1] @ e: &mut &mut T, e read-only
 
-+[p0, p1] @ &mut **q: &mut T
++[p0, p1] @ &mut **e: &mut T
 +------------------------------------ "ConstructorMultiRef"
-+[p0, p1] @ q: &mut &mut T, q mutable
++[p0, p1] @ e: &mut &mut T, e mutable

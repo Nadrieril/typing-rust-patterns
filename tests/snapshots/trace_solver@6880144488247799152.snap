@@ -15,11 +15,11 @@ info:
   bundle_name: stateless
   request: "&mut x: &mut &mut T"
 ---
-&mut x @ p: &mut &mut T
+&mut x @ s: &mut &mut T
 // Applying rule `Deref(EatOuter)`
-x @ *p: &mut T
+x @ *s: &mut T
 // Applying rule `Binding`
-let x: &mut T = *p
+let x: &mut T = *s
 
 // Final bindings (simplified):
-let x: &mut T = *p; // Borrow-check error: CantCopyRefMut
+let x: &mut T = *s; // Borrow-check error: CantCopyRefMut

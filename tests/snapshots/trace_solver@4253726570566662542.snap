@@ -15,5 +15,5 @@ info:
   bundle_name: ~
   request: "&x: &mut T"
 ---
-&x @ p: &mut T
-// Type error for `&x @ p: &mut T`: MutabilityMismatch
+&x @ s: &mut T
+// Type error for `&x @ s: &mut T`: MutabilityMismatch

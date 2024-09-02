@@ -107,8 +107,8 @@ impl Display for Expression<'_> {
 impl Display for ExprKind<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ExprKind::Scrutinee => write!(f, "p"),
-            ExprKind::Abstract { .. } => write!(f, "q"),
+            ExprKind::Scrutinee => write!(f, "s"),
+            ExprKind::Abstract { .. } => write!(f, "e"),
             ExprKind::Ref(mutable, e) => write!(f, "&{mutable}{e}"),
             ExprKind::Deref(e) => write!(f, "*{e}"),
             ExprKind::Field(e, n) => {

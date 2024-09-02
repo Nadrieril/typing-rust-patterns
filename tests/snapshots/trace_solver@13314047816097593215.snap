@@ -15,11 +15,11 @@ info:
   bundle_name: stateless
   request: "ref x: T"
 ---
-ref x @ p: T
+ref x @ s: T
 // Applying rule `BindingBorrow`
-x @ &p: &T
+x @ &s: &T
 // Applying rule `Binding`
-let x: &T = &p
+let x: &T = &s
 
 // Final bindings (simplified):
-let x: &T = &p;
+let x: &T = &s;

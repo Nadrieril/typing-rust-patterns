@@ -15,15 +15,15 @@ info:
   bundle_name: stateless
   request: "&[[x]]: &[&mut [T]]"
 ---
-&[[x]] @ p: &[&mut [T]]
+&[[x]] @ s: &[&mut [T]]
 // Applying rule `Deref(EatOuter)`
-[[x]] @ *p: [&mut [T]]
+[[x]] @ *s: [&mut [T]]
 // Applying rule `Constructor`
-[x] @ (*p).0: &mut [T]
+[x] @ (*s).0: &mut [T]
 // Applying rule `ConstructorRef`
-x @ &mut (*(*p).0).0: &mut T
+x @ &mut (*(*s).0).0: &mut T
 // Applying rule `Binding`
-let x: &mut T = &mut (*(*p).0).0
+let x: &mut T = &mut (*(*s).0).0
 
 // Final bindings (simplified):
-let x: &mut T = &mut (*(*p).0).0; // Borrow-check error: MutBorrowBehindSharedBorrow
+let x: &mut T = &mut (*(*s).0).0; // Borrow-check error: MutBorrowBehindSharedBorrow

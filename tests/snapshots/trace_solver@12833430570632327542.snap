@@ -15,13 +15,13 @@ info:
   bundle_name: ergo2024
   request: "&[x]: &[&mut T]"
 ---
-&[x] @ p: &[&mut T]
+&[x] @ s: &[&mut T]
 // Applying rule `Deref(EatOuter)`
-[x] @ *p: [&mut T]
+[x] @ *s: [&mut T]
 // Applying rule `Constructor`
-x @ (*p).0: &mut T
+x @ (*s).0: &mut T
 // Applying rule `Binding`
-let x: &mut T = (*p).0
+let x: &mut T = (*s).0
 
 // Final bindings (simplified):
-let x: &mut T = (*p).0; // Borrow-check error: CantCopyRefMut
+let x: &mut T = (*s).0; // Borrow-check error: CantCopyRefMut
