@@ -137,15 +137,16 @@ impl RuleOptions {
             Ok(v)
         }
         match key {
-            "rules_display_style" => self.rules_display_style = from_str(val)?,
             "match_constructor_through_ref" => self.match_constructor_through_ref = from_str(val)?,
-            "ref_binding_on_inherited" => self.ref_binding_on_inherited = from_str(val)?,
-            "mut_binding_on_inherited" => self.mut_binding_on_inherited = from_str(val)?,
+            "eat_inherited_ref_alone" => self.eat_inherited_ref_alone = from_str(val)?,
             "inherited_ref_on_ref" => self.inherited_ref_on_ref = from_str(val)?,
+            "fallback_to_outer" => self.fallback_to_outer = from_str(val)?,
             "allow_ref_pat_on_ref_mut" => self.allow_ref_pat_on_ref_mut = from_str(val)?,
             "simplify_deref_mut" => self.simplify_deref_mut = from_str(val)?,
-            "eat_inherited_ref_alone" => self.eat_inherited_ref_alone = from_str(val)?,
             "downgrade_mut_inside_shared" => self.downgrade_mut_inside_shared = from_str(val)?,
+            "ref_binding_on_inherited" => self.ref_binding_on_inherited = from_str(val)?,
+            "mut_binding_on_inherited" => self.mut_binding_on_inherited = from_str(val)?,
+            "rules_display_style" => self.rules_display_style = from_str(val)?,
             _ => anyhow::bail!("unknown key `{key}`"),
         }
         Ok(())
