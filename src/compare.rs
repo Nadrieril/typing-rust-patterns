@@ -263,6 +263,15 @@ fn compare() -> anyhow::Result<()> {
                 ..RuleOptions::STATELESS
             }),
         ),
+        (
+            "stateless_add_rule3",
+            TypeBased(RuleOptions::STATELESS),
+            Less,
+            TypeBased(RuleOptions {
+                downgrade_mut_inside_shared: true,
+                ..RuleOptions::STATELESS
+            }),
+        ),
     ];
 
     let test_cases = TypingRequest::generate(a, 3, 4);
