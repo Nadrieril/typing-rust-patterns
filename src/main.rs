@@ -8,8 +8,25 @@ use itertools::Itertools;
 
 use typing_rust_patterns::*;
 
-static COMMANDS: &[&str] = &[
-    "help", "options", "set", "rules", "save", "unsave", "compare", "swap", "quit",
+static COMMANDS: &[(&str, &str)] = &[
+    ("help", "view this help message"),
+    ("set", "set options; type `set` for details"),
+    ("options", "view the current value of each option"),
+    (
+        "rules",
+        "display the typing rules implied by the current options",
+    ),
+    (
+        "save",
+        "save the current ruleset, for use with `swap` and `compare`",
+    ),
+    ("unsave", "forget the saved ruleset"),
+    ("swap", "swap the current ruleset with the saved one"),
+    (
+        "compare",
+        "compare the current ruleset against the saved one",
+    ),
+    ("quit", "quit"),
 ];
 
 struct CliState {
@@ -52,16 +69,27 @@ fn main() -> anyhow::Result<()> {
         println!("Welcome to the interactive pattern typer!");
         println!("Write `pattern: type` on the prompt line and I will attempt to type it.");
         println!("Example: `&[ref x]: &[T]`");
-        println!(
-            "Type `help` for a list of available commands. Type the command for usage instructions."
-        );
+        println!("Type `help` for a list of available commands.");
         println!("");
     }
 
     while let Some(request) = state.prompt(is_interactive)? {
         let request = request.trim();
         if request == "?" || request == "help" {
-            println!("Commands: {}", COMMANDS.iter().format(", "));
+            println!(
+                indoc!(
+                    "
+                Commands: {}
+
+                {}
+                "
+                ),
+                COMMANDS.iter().map(|(name, _)| name).format(", "),
+                COMMANDS
+                    .iter()
+                    .map(|(name, doc)| format!("- {name}: {doc}"))
+                    .format("\n"),
+            )
         } else if request == "q" || request == "quit" {
             break;
         } else if request == "options" {
@@ -329,7 +357,7 @@ impl inquire::Autocomplete for Autocomplete {
         }
         let input = &input.to_lowercase();
 
-        for &cmd in COMMANDS {
+        for &(cmd, _) in COMMANDS {
             if cmd.starts_with(input) && cmd != input {
                 ret.push(format!("{cmd}"))
             }

@@ -2,4 +2,14 @@
 source: tests/trace_cli.rs
 info: help
 ---
-Commands: help, options, set, rules, save, unsave, compare, swap, quit
+Commands: help, set, options, rules, save, unsave, swap, compare, quit
+
+- help: view this help message
+- set: set options; type `set` for details
+- options: view the current value of each option
+- rules: display the typing rules implied by the current options
+- save: save the current ruleset, for use with `swap` and `compare`
+- unsave: forget the saved ruleset
+- swap: swap the current ruleset with the saved one
+- compare: compare the current ruleset against the saved one
+- quit: quit
