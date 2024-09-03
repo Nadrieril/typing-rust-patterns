@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display, io::IsTerminal};
+use std::{fmt::Display, io::IsTerminal};
 
 use anyhow::bail;
 use colored::Color;
@@ -81,7 +81,8 @@ fn main() -> anyhow::Result<()> {
                 std::mem::swap(saved, &mut state.options);
                 display_options_diff(*saved, state.options);
                 println!();
-                display_rules_diff(*saved, state.options);
+                display_joint_rules(*saved, state.options);
+                // display_rules_diff(*saved, state.options);
             } else {
                 println!("Can't swap saved and current ruleset because there is no saved ruleset. Use `save` to save one.");
             }
@@ -110,7 +111,8 @@ fn main() -> anyhow::Result<()> {
                 Ok(_) => {
                     display_options_diff(old_options, state.options);
                     println!();
-                    display_rules_diff(old_options, state.options);
+                    // display_rules_diff(old_options, state.options);
+                    display_joint_rules(old_options, state.options);
                 }
                 Err(err) => {
                     println!(
@@ -197,24 +199,24 @@ enum DiffState {
 }
 
 impl DiffState {
-    fn display<'a>(&self, text: &'a str) -> impl Display + 'a {
-        use colored::Colorize;
-        let (marker, color) = match self {
-            Self::New => ("+", Some(Color::Green)),
-            Self::Old => ("-", Some(Color::Red)),
-            Self::Both => (" ", None),
-        };
-        text.lines()
-            .map(move |line| {
-                let line = format!("{marker}{line}");
-                if let Some(color) = color {
-                    line.color(color)
-                } else {
-                    <&str as Colorize>::clear(&line)
-                }
-            })
-            .format("\n")
-    }
+    // fn display<'a>(&self, text: &'a str) -> impl Display + 'a {
+    //     use colored::Colorize;
+    //     let (marker, color) = match self {
+    //         Self::New => ("+", Some(Color::Green)),
+    //         Self::Old => ("-", Some(Color::Red)),
+    //         Self::Both => (" ", None),
+    //     };
+    //     text.lines()
+    //         .map(move |line| {
+    //             let line = format!("{marker}{line}");
+    //             if let Some(color) = color {
+    //                 line.color(color)
+    //             } else {
+    //                 <&str as Colorize>::clear(&line)
+    //             }
+    //         })
+    //         .format("\n")
+    // }
 
     fn color_line<'a>(&self, line: &'a str) -> impl Display + 'a {
         use colored::Colorize;
@@ -260,61 +262,61 @@ fn display_joint_rules(left: RuleOptions, right: RuleOptions) {
     }
 }
 
-fn display_rules_diff(old_options: RuleOptions, new_options: RuleOptions) {
-    let arenas = &Arenas::default();
-    let old_rules = compute_rules(TypingCtx {
-        arenas,
-        options: old_options,
-    });
-    let new_rules = compute_rules(TypingCtx {
-        arenas,
-        options: new_options,
-    });
+// fn display_rules_diff(old_options: RuleOptions, new_options: RuleOptions) {
+//     let arenas = &Arenas::default();
+//     let old_rules = compute_rules(TypingCtx {
+//         arenas,
+//         options: old_options,
+//     });
+//     let new_rules = compute_rules(TypingCtx {
+//         arenas,
+//         options: new_options,
+//     });
 
-    let mut all_rules: Vec<(DiffState, &TypingRule)> = Vec::new();
-    let new_rules_hashed: HashSet<&TypingRule> = new_rules.iter().collect();
-    for rule in &old_rules {
-        let state = if new_rules_hashed.contains(rule) {
-            DiffState::Both
-        } else {
-            DiffState::Old
-        };
-        all_rules.push((state, rule));
-    }
-    let old_rules_hashed: HashSet<&TypingRule> = old_rules.iter().collect();
-    for rule in &new_rules {
-        if !old_rules_hashed.contains(rule) {
-            all_rules.push((DiffState::New, rule));
-        }
-    }
-    all_rules.sort_by_key(|(_, rule)| rule.name);
+//     let mut all_rules: Vec<(DiffState, &TypingRule)> = Vec::new();
+//     let new_rules_hashed: HashSet<&TypingRule> = new_rules.iter().collect();
+//     for rule in &old_rules {
+//         let state = if new_rules_hashed.contains(rule) {
+//             DiffState::Both
+//         } else {
+//             DiffState::Old
+//         };
+//         all_rules.push((state, rule));
+//     }
+//     let old_rules_hashed: HashSet<&TypingRule> = old_rules.iter().collect();
+//     for rule in &new_rules {
+//         if !old_rules_hashed.contains(rule) {
+//             all_rules.push((DiffState::New, rule));
+//         }
+//     }
+//     all_rules.sort_by_key(|(_, rule)| rule.name);
 
-    // Display the rules diff.
-    for (state, rule) in all_rules {
-        match state {
-            DiffState::Both => {
-                if old_options.rules_display_style != new_options.rules_display_style {
-                    // Show the style diff if there is one.
-                    let old_style = rule.display(old_options.rules_display_style).to_string();
-                    let new_style = rule.display(new_options.rules_display_style).to_string();
-                    if old_style == new_style {
-                        continue;
-                    }
-                    println!("{}\n", DiffState::Old.display(&old_style));
-                    println!("{}\n", DiffState::New.display(&new_style));
-                }
-            }
-            DiffState::Old => {
-                let rule_str = rule.display(old_options.rules_display_style).to_string();
-                println!("{}\n", state.display(&rule_str));
-            }
-            DiffState::New => {
-                let rule_str = rule.display(new_options.rules_display_style).to_string();
-                println!("{}\n", state.display(&rule_str));
-            }
-        }
-    }
-}
+//     // Display the rules diff.
+//     for (state, rule) in all_rules {
+//         match state {
+//             DiffState::Both => {
+//                 if old_options.rules_display_style != new_options.rules_display_style {
+//                     // Show the style diff if there is one.
+//                     let old_style = rule.display(old_options.rules_display_style).to_string();
+//                     let new_style = rule.display(new_options.rules_display_style).to_string();
+//                     if old_style == new_style {
+//                         continue;
+//                     }
+//                     println!("{}\n", DiffState::Old.display(&old_style));
+//                     println!("{}\n", DiffState::New.display(&new_style));
+//                 }
+//             }
+//             DiffState::Old => {
+//                 let rule_str = rule.display(old_options.rules_display_style).to_string();
+//                 println!("{}\n", state.display(&rule_str));
+//             }
+//             DiffState::New => {
+//                 let rule_str = rule.display(new_options.rules_display_style).to_string();
+//                 println!("{}\n", state.display(&rule_str));
+//             }
+//         }
+//     }
+// }
 
 #[derive(Clone)]
 struct Autocomplete;
