@@ -277,11 +277,11 @@ fn display_joint_rules(left: RuleOptions, right: RuleOptions) {
         let right = right
             .map(|r| r.display(style).to_string())
             .unwrap_or_default();
-        let same = left == right;
         for x in left.lines().zip_longest(right.lines()) {
+            let (l, r) = x.or(" ", " ");
+            let same = l == r;
             let l_state = if same { Both } else { Old };
             let r_state = if same { Both } else { New };
-            let (l, r) = x.or(" ", " ");
             let l = l_state.color_line(l);
             let r = r_state.color_line(r);
             println!(" {l:80} | {r}");
