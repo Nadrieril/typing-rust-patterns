@@ -5,7 +5,7 @@ info: set ref_binding_on_inherited true
 Error: unknown variant `true`, expected one of `ResetBindingMode`, `AllocTemporary`, `Error`
 
 Options are:
-- rules_display_style: Expression | BindingMode
+- rules_display_style: Expression | BindingMode | Stateless
     how to display typing rules (in the `rules` command)
 - match_constructor_through_ref: true | false
     whether `[p]` can match on `&[T]`; the heart of match ergonomics.

@@ -80,7 +80,7 @@ impl RuleOptions {
     pub const OPTIONS_DOC: &[(&str, &[&str], &str)] = &[
         (
             "rules_display_style",
-            &["Expression", "BindingMode"],
+            &["Expression", "BindingMode", "Stateless"],
             "how to display typing rules (in the `rules` command)",
         ),
         (

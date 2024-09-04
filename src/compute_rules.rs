@@ -128,13 +128,13 @@ pub fn compute_joint_rules<'a>(
 
 /// Extra constraints to display as preconditions.
 #[derive(Default)]
-struct SideConstraints<'a> {
+pub struct SideConstraints<'a> {
     /// The binding mode of the abstract expression.
-    binding_mode: Option<BindingMode>,
+    pub binding_mode: Option<BindingMode>,
     /// Type variables that are known not to be references.
-    non_ref_types: HashSet<&'a str>,
+    pub non_ref_types: HashSet<&'a str>,
     /// WHat access the abstract expression has of the scrutinee.
-    scrutinee_mutability: Option<Mutability>,
+    pub scrutinee_mutability: Option<Mutability>,
 }
 
 impl<'a> Type<'a> {
@@ -292,6 +292,7 @@ impl<'a> Expression<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TypingRuleStyle {
     Expression,
+    /// Replaces the innermost `&{mut}e` expression with a `bm(e) = ref {mut}` side-constraint.
     BindingMode,
     /// Doesn't draw the expression.
     Stateless,
@@ -335,11 +336,7 @@ impl<'a> TypingRule<'a> {
         let (cstrs, rule) = self.extract_side_constraints(a, extract_bm);
         let abstract_expr = ExprKind::new_abstract();
 
-        let mut postconditions_str = if matches!(style, Stateless) {
-            rule.postcondition.display_without_expr()
-        } else {
-            rule.postcondition.display()
-        };
+        let mut postconditions_str = rule.postcondition.display_with_style(style);
 
         if let Some(bm) = cstrs.binding_mode {
             match style {
@@ -360,7 +357,10 @@ impl<'a> TypingRule<'a> {
                     );
                 }
                 Stateless => {
-                    panic!("stateless style cannot describe a binding mode")
+                    let _ = write!(
+                        &mut postconditions_str,
+                        ", error: stateless style cannot describe a binding mode",
+                    );
                 }
             }
         }
@@ -379,13 +379,7 @@ impl<'a> TypingRule<'a> {
         let mut preconditions_str = rule
             .preconditions
             .iter()
-            .map(|pred| {
-                if matches!(style, Stateless) {
-                    pred.display_without_expr()
-                } else {
-                    pred.display()
-                }
-            })
+            .map(|pred| pred.display_with_style(style))
             .join(",  ");
 
         if let BindingMode = style

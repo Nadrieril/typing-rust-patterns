@@ -6,7 +6,7 @@ Error: couldn't parse `set` command.
 Syntax is `set option value`.
 
 Options are:
-- rules_display_style: Expression | BindingMode
+- rules_display_style: Expression | BindingMode | Stateless
     how to display typing rules (in the `rules` command)
 - match_constructor_through_ref: true | false
     whether `[p]` can match on `&[T]`; the heart of match ergonomics.

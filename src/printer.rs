@@ -41,12 +41,18 @@ impl<'a> TypingPredicate<'a> {
         }
     }
 
-    pub fn display_as_let_without_expr(&self) -> String {
-        format!("let {}: {}", self.pat, self.expr.ty)
+    pub fn display_with_style(&self, style: TypingRuleStyle) -> String {
+        match style {
+            TypingRuleStyle::Stateless => format!("{}: {}", self.pat, self.expr.ty),
+            _ => self.display(),
+        }
     }
 
-    pub fn display_without_expr(&self) -> String {
-        format!("{}: {}", self.pat, self.expr.ty)
+    pub fn display_as_let_with_style(&self, style: TypingRuleStyle) -> String {
+        match style {
+            TypingRuleStyle::Stateless => format!("let {}: {}", self.pat, self.expr.ty),
+            _ => self.display_as_let(),
+        }
     }
 }
 
