@@ -55,7 +55,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
         match pred.typing_rule(ctx) {
             Ok(rule) => {
                 if TRACE {
-                    let rule_str = rule.display(TypingRuleStyle::Plain).to_string();
+                    let rule_str = rule.display(TypingRuleStyle::Expression).to_string();
                     let rule_str = rule_str.replace("\n", "\n    ");
                     println!("  Pushing rule:\n    {rule_str}");
                 }
@@ -291,7 +291,7 @@ impl<'a> Expression<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TypingRuleStyle {
-    Plain,
+    Expression,
     BindingMode,
     /// Doesn't draw the expression.
     Stateless,
@@ -343,7 +343,7 @@ impl<'a> TypingRule<'a> {
 
         if let Some(bm) = cstrs.binding_mode {
             match style {
-                Plain => {
+                Expression => {
                     assert!(bm == ByMove);
                     let _ = write!(
                         &mut postconditions_str,
@@ -433,7 +433,7 @@ fn bundle_rules() -> anyhow::Result<()> {
     let bundles = RuleOptions::KNOWN_OPTION_BUNDLES
         .into_iter()
         .copied()
-        .cartesian_product([TypingRuleStyle::Plain, TypingRuleStyle::BindingMode])
+        .cartesian_product([TypingRuleStyle::Expression, TypingRuleStyle::BindingMode])
         .chain([(
             ("stateless", RuleOptions::STATELESS, ""),
             TypingRuleStyle::Stateless,

@@ -11,7 +11,7 @@ info:
     downgrade_mut_inside_shared: false
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: ResetBindingMode
-    rules_display_style: Plain
+    rules_display_style: Expression
   bundle_name: stable_rust
   request: "[&x]: &[&T]"
 ---

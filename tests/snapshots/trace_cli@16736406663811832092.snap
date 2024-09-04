@@ -5,7 +5,7 @@ info: set mistyped val
 Error: unknown key `mistyped`
 
 Options are:
-- rules_display_style: Plain | BindingMode
+- rules_display_style: Expression | BindingMode
     how to display typing rules (in the `rules` command)
 - match_constructor_through_ref: true | false
     whether `[p]` can match on `&[T]`; the heart of match ergonomics.

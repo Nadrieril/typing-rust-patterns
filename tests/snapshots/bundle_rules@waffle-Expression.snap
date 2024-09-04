@@ -1,18 +1,18 @@
 ---
 source: src/compute_rules.rs
 info:
-  bundle_name: rfc3627_2021
+  bundle_name: waffle
   options:
     match_constructor_through_ref: true
     eat_inherited_ref_alone: true
-    inherited_ref_on_ref: EatBoth
+    inherited_ref_on_ref: EatOuter
     fallback_to_outer: true
-    allow_ref_pat_on_ref_mut: true
+    allow_ref_pat_on_ref_mut: false
     simplify_deref_mut: true
     downgrade_mut_inside_shared: true
     ref_binding_on_inherited: ResetBindingMode
-    mut_binding_on_inherited: ResetBindingMode
-    rules_display_style: Plain
+    mut_binding_on_inherited: Error
+    rules_display_style: Expression
 ---
 p0 @ e.0: T0,  p1 @ e.1: T1
 --------------------------- "Constructor"
@@ -51,56 +51,12 @@ p0 @ &mut (*e).0: &mut T0,  p1 @ &mut (*e).1: &mut T1
 [p0, p1] @ e: &mut &mut T, e mutable
 
 p @ *e: T
--------------------------------- "Deref(EatOuter)"
-&p @ e: &T, e is not a reference
-
-p @ *&e: T
---------------------------------- "Deref(EatOuter)"
-&p @ &e: &T, T is not a reference
+---------- "Deref(EatOuter)"
+&p @ e: &T
 
 p @ *e: T
----------------------------------------- "Deref(EatOuter)"
-&mut p @ e: &mut T, e is not a reference
-
-p @ e: T
---------------------------------------------- "Deref(EatOuter)"
-&mut p @ &mut e: &mut T, T is not a reference
-
-p @ *e: T
------------- "Deref(EatBoth)"
-&p @ &e: &&T
-
-p @ *e: T
--------------------- "Deref(EatBoth)"
-&p @ &mut e: &mut &T
-
-p @ *e: T
--------------------- "Deref(EatBoth)"
-&mut p @ &e: &&mut T
-
-p @ e: &T
------------------------- "Deref(EatBoth)"
-&mut p @ &mut e: &mut &T
-
-p @ *e: T
----------------------------- "Deref(EatBoth)"
-&mut p @ &mut e: &mut &mut T
-
-p @ *&*e: T
------------------------------------- "DerefMutWithShared(EatOuter)"
-&p @ e: &mut T, e is not a reference
-
-p @ *&e: T
------------------------------------------ "DerefMutWithShared(EatOuter)"
-&p @ &mut e: &mut T, T is not a reference
-
-p @ *&*e: T
----------------- "DerefMutWithShared(EatBoth)"
-&p @ &e: &&mut T
-
-p @ *&*e: T
------------------------- "DerefMutWithShared(EatBoth)"
-&p @ &mut e: &mut &mut T
+------------------ "Deref(EatOuter)"
+&mut p @ e: &mut T
 
 ref x @ e: T
 -------------- "RefBindingResetBindingMode"
@@ -117,14 +73,6 @@ ref mut x @ &e: &T
 ref mut x @ e: T
 -------------------------- "RefBindingResetBindingMode"
 ref mut x @ &mut e: &mut T
-
-mut x @ e: T
--------------- "MutBindingResetBindingMode"
-mut x @ &e: &T
-
-mut x @ e: T
----------------------- "MutBindingResetBindingMode"
-mut x @ &mut e: &mut T
 
 x @ &e: &T
 ---------------------------------- "BindingBorrow"

@@ -11,7 +11,7 @@ info:
     downgrade_mut_inside_shared: true
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: Error
-    rules_display_style: Plain
+    rules_display_style: Expression
   bundle_name: ergo2024
   request: "[&mut x]: &[&mut T]"
 ---

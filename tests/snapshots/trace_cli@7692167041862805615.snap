@@ -81,7 +81,7 @@ The two rulesets are described by the following sets of rules, with differences 
  ---------------- "Binding"                                                       | ---------------- "Binding"
  mut x @ e: T                                                                     | mut x @ e: T
 
-rules_display_style: "Plain" -> "BindingMode"
+rules_display_style: "Expression" -> "BindingMode"
 
 The two rulesets are described by the following sets of rules, with differences highlighted.
 

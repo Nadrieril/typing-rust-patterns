@@ -1,18 +1,18 @@
 ---
 source: src/compute_rules.rs
 info:
-  bundle_name: stable_rust
+  bundle_name: rfc3627_2021
   options:
     match_constructor_through_ref: true
-    eat_inherited_ref_alone: false
+    eat_inherited_ref_alone: true
     inherited_ref_on_ref: EatBoth
-    fallback_to_outer: false
-    allow_ref_pat_on_ref_mut: false
+    fallback_to_outer: true
+    allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
-    downgrade_mut_inside_shared: false
+    downgrade_mut_inside_shared: true
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: ResetBindingMode
-    rules_display_style: Plain
+    rules_display_style: Expression
 ---
 p0 @ e.0: T0,  p1 @ e.1: T1
 --------------------------- "Constructor"
@@ -22,9 +22,13 @@ p0 @ &(*e).0: &T0,  p1 @ &(*e).1: &T1
 ------------------------------------- "ConstructorRef"
 [p0, p1] @ e: &[T0, T1]
 
+p0 @ &(*e).0: &T0,  p1 @ &(*e).1: &T1
+---------------------------------------- "ConstructorRef"
+[p0, p1] @ e: &mut [T0, T1], e read-only
+
 p0 @ &mut (*e).0: &mut T0,  p1 @ &mut (*e).1: &mut T1
 ----------------------------------------------------- "ConstructorRef"
-[p0, p1] @ e: &mut [T0, T1]
+[p0, p1] @ e: &mut [T0, T1], e mutable
 
 [p0, p1] @ *e: &T
 ----------------- "ConstructorMultiRef"
@@ -38,17 +42,29 @@ p0 @ &mut (*e).0: &mut T0,  p1 @ &mut (*e).1: &mut T1
 --------------------- "ConstructorMultiRef"
 [p0, p1] @ e: &mut &T
 
+[p0, p1] @ &**e: &T
+-------------------------------------- "ConstructorMultiRef"
+[p0, p1] @ e: &mut &mut T, e read-only
+
 [p0, p1] @ &mut **e: &mut T
---------------------------- "ConstructorMultiRef"
-[p0, p1] @ e: &mut &mut T
+------------------------------------ "ConstructorMultiRef"
+[p0, p1] @ e: &mut &mut T, e mutable
 
 p @ *e: T
 -------------------------------- "Deref(EatOuter)"
 &p @ e: &T, e is not a reference
 
+p @ *&e: T
+--------------------------------- "Deref(EatOuter)"
+&p @ &e: &T, T is not a reference
+
 p @ *e: T
 ---------------------------------------- "Deref(EatOuter)"
 &mut p @ e: &mut T, e is not a reference
+
+p @ e: T
+--------------------------------------------- "Deref(EatOuter)"
+&mut p @ &mut e: &mut T, T is not a reference
 
 p @ *e: T
 ------------ "Deref(EatBoth)"
@@ -62,9 +78,29 @@ p @ *e: T
 -------------------- "Deref(EatBoth)"
 &mut p @ &e: &&mut T
 
+p @ e: &T
+------------------------ "Deref(EatBoth)"
+&mut p @ &mut e: &mut &T
+
 p @ *e: T
 ---------------------------- "Deref(EatBoth)"
 &mut p @ &mut e: &mut &mut T
+
+p @ *&*e: T
+------------------------------------ "DerefMutWithShared(EatOuter)"
+&p @ e: &mut T, e is not a reference
+
+p @ *&e: T
+----------------------------------------- "DerefMutWithShared(EatOuter)"
+&p @ &mut e: &mut T, T is not a reference
+
+p @ *&*e: T
+---------------- "DerefMutWithShared(EatBoth)"
+&p @ &e: &&mut T
+
+p @ *&*e: T
+------------------------ "DerefMutWithShared(EatBoth)"
+&p @ &mut e: &mut &mut T
 
 ref x @ e: T
 -------------- "RefBindingResetBindingMode"

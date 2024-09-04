@@ -3,7 +3,7 @@ use crate::*;
 impl RuleOptions {
     /// Reproduces stable rust behavior.
     pub const STABLE_RUST: Self = RuleOptions {
-        rules_display_style: TypingRuleStyle::Plain,
+        rules_display_style: TypingRuleStyle::Expression,
         match_constructor_through_ref: true,
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
@@ -17,7 +17,7 @@ impl RuleOptions {
 
     /// Reproduces RFC3627 (match ergonomics 2024) behavior
     pub const ERGO2024: Self = RuleOptions {
-        rules_display_style: TypingRuleStyle::Plain,
+        rules_display_style: TypingRuleStyle::Expression,
         match_constructor_through_ref: true,
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
@@ -32,7 +32,7 @@ impl RuleOptions {
     /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
     /// inspect the DBM, we only follow the types.
     pub const STATELESS: Self = RuleOptions {
-        rules_display_style: TypingRuleStyle::Plain,
+        rules_display_style: TypingRuleStyle::Expression,
         match_constructor_through_ref: true,
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::AllocTemporary,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Keep,
