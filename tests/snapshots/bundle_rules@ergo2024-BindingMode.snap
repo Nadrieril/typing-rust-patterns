@@ -130,10 +130,10 @@ x @ &mut e: &mut T
 ---------------------------------------- "BindingBorrow"
 ref mut x @ e: T, binding_mode(e) = move
 
-let x: T = e
------------- "Binding"
+
+-------- "Binding"
 x @ e: T
 
-let mut x: T = e
+
 ------------------------------------ "Binding"
 mut x @ e: T, binding_mode(e) = move

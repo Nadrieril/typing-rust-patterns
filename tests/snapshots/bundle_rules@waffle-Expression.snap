@@ -82,10 +82,10 @@ x @ &mut e: &mut T
 -------------------------------------- "BindingBorrow"
 ref mut x @ e: T, e is not a reference
 
-let x: T = e
------------- "Binding"
+
+-------- "Binding"
 x @ e: T
 
-let mut x: T = e
+
 ---------------------------------- "Binding"
 mut x @ e: T, e is not a reference

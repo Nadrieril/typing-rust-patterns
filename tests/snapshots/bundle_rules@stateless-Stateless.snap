@@ -62,10 +62,10 @@ x: &mut T
 ------------ "BindingBorrow"
 ref mut x: T
 
-let x: T
--------- "Binding"
+
+---- "Binding"
 x: T
 
-let mut x: T
------------- "Binding"
+
+-------- "Binding"
 mut x: T

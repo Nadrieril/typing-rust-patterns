@@ -126,20 +126,20 @@ The two rulesets are described by the following sets of rules, with differences 
  -------------------------------------- "BindingBorrow"                           | -------------------------------------- "BindingBorrow"
  ref mut x @ e: T, e is not a reference                                           | ref mut x @ e: T, e is not a reference
 
- let x: T = e                                                                     | let x: T = e
- ------------ "Binding"                                                           | ------------ "Binding"
+                                                                                  | 
+ -------- "Binding"                                                               | -------- "Binding"
  x @ e: T                                                                         | x @ e: T
 
- let mut x: T = e                                                                 | let mut x: T = e
+                                                                                  | 
  ---------------------------------- "Binding"                                     | ---------------------------------- "Binding"
  mut x @ e: T, e is not a reference                                               | mut x @ e: T, e is not a reference
 
- let mut x: &T = &e                                                               |  
- ------------------ "Binding"                                                     |  
+                                                                                  |  
+ -------------- "Binding"                                                         |  
  mut x @ &e: &T                                                                   |  
 
- let mut x: &mut T = &mut e                                                       |  
- -------------------------- "Binding"                                             |  
+                                                                                  |  
+ ---------------------- "Binding"                                                 |  
  mut x @ &mut e: &mut T                                                           |  
 
 match_constructor_through_ref: true

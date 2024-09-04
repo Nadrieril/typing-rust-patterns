@@ -376,24 +376,17 @@ impl<'a> TypingRule<'a> {
             let _ = write!(&mut postconditions_str, ", {abstract_expr} {mtbl}",);
         }
 
-        let mut preconditions_str = if rule.preconditions.is_empty() {
-            if matches!(style, Stateless) {
-                rule.postcondition.display_as_let_without_expr()
-            } else {
-                rule.postcondition.display_as_let()
-            }
-        } else {
-            rule.preconditions
-                .iter()
-                .map(|pred| {
-                    if matches!(style, Stateless) {
-                        pred.display_without_expr()
-                    } else {
-                        pred.display()
-                    }
-                })
-                .join(",  ")
-        };
+        let mut preconditions_str = rule
+            .preconditions
+            .iter()
+            .map(|pred| {
+                if matches!(style, Stateless) {
+                    pred.display_without_expr()
+                } else {
+                    pred.display()
+                }
+            })
+            .join(",  ");
 
         if let BindingMode = style
             && let Some(ByRef(..)) = cstrs.binding_mode

@@ -62,10 +62,10 @@ The two rulesets are described by the following sets of rules, with differences 
  -------------------------------------- "BindingBorrow"                           | -------------------------------------- "BindingBorrow"
  ref mut x @ e: T, e is not a reference                                           | ref mut x @ e: T, e is not a reference
 
- let x: T = e                                                                     | let x: T = e
- ------------ "Binding"                                                           | ------------ "Binding"
+                                                                                  | 
+ -------- "Binding"                                                               | -------- "Binding"
  x @ e: T                                                                         | x @ e: T
 
- let mut x: T = e                                                                 | let mut x: T = e
- ---------------- "Binding"                                                       | ---------------- "Binding"
+                                                                                  | 
+ ------------ "Binding"                                                           | ------------ "Binding"
  mut x @ e: T                                                                     | mut x @ e: T

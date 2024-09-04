@@ -74,12 +74,12 @@ The two rulesets are described by the following sets of rules, with differences 
                                                                                   | ---------------------------- "BindingBorrow"
                                                                                   | ref mut x @ &mut e: &mut T
 
- let x: T = e                                                                     | let x: T = e
- ------------ "Binding"                                                           | ------------ "Binding"
+                                                                                  | 
+ -------- "Binding"                                                               | -------- "Binding"
  x @ e: T                                                                         | x @ e: T
 
- let mut x: T = e                                                                 | let mut x: T = e
- ---------------- "Binding"                                                       | ---------------- "Binding"
+                                                                                  | 
+ ------------ "Binding"                                                           | ------------ "Binding"
  mut x @ e: T                                                                     | mut x @ e: T
 
 Current and saved rulesets were swapped
@@ -154,12 +154,12 @@ The two rulesets are described by the following sets of rules, with differences 
  ---------------------------- "BindingBorrow"                                     |  
  ref mut x @ &mut e: &mut T                                                       |  
 
- let x: T = e                                                                     | let x: T = e
- ------------ "Binding"                                                           | ------------ "Binding"
+                                                                                  | 
+ -------- "Binding"                                                               | -------- "Binding"
  x @ e: T                                                                         | x @ e: T
 
- let mut x: T = e                                                                 | let mut x: T = e
- ---------------- "Binding"                                                       | ---------------- "Binding"
+                                                                                  | 
+ ------------ "Binding"                                                           | ------------ "Binding"
  mut x @ e: T                                                                     | mut x @ e: T
 
 The two rulesets are described by the following sets of rules, with differences highlighted.
@@ -228,10 +228,10 @@ The two rulesets are described by the following sets of rules, with differences 
  ---------------------------- "BindingBorrow"                                     |  
  ref mut x @ &mut e: &mut T                                                       |  
 
- let x: T = e                                                                     | let x: T = e
- ------------ "Binding"                                                           | ------------ "Binding"
+                                                                                  | 
+ -------- "Binding"                                                               | -------- "Binding"
  x @ e: T                                                                         | x @ e: T
 
- let mut x: T = e                                                                 | let mut x: T = e
- ---------------- "Binding"                                                       | ---------------- "Binding"
+                                                                                  | 
+ ------------ "Binding"                                                           | ------------ "Binding"
  mut x @ e: T                                                                     | mut x @ e: T
