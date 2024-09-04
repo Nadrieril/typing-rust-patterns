@@ -95,6 +95,35 @@ impl CliState {
             bail!("unknown option `{key}`")
         }
     }
+
+    fn display_joint_rules(&self, left: RuleOptions, right: RuleOptions) {
+        use DiffState::*;
+        let style = self.rules_display_style;
+        let arenas = &Arenas::default();
+        let joint_rules = compute_joint_rules(arenas, left, right);
+
+        println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
+        println!();
+        for joint_rule in joint_rules {
+            let (left, right) = joint_rule.left_and_right();
+            let left = left
+                .map(|r| r.display(style).to_string())
+                .unwrap_or_default();
+            let right = right
+                .map(|r| r.display(style).to_string())
+                .unwrap_or_default();
+            for x in left.lines().zip_longest(right.lines()) {
+                let (l, r) = x.or(" ", " ");
+                let same = l == r;
+                let l_state = if same { Both } else { Old };
+                let r_state = if same { Both } else { New };
+                let l = l_state.color_line(l);
+                let r = r_state.color_line(r);
+                println!(" {l:80} | {r}");
+            }
+            println!();
+        }
+    }
 }
 
 fn main() -> anyhow::Result<()> {
@@ -150,9 +179,10 @@ fn main() -> anyhow::Result<()> {
             if let Some(saved) = &mut state.saved {
                 println!("Current and saved rulesets were swapped");
                 std::mem::swap(saved, &mut state.options);
-                display_options_diff(*saved, state.options);
+                let saved = *saved;
+                display_options_diff(saved, state.options);
                 println!();
-                display_joint_rules(state.rules_display_style, *saved, state.options);
+                state.display_joint_rules(saved, state.options);
             } else {
                 println!("Can't swap saved and current ruleset because there is no saved ruleset. Use `save` to save one.");
             }
@@ -168,7 +198,7 @@ fn main() -> anyhow::Result<()> {
                 } else {
                     // TODO
                     // TODO: show sets of options at the top
-                    display_joint_rules(state.rules_display_style, saved, state.options);
+                    state.display_joint_rules(saved, state.options);
                 }
             } else {
                 println!("Can't compare rulesets because there is no saved ruleset. Use `save` to save one.");
@@ -182,7 +212,7 @@ fn main() -> anyhow::Result<()> {
                     if old_options != state.options {
                         display_options_diff(old_options, state.options);
                         println!();
-                        display_joint_rules(state.rules_display_style, old_options, state.options);
+                        state.display_joint_rules(old_options, state.options);
                     }
                 }
                 Err(err) => {
@@ -304,34 +334,6 @@ impl DiffState {
         } else {
             <&str as Colorize>::clear(line)
         }
-    }
-}
-
-fn display_joint_rules(style: TypingRuleStyle, left: RuleOptions, right: RuleOptions) {
-    use DiffState::*;
-    println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
-    println!();
-
-    let arenas = &Arenas::default();
-    let joint_rules = compute_joint_rules(arenas, left, right);
-    for joint_rule in joint_rules {
-        let (left, right) = joint_rule.left_and_right();
-        let left = left
-            .map(|r| r.display(style).to_string())
-            .unwrap_or_default();
-        let right = right
-            .map(|r| r.display(style).to_string())
-            .unwrap_or_default();
-        for x in left.lines().zip_longest(right.lines()) {
-            let (l, r) = x.or(" ", " ");
-            let same = l == r;
-            let l_state = if same { Both } else { Old };
-            let r_state = if same { Both } else { New };
-            let l = l_state.color_line(l);
-            let r = r_state.color_line(r);
-            println!(" {l:80} | {r}");
-        }
-        println!();
     }
 }
 
