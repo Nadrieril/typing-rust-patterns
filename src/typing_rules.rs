@@ -68,21 +68,12 @@ pub struct RuleOptions {
     pub ref_binding_on_inherited: RefBindingOnInheritedBehavior,
     /// What happens with a `mut x` binding and an inherited reference.
     pub mut_binding_on_inherited: MutBindingOnInheritedBehavior,
-    /// How to display rules.
-    pub rules_display_style: TypingRuleStyle,
     // TODO: double_ref: Last | Min
 }
 
 impl RuleOptions {
     /// Documentation for the options.
-    // TODO: use the list of values to check validity, then use serde to avoid needing to list
-    // fields in `set_field`.
     pub const OPTIONS_DOC: &[(&str, &[&str], &str)] = &[
-        (
-            "rules_display_style",
-            &["Expression", "BindingMode", "Stateless"],
-            "how to display typing rules (in the `rules` command)",
-        ),
         (
             "match_constructor_through_ref",
             &["true", "false"],
@@ -132,23 +123,21 @@ impl RuleOptions {
     ];
 
     pub fn set_key(&mut self, key: &str, val: &str) -> anyhow::Result<()> {
-        fn from_str<T: for<'de> Deserialize<'de>>(s: &str) -> anyhow::Result<T> {
-            let v = serde_yaml::from_str(&s)?;
-            Ok(v)
-        }
-        match key {
-            "match_constructor_through_ref" => self.match_constructor_through_ref = from_str(val)?,
-            "eat_inherited_ref_alone" => self.eat_inherited_ref_alone = from_str(val)?,
-            "inherited_ref_on_ref" => self.inherited_ref_on_ref = from_str(val)?,
-            "fallback_to_outer" => self.fallback_to_outer = from_str(val)?,
-            "allow_ref_pat_on_ref_mut" => self.allow_ref_pat_on_ref_mut = from_str(val)?,
-            "simplify_deref_mut" => self.simplify_deref_mut = from_str(val)?,
-            "downgrade_mut_inside_shared" => self.downgrade_mut_inside_shared = from_str(val)?,
-            "ref_binding_on_inherited" => self.ref_binding_on_inherited = from_str(val)?,
-            "mut_binding_on_inherited" => self.mut_binding_on_inherited = from_str(val)?,
-            "rules_display_style" => self.rules_display_style = from_str(val)?,
-            _ => anyhow::bail!("unknown key `{key}`"),
-        }
+        // Hack to set a key without knowing its type: print as a yaml object, replacing the key we
+        // care about with the string value we got. Yaml parsing will parse the value correctly.
+        let text = self
+            .to_map()
+            .into_iter()
+            .map(|(k, v)| {
+                let v = if k == key {
+                    val
+                } else {
+                    &serde_yaml::to_string(&v).unwrap()
+                };
+                format!("{k}: {v}")
+            })
+            .join("\n");
+        *self = serde_yaml::from_str(&text)?;
         Ok(())
     }
 

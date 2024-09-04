@@ -12,7 +12,6 @@ info:
     downgrade_mut_inside_shared: false
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: ResetBindingMode
-    rules_display_style: BindingMode
 ---
 p0 @ e.0: T0,  p1 @ e.1: T1
 --------------------------- "Constructor"

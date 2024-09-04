@@ -32,10 +32,17 @@ static COMMANDS: &[(&str, &str)] = &[
 struct CliState {
     history: Vec<String>,
     options: RuleOptions,
+    rules_display_style: TypingRuleStyle,
     saved: Option<RuleOptions>,
 }
 
 impl CliState {
+    pub const CLI_OPTIONS: &[(&str, &[&str], &str)] = &[(
+        "rules_display_style",
+        &["Expression", "BindingMode", "Stateless"],
+        "how to display typing rules (in the `rules` command)",
+    )];
+
     fn prompt(&self, interactive: bool) -> anyhow::Result<Option<String>> {
         if interactive {
             Ok(Text::new("")
@@ -55,12 +62,46 @@ impl CliState {
             })
         }
     }
+
+    fn settings() -> impl Iterator<Item = (&'static str, &'static [&'static str], &'static str)> {
+        RuleOptions::OPTIONS_DOC
+            .into_iter()
+            .chain(Self::CLI_OPTIONS)
+            .copied()
+    }
+
+    fn set_key(&mut self, key: &str, val: &str) -> anyhow::Result<()> {
+        if let Some((_key, values, _doc)) = Self::settings().find(|(k, _, _)| *k == key) {
+            if values.contains(&val) {
+                if RuleOptions::OPTIONS_DOC
+                    .iter()
+                    .find(|(k, _, _)| *k == key)
+                    .is_some()
+                {
+                    self.options.set_key(key, val)?;
+                } else if key == "rules_display_style" {
+                    self.rules_display_style = serde_yaml::from_str(val)?;
+                } else {
+                    bail!("oops, forgot to implement `set {key}`; please open an issue")
+                }
+                Ok(())
+            } else {
+                bail!(
+                    "unknown value `{val}` for option `{key}`; options are: {}",
+                    values.iter().format(", ")
+                )
+            }
+        } else {
+            bail!("unknown option `{key}`")
+        }
+    }
 }
 
 fn main() -> anyhow::Result<()> {
     let mut state = CliState {
         history: Vec::new(),
         options: RuleOptions::DEFAULT,
+        rules_display_style: TypingRuleStyle::Expression,
         saved: None,
     };
 
@@ -95,8 +136,10 @@ fn main() -> anyhow::Result<()> {
         } else if request == "options" {
             let options = serde_yaml::to_string(&state.options)?;
             print!("{options}");
+            let style = serde_yaml::to_string(&state.rules_display_style)?;
+            print!("rules_display_style: {}", style);
         } else if request == "rules" {
-            display_rules(state.options)
+            display_rules(&state)
         } else if request == "save" {
             println!("Current ruleset was saved");
             state.saved = Some(state.options);
@@ -109,8 +152,7 @@ fn main() -> anyhow::Result<()> {
                 std::mem::swap(saved, &mut state.options);
                 display_options_diff(*saved, state.options);
                 println!();
-                display_joint_rules(*saved, state.options);
-                // display_rules_diff(*saved, state.options);
+                display_joint_rules(state.rules_display_style, *saved, state.options);
             } else {
                 println!("Can't swap saved and current ruleset because there is no saved ruleset. Use `save` to save one.");
             }
@@ -126,7 +168,7 @@ fn main() -> anyhow::Result<()> {
                 } else {
                     // TODO
                     // TODO: show sets of options at the top
-                    display_joint_rules(saved, state.options);
+                    display_joint_rules(state.rules_display_style, saved, state.options);
                 }
             } else {
                 println!("Can't compare rulesets because there is no saved ruleset. Use `save` to save one.");
@@ -134,13 +176,14 @@ fn main() -> anyhow::Result<()> {
         } else if let Some(cmd) = request.strip_prefix("set") {
             state.history.push(request.to_string());
             let old_options = state.options;
-            match parse_set_cmd(cmd, &mut state.options) {
+            match parse_set_cmd(cmd, &mut state) {
                 // Display what changed.
                 Ok(_) => {
-                    display_options_diff(old_options, state.options);
-                    println!();
-                    // display_rules_diff(old_options, state.options);
-                    display_joint_rules(old_options, state.options);
+                    if old_options != state.options {
+                        display_options_diff(old_options, state.options);
+                        println!();
+                        display_joint_rules(state.rules_display_style, old_options, state.options);
+                    }
                 }
                 Err(err) => {
                     println!(
@@ -149,7 +192,7 @@ fn main() -> anyhow::Result<()> {
                         {}\n\
                         There also exist some predefined option-bundles. Activate one with `set <bundle>`\n\
                         {}",
-                        RuleOptions::OPTIONS_DOC.iter().map(|(name, values, descr)| format!("- {name}: {}\n    {descr}\n", values.iter().format(" | "))).format(""),
+                        CliState::settings().map(|(name, values, descr)| format!("- {name}: {}\n    {descr}\n", values.iter().format(" | "))).format(""),
                         RuleOptions::KNOWN_OPTION_BUNDLES.iter().map(|(name, _, descr)| format!("- {name}: {descr}")).format("\n")
                     )
                 }
@@ -179,20 +222,20 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn parse_set_cmd(cmd: &str, options: &mut RuleOptions) -> anyhow::Result<()> {
+fn parse_set_cmd(cmd: &str, state: &mut CliState) -> anyhow::Result<()> {
     let cmd = cmd.trim();
     if cmd == "" {
         bail!("Syntax is `set option value`.")
     }
     if let Some(opt) = RuleOptions::from_bundle_name(cmd) {
-        *options = opt;
+        state.options = opt;
         return Ok(());
     }
     let cmd = cmd.split(" ").collect_vec();
     let ([opt, val] | [opt, "=", val]) = cmd.as_slice() else {
         bail!("couldn't parse `set` command.\nSyntax is `set option value`.")
     };
-    options.set_key(opt, val)?;
+    state.set_key(opt, val)?;
     Ok(())
 }
 
@@ -207,15 +250,18 @@ fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
     }
 }
 
-fn display_rules(options: RuleOptions) {
+fn display_rules(state: &CliState) {
     println!("The current options can be fully described as the following set of rules.");
     println!();
 
     let arenas = &Arenas::default();
-    let ctx = TypingCtx { arenas, options };
+    let ctx = TypingCtx {
+        arenas,
+        options: state.options,
+    };
     let typing_rules = compute_rules(ctx);
     for rule in typing_rules {
-        println!("{}\n", rule.display(options.rules_display_style));
+        println!("{}\n", rule.display(state.rules_display_style));
     }
 }
 
@@ -261,13 +307,12 @@ impl DiffState {
     }
 }
 
-fn display_joint_rules(left: RuleOptions, right: RuleOptions) {
+fn display_joint_rules(style: TypingRuleStyle, left: RuleOptions, right: RuleOptions) {
     use DiffState::*;
     println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
     println!();
 
     let arenas = &Arenas::default();
-    let style = left.rules_display_style;
     let joint_rules = compute_joint_rules(arenas, left, right);
     for joint_rule in joint_rules {
         let (left, right) = joint_rule.left_and_right();
@@ -365,7 +410,7 @@ impl inquire::Autocomplete for Autocomplete {
 
         if let Some(opt) = input.strip_prefix("set") {
             let opt = opt.trim();
-            for &(name, values, _) in RuleOptions::OPTIONS_DOC {
+            for (name, values, _) in CliState::settings() {
                 if let Some(val) = opt.strip_prefix(name) {
                     let val = val.trim();
                     for possible_value in values {

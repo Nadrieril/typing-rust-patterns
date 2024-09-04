@@ -425,15 +425,9 @@ fn bundle_rules() -> anyhow::Result<()> {
             ("stateless", RuleOptions::STATELESS, ""),
             TypingRuleStyle::Stateless,
         )])
-        .map(|((name, options, _), style)| {
-            let options = RuleOptions {
-                rules_display_style: style,
-                ..options
-            };
-            (name, options)
-        });
+        .map(|((name, options, _), style)| (name, options, style));
 
-    for (name, options) in bundles {
+    for (name, options, style) in bundles {
         let ctx = TypingCtx { arenas, options };
 
         let mut typing_rules = compute_rules(ctx);
@@ -441,11 +435,7 @@ fn bundle_rules() -> anyhow::Result<()> {
 
         let mut rules_str = String::new();
         for rule in typing_rules {
-            let _ = writeln!(
-                &mut rules_str,
-                "{}\n",
-                rule.display(options.rules_display_style)
-            );
+            let _ = writeln!(&mut rules_str, "{}\n", rule.display(style));
         }
 
         let info = TestCase {
@@ -454,7 +444,7 @@ fn bundle_rules() -> anyhow::Result<()> {
         };
         insta::with_settings!({
             snapshot_path => "../tests/snapshots",
-            snapshot_suffix => format!("{name}-{:?}", options.rules_display_style),
+            snapshot_suffix => format!("{name}-{:?}", style),
             prepend_module_to_snapshot => false,
             omit_expression => true,
             info => &info,

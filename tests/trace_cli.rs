@@ -12,13 +12,13 @@ fn trace_cli() -> anyhow::Result<()> {
         "set mistyped",
         "set mistyped val",
         "set ref_binding_on_inherited true",
-        "set allow_ref_pat_on_ref_mut false",
+        "set inherited_ref_on_ref EatInner",
         "set downgrade_mut_inside_shared true",
         "set ergo2024\noptions",
         "&x: &mut T",
         "set allow_ref_pat_on_ref_mut false\n&x: &mut T",
         "set structural\nrules",
-        "set structural\nset rules_display_style BindingMode\nrules",
+        "set rules_display_style BindingMode\nrules",
         "save\nset structural\nswap\ncompare",
     ];
     for &test_case in test_cases {
