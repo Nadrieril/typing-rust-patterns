@@ -1,0 +1,5 @@
+---
+source: tests/trace_cli.rs
+info: set rules_display_style Stateless
+---
+Error: the current ruleset cannot be displayed with style Stateless.

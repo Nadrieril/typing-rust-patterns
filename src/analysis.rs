@@ -59,6 +59,20 @@ impl<'a> Type<'a> {
         }
     }
 
+    pub fn visit(&self, f: &mut impl FnMut(&Self)) {
+        f(self);
+        match *self {
+            Type::Abstract(_) => {}
+            Type::NonRef(_) => {}
+            Type::Tuple(tys) => {
+                for ty in tys {
+                    ty.visit(f);
+                }
+            }
+            Type::Ref(_, ty) => ty.visit(f),
+        }
+    }
+
     /// Whether the type contains an abstract subtype.
     pub fn contains_abstract(&self) -> bool {
         match *self {
@@ -97,6 +111,17 @@ pub enum BorrowCheckError {
 }
 
 impl<'a> Expression<'a> {
+    pub fn visit(&self, f: &mut impl FnMut(&Self)) {
+        f(self);
+        match self.kind {
+            ExprKind::Scrutinee => {}
+            ExprKind::Abstract { .. } => {}
+            ExprKind::Ref(_, e) => e.visit(f),
+            ExprKind::Deref(e) => e.visit(f),
+            ExprKind::Field(e, _) => e.visit(f),
+        }
+    }
+
     /// An expression is either a place or a reference to a place. This corresponds to the "default
     /// binding mode" of RFC2005 aka "match ergonomics".
     pub fn binding_mode(&self) -> Result<BindingMode, TypeError> {

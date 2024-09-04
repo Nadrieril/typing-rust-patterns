@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::cmp::max;
 use std::collections::HashSet;
 use std::fmt::Write;
-use std::{cmp::max, fmt::Display};
 
 use itertools::{EitherOrBoth, Itertools};
 
@@ -55,7 +55,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
         match pred.typing_rule(ctx) {
             Ok(rule) => {
                 if TRACE {
-                    let rule_str = rule.display(TypingRuleStyle::Expression).to_string();
+                    let rule_str = rule.display(TypingRuleStyle::Expression).unwrap();
                     let rule_str = rule_str.replace("\n", "\n    ");
                     println!("  Pushing rule:\n    {rule_str}");
                 }
@@ -131,87 +131,62 @@ pub fn compute_joint_rules<'a>(
 pub struct SideConstraints<'a> {
     /// The binding mode of the abstract expression.
     pub binding_mode: Option<BindingMode>,
+    /// Whether the abstract expression is known not to be a reference.
+    pub abstract_expr_is_not_ref: bool,
     /// Type variables that are known not to be references.
     pub non_ref_types: HashSet<&'a str>,
-    /// WHat access the abstract expression has of the scrutinee.
+    /// What access the abstract expression has of the scrutinee.
     pub scrutinee_mutability: Option<Mutability>,
 }
 
 impl<'a> Type<'a> {
     /// Collect the names of types known to not be references.
-    fn extract_side_constraints(&self, cstrs: &mut SideConstraints<'a>) {
-        match *self {
-            Type::Abstract(_) => {}
+    fn collect_side_constraints(&self, cstrs: &mut SideConstraints<'a>) {
+        self.visit(&mut |ty| match ty {
             Type::NonRef(var) => {
                 cstrs.non_ref_types.insert(var);
             }
-            Type::Tuple(tys) => {
-                for ty in tys {
-                    ty.extract_side_constraints(cstrs)
-                }
-            }
-            Type::Ref(_, ty) => ty.extract_side_constraints(cstrs),
-        }
+            _ => {}
+        })
     }
 }
 
 impl<'a> Expression<'a> {
-    /// Collects constraints on the abstract variables of this expression. If `remove_bm` is true,
-    /// this counts the whole binding mode of the abstract var as a constraint and removes it from
-    /// the expression.
-    fn extract_side_constraints(
-        &self,
-        a: &'a Arenas<'a>,
-        cstrs: &mut SideConstraints<'a>,
-        remove_bm: bool,
-    ) -> Self {
-        self.ty.extract_side_constraints(cstrs);
-        match self.kind {
-            ExprKind::Scrutinee => *self,
+    /// Collects constraints on the abstract variables of this expression.
+    fn collect_side_constraints(&self, cstrs: &mut SideConstraints<'a>) {
+        self.ty.collect_side_constraints(cstrs);
+        self.visit(&mut |e| match e.kind {
             ExprKind::Abstract {
                 not_a_ref,
                 scrutinee_mutability,
             } => {
                 cstrs.scrutinee_mutability = scrutinee_mutability;
-                if not_a_ref {
-                    cstrs.binding_mode = Some(ByMove);
-                    Expression {
-                        ty: self.ty,
-                        kind: ExprKind::Abstract {
-                            not_a_ref: false,
-                            scrutinee_mutability,
-                        },
-                    }
-                } else {
-                    *self
-                }
+                cstrs.abstract_expr_is_not_ref = not_a_ref;
             }
+            _ => {}
+        })
+    }
+
+    /// Interprets the expression as a binding mode, or returns `None` if that doesn't make sense.
+    fn as_binding_mode(&self) -> Result<Option<BindingMode>, IncompatibleStyle> {
+        match self.kind {
+            ExprKind::Abstract {
+                not_a_ref: false, ..
+            } => Ok(None),
+            ExprKind::Abstract {
+                not_a_ref: true, ..
+            } => Ok(Some(ByMove)),
             ExprKind::Ref(
                 mtbl,
-                &Expression {
+                Expression {
                     kind:
                         ExprKind::Abstract {
-                            not_a_ref: false,
-                            scrutinee_mutability,
+                            not_a_ref: false, ..
                         },
                     ..
                 },
-            ) if remove_bm => {
-                cstrs.binding_mode = Some(ByRef(mtbl));
-                cstrs.scrutinee_mutability = scrutinee_mutability;
-                Expression {
-                    ty: self.ty,
-                    kind: ExprKind::Abstract {
-                        not_a_ref: false,
-                        scrutinee_mutability,
-                    },
-                }
-            }
-            ExprKind::Ref(mtbl, e) => e
-                .extract_side_constraints(a, cstrs, remove_bm)
-                .borrow(a, mtbl),
-            ExprKind::Deref(e) => e.extract_side_constraints(a, cstrs, remove_bm).deref(a),
-            ExprKind::Field(e, n) => e.extract_side_constraints(a, cstrs, remove_bm).field(a, n),
+            ) => Ok(Some(ByRef(mtbl))),
+            _ => Err(IncompatibleStyle),
         }
     }
 
@@ -291,64 +266,66 @@ impl<'a> Expression<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TypingRuleStyle {
+    /// Draws the expression as-is.
     Expression,
-    /// Replaces the innermost `&{mut}e` expression with a `bm(e) = ref {mut}` side-constraint.
+    /// Replaces the expression with a binding-mode side-constraint.
     BindingMode,
     /// Doesn't draw the expression.
     Stateless,
 }
 
+#[derive(Debug)]
+pub struct IncompatibleStyle;
+
 impl<'a> TypingRule<'a> {
-    /// If the postcondition expression contains an abstract variable with a known binding mode,
-    /// extract it and reset the binding mode of the variable.
-    fn extract_side_constraints(
-        &self,
-        a: &'a Arenas<'a>,
-        remove_bm: bool,
-    ) -> (SideConstraints, Self) {
+    /// Collects the side constraints stored in the expression and type.
+    fn collect_side_constraints(&self) -> SideConstraints {
         let mut cstrs = SideConstraints::default();
-        let mut ret = self.clone();
-        let expr = ret
-            .postcondition
-            .expr
-            .extract_side_constraints(a, &mut cstrs, remove_bm);
-        ret.postcondition.expr = expr;
-        // If we changed the type of `q` above, we must change it here too.
-        for pred in &mut ret.preconditions {
-            pred.expr = pred.expr.set_abstract_bm(a, cstrs.binding_mode);
-        }
-        (cstrs, ret)
+        self.postcondition.expr.collect_side_constraints(&mut cstrs);
+        cstrs
     }
 
-    pub fn display(&self, style: TypingRuleStyle) -> impl Display + '_ {
-        TypingRuleWithStyle(self, style)
-    }
-
-    fn display_inner(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        style: TypingRuleStyle,
-    ) -> std::fmt::Result {
+    pub fn display(&self, style: TypingRuleStyle) -> Result<String, IncompatibleStyle> {
         use TypingRuleStyle::*;
+        let abstract_expr = ExprKind::new_abstract();
         let a = &Arenas::default();
 
-        let extract_bm = matches!(style, BindingMode);
-        let (cstrs, rule) = self.extract_side_constraints(a, extract_bm);
-        let abstract_expr = ExprKind::new_abstract();
+        let mut cstrs = self.collect_side_constraints();
+        if matches!(style, BindingMode | Stateless) {
+            // Interpret the expression as a binding mode if possible.
+            cstrs.binding_mode = self.postcondition.expr.as_binding_mode()?;
+        }
+
+        let mut rule = self.clone();
+        match style {
+            BindingMode => {
+                // Reset the expression to be the abstract one.
+                rule.postcondition.expr.kind = abstract_expr;
+                // We may have changed the type of `e` so we must change it in the postconditions too.
+                for pred in &mut rule.preconditions {
+                    pred.expr = pred.expr.set_abstract_bm(a, cstrs.binding_mode);
+                }
+            }
+            Stateless if cstrs.binding_mode.is_some() => {
+                return Err(IncompatibleStyle);
+            }
+            _ => {}
+        }
 
         let mut postconditions_str = rule.postcondition.display_with_style(style);
 
-        if let Some(bm) = cstrs.binding_mode {
-            match style {
-                Expression => {
-                    assert!(bm == ByMove);
+        match style {
+            Expression => {
+                if cstrs.abstract_expr_is_not_ref {
                     let _ = write!(
                         &mut postconditions_str,
                         ", {} is not a reference",
                         abstract_expr
                     );
                 }
-                BindingMode => {
+            }
+            BindingMode => {
+                if let Some(bm) = cstrs.binding_mode {
                     let bm = bm.name();
                     let _ = write!(
                         &mut postconditions_str,
@@ -356,24 +333,23 @@ impl<'a> TypingRule<'a> {
                         abstract_expr
                     );
                 }
-                Stateless => {
-                    let _ = write!(
-                        &mut postconditions_str,
-                        ", error: stateless style cannot describe a binding mode",
-                    );
-                }
             }
+            _ => {}
         }
-
         for ty in cstrs.non_ref_types {
             let _ = write!(&mut postconditions_str, ", {ty} is not a reference",);
         }
         if let Some(mtbl) = cstrs.scrutinee_mutability {
-            let mtbl = match mtbl {
-                Mutability::Shared => "read-only",
-                Mutability::Mutable => "mutable",
-            };
-            let _ = write!(&mut postconditions_str, ", {abstract_expr} {mtbl}",);
+            match style {
+                Expression | BindingMode => {
+                    let mtbl = match mtbl {
+                        Mutability::Shared => "read-only",
+                        Mutability::Mutable => "mutable",
+                    };
+                    let _ = write!(&mut postconditions_str, ", {abstract_expr} {mtbl}",);
+                }
+                Stateless => return Err(IncompatibleStyle),
+            }
         }
 
         let mut preconditions_str = rule
@@ -391,17 +367,11 @@ impl<'a> TypingRule<'a> {
 
         let len = max(preconditions_str.len(), postconditions_str.len());
         let bar = "-".repeat(len);
-        write!(f, "{preconditions_str}\n")?;
-        write!(f, "{bar} \"{:?}\"\n", self.name)?;
-        write!(f, "{postconditions_str}")?;
-        Ok(())
-    }
-}
-
-struct TypingRuleWithStyle<'a>(&'a TypingRule<'a>, TypingRuleStyle);
-impl<'a> Display for TypingRuleWithStyle<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.display_inner(f, self.1)
+        let mut out = String::new();
+        let _ = write!(&mut out, "{preconditions_str}\n");
+        let _ = write!(&mut out, "{bar} \"{:?}\"\n", self.name);
+        let _ = write!(&mut out, "{postconditions_str}");
+        Ok(out)
     }
 }
 
@@ -420,11 +390,11 @@ fn bundle_rules() -> anyhow::Result<()> {
     let bundles = RuleOptions::KNOWN_OPTION_BUNDLES
         .into_iter()
         .copied()
-        .cartesian_product([TypingRuleStyle::Expression, TypingRuleStyle::BindingMode])
-        .chain([(
-            ("stateless", RuleOptions::STATELESS, ""),
+        .cartesian_product([
+            TypingRuleStyle::Expression,
+            TypingRuleStyle::BindingMode,
             TypingRuleStyle::Stateless,
-        )])
+        ])
         .map(|((name, options, _), style)| (name, options, style));
 
     for (name, options, style) in bundles {
@@ -434,23 +404,25 @@ fn bundle_rules() -> anyhow::Result<()> {
         typing_rules.sort_by_key(|rule| rule.name);
 
         let mut rules_str = String::new();
-        for rule in typing_rules {
-            let _ = writeln!(&mut rules_str, "{}\n", rule.display(style));
-        }
+        let _: Result<_, IncompatibleStyle> = try {
+            for rule in typing_rules {
+                let _ = writeln!(&mut rules_str, "{}\n", rule.display(style)?);
+            }
 
-        let info = TestCase {
-            bundle_name: name,
-            options,
+            let info = TestCase {
+                bundle_name: name,
+                options,
+            };
+            insta::with_settings!({
+                snapshot_path => "../tests/snapshots",
+                snapshot_suffix => format!("{name}-{:?}", style),
+                prepend_module_to_snapshot => false,
+                omit_expression => true,
+                info => &info,
+            }, {
+                insta::assert_snapshot!(rules_str);
+            });
         };
-        insta::with_settings!({
-            snapshot_path => "../tests/snapshots",
-            snapshot_suffix => format!("{name}-{:?}", style),
-            prepend_module_to_snapshot => false,
-            omit_expression => true,
-            info => &info,
-        }, {
-            insta::assert_snapshot!(rules_str);
-        });
     }
 
     Ok(())

@@ -1,5 +1,6 @@
-#![feature(let_chains)]
 #![feature(if_let_guard)]
+#![feature(let_chains)]
+#![feature(try_blocks)]
 
 mod analysis;
 mod ast;

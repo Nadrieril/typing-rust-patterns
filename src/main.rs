@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::{fmt::Display, io::IsTerminal};
 
 use anyhow::bail;
@@ -96,21 +97,28 @@ impl CliState {
         }
     }
 
-    fn display_joint_rules(&self, left: RuleOptions, right: RuleOptions) {
+    fn display_joint_rules(
+        &self,
+        left: RuleOptions,
+        right: RuleOptions,
+    ) -> Result<String, IncompatibleStyle> {
         use DiffState::*;
         let style = self.rules_display_style;
         let arenas = &Arenas::default();
         let joint_rules = compute_joint_rules(arenas, left, right);
 
-        println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
-        println!();
+        let mut out = String::new();
+        let _ = writeln!(&mut out, "The two rulesets are described by the following sets of rules, with differences highlighted.");
+        let _ = writeln!(&mut out);
         for joint_rule in joint_rules {
             let (left, right) = joint_rule.left_and_right();
             let left = left
-                .map(|r| r.display(style).to_string())
+                .map(|r| r.display(style))
+                .transpose()?
                 .unwrap_or_default();
             let right = right
-                .map(|r| r.display(style).to_string())
+                .map(|r| r.display(style))
+                .transpose()?
                 .unwrap_or_default();
             for x in left.lines().zip_longest(right.lines()) {
                 let (l, r) = x.or(" ", " ");
@@ -119,10 +127,11 @@ impl CliState {
                 let r_state = if same { Both } else { New };
                 let l = l_state.color_line(l);
                 let r = r_state.color_line(r);
-                println!(" {l:80} | {r}");
+                let _ = writeln!(&mut out, " {l:80} | {r}");
             }
-            println!();
+            let _ = writeln!(&mut out);
         }
+        Ok(out)
     }
 }
 
@@ -168,7 +177,10 @@ fn main() -> anyhow::Result<()> {
             let style = serde_yaml::to_string(&state.rules_display_style)?;
             print!("rules_display_style: {}", style);
         } else if request == "rules" {
-            display_rules(&state)
+            print!(
+                "{}",
+                display_rules(state.rules_display_style, state.options).unwrap()
+            );
         } else if request == "save" {
             println!("Current ruleset was saved");
             state.saved = Some(state.options);
@@ -180,9 +192,10 @@ fn main() -> anyhow::Result<()> {
                 println!("Current and saved rulesets were swapped");
                 std::mem::swap(saved, &mut state.options);
                 let saved = *saved;
+                let s = state.display_joint_rules(saved, state.options).unwrap();
                 display_options_diff(saved, state.options);
                 println!();
-                state.display_joint_rules(saved, state.options);
+                print!("{s}")
             } else {
                 println!("Can't swap saved and current ruleset because there is no saved ruleset. Use `save` to save one.");
             }
@@ -198,21 +211,51 @@ fn main() -> anyhow::Result<()> {
                 } else {
                     // TODO
                     // TODO: show sets of options at the top
-                    state.display_joint_rules(saved, state.options);
+                    let s = state.display_joint_rules(saved, state.options).unwrap();
+                    print!("{s}");
                 }
             } else {
                 println!("Can't compare rulesets because there is no saved ruleset. Use `save` to save one.");
             }
         } else if let Some(cmd) = request.strip_prefix("set") {
             state.history.push(request.to_string());
+            let old_style = state.rules_display_style;
             let old_options = state.options;
             match parse_set_cmd(cmd, &mut state) {
                 // Display what changed.
                 Ok(_) => {
                     if old_options != state.options {
-                        display_options_diff(old_options, state.options);
-                        println!();
-                        state.display_joint_rules(old_options, state.options);
+                        match state.display_joint_rules(old_options, state.options) {
+                            Ok(s) => {
+                                display_options_diff(old_options, state.options);
+                                println!();
+                                print!("{s}")
+                            }
+                            Err(IncompatibleStyle) => {
+                                state.options = old_options;
+                                print!(
+                                    "Error: the new ruleset cannot be displayed with style {}. ",
+                                    state.rules_display_style
+                                );
+                                println!("Change the style and try again.");
+                            }
+                        }
+                    } else {
+                        if display_rules(state.rules_display_style, state.options).is_err() {
+                            println!(
+                                "Error: the current ruleset cannot be displayed with style {}.",
+                                state.rules_display_style
+                            );
+                            state.rules_display_style = old_style;
+                        } else if state.saved.is_some_and(|saved| {
+                            display_rules(state.rules_display_style, saved).is_err()
+                        }) {
+                            println!(
+                                "Error: the saved ruleset cannot be displayed with style {}.",
+                                state.rules_display_style
+                            );
+                            state.rules_display_style = old_style;
+                        }
                     }
                 }
                 Err(err) => {
@@ -280,19 +323,24 @@ fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
     }
 }
 
-fn display_rules(state: &CliState) {
-    println!("The current options can be fully described as the following set of rules.");
-    println!();
+fn display_rules(
+    style: TypingRuleStyle,
+    options: RuleOptions,
+) -> Result<String, IncompatibleStyle> {
+    let mut out = String::new();
+    let _ = writeln!(
+        &mut out,
+        "The current options can be fully described as the following set of rules."
+    );
+    let _ = writeln!(&mut out);
 
     let arenas = &Arenas::default();
-    let ctx = TypingCtx {
-        arenas,
-        options: state.options,
-    };
+    let ctx = TypingCtx { arenas, options };
     let typing_rules = compute_rules(ctx);
     for rule in typing_rules {
-        println!("{}\n", rule.display(state.rules_display_style));
+        let _ = writeln!(&mut out, "{}\n", rule.display(style)?);
     }
+    Ok(out)
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

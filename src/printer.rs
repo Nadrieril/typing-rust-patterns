@@ -141,6 +141,12 @@ impl Display for TypingPredicate<'_> {
     }
 }
 
+impl Display for TypingRuleStyle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", serde_yaml::to_string(self).unwrap().trim())
+    }
+}
+
 impl Debug for Mutability {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{self}")
