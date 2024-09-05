@@ -234,15 +234,11 @@ impl<'a> TypingPredicate<'a> {
                 if o.match_constructor_through_ref =>
             {
                 let mtbl = min(outer_mtbl, inner_mtbl);
-                let mut expr = self.expr.deref(a);
-                if let Mutable = inner_mtbl {
-                    // Reborrow
-                    expr = expr.deref(a).borrow_cap_mutability(
-                        a,
-                        mtbl,
-                        ctx.options.downgrade_mut_inside_shared,
-                    )?
-                }
+                let expr = self.expr.deref(a).deref(a).borrow_cap_mutability(
+                    a,
+                    mtbl,
+                    ctx.options.downgrade_mut_inside_shared,
+                )?;
                 Ok((
                     Rule::ConstructorMultiRef,
                     vec![Self {

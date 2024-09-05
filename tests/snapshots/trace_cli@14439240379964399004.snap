@@ -21,15 +21,15 @@ The two rulesets are described by the following sets of rules, with differences 
  ----------------------------------------------------- "ConstructorRef"           |  
  [p0, p1] @ e: &mut [T0, T1]                                                      |  
 
- [p0, p1] @ *e: &T                                                                |  
- ----------------- "ConstructorMultiRef"                                          |  
+ [p0, p1] @ &**e: &T                                                              |  
+ ------------------- "ConstructorMultiRef"                                        |  
  [p0, p1] @ e: &&T                                                                |  
 
  [p0, p1] @ &**e: &T                                                              |  
  --------------------- "ConstructorMultiRef"                                      |  
  [p0, p1] @ e: &&mut T                                                            |  
 
- [p0, p1] @ *e: &T                                                                |  
+ [p0, p1] @ &**e: &T                                                              |  
  --------------------- "ConstructorMultiRef"                                      |  
  [p0, p1] @ e: &mut &T                                                            |  
 

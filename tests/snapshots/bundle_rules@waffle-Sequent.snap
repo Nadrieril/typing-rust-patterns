@@ -29,7 +29,7 @@ value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1
 ----------------------------------------------------- "ConstructorRef"
 b, rw ⊢ [p0, p1]: &mut [T0, T1]
 
-place, ro ⊢ [p0, p1]: &T
+value, ro ⊢ [p0, p1]: &T
 -------------------------- "ConstructorMultiRef"
 b, m ⊢ [p0, p1]: &&T
 
@@ -37,7 +37,7 @@ value, ro ⊢ [p0, p1]: &T
 -------------------------- "ConstructorMultiRef"
 b, m ⊢ [p0, p1]: &&mut T
 
-place, m ⊢ [p0, p1]: &T
+value, ro ⊢ [p0, p1]: &T
 -------------------------- "ConstructorMultiRef"
 b, m ⊢ [p0, p1]: &mut &T
 

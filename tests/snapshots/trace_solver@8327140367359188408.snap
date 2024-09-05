@@ -16,13 +16,13 @@ info:
 ---
 [x] @ s: &&&[T]
 // Applying rule `ConstructorMultiRef`
-[x] @ *s: &&[T]
+[x] @ &**s: &&[T]
 // Applying rule `ConstructorMultiRef`
-[x] @ **s: &[T]
+[x] @ &**&**s: &[T]
 // Applying rule `ConstructorRef`
-x @ &(***s).0: &T
+x @ &(*&**&**s).0: &T
 // Applying rule `Binding`
-let x: &T = &(***s).0
+let x: &T = &(*&**&**s).0
 
 // Final bindings (simplified):
 let x: &T = &(***s).0;
