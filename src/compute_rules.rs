@@ -58,7 +58,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
         match pred.typing_rule(ctx) {
             Ok(rule) => {
                 if TRACE {
-                    let rule_str = rule.display(TypingRuleStyle::Expression).unwrap();
+                    let rule_str = rule.display(PredicateStyle::Expression).unwrap();
                     let rule_str = rule_str.replace("\n", "\n    ");
                     println!("  Pushing rule:\n    {rule_str}");
                 }
@@ -268,7 +268,7 @@ impl<'a> Expression<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum TypingRuleStyle {
+pub enum PredicateStyle {
     /// Draws the expression as-is.
     Expression,
     /// Tracks the two bits of state on the lhs of a sequent.
@@ -290,8 +290,8 @@ impl<'a> TypingRule<'a> {
         cstrs
     }
 
-    pub fn display(&self, style: TypingRuleStyle) -> Result<String, IncompatibleStyle> {
-        use TypingRuleStyle::*;
+    pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
+        use PredicateStyle::*;
         let abstract_expr = ExprKind::new_abstract();
         let a = &Arenas::default();
 
@@ -398,10 +398,10 @@ fn bundle_rules() -> anyhow::Result<()> {
         .into_iter()
         .copied()
         .cartesian_product([
-            TypingRuleStyle::Expression,
-            TypingRuleStyle::Sequent,
-            TypingRuleStyle::BindingMode,
-            TypingRuleStyle::Stateless,
+            PredicateStyle::Expression,
+            PredicateStyle::Sequent,
+            PredicateStyle::BindingMode,
+            PredicateStyle::Stateless,
         ])
         .map(|((name, options, _), style)| (name, options, style));
 

@@ -1,6 +1,6 @@
 ---
 source: tests/trace_cli.rs
-info: "set ergo2024\nset rules_display_style BindingMode\nrules"
+info: "set ergo2024\nset predicate_style BindingMode\nrules"
 ---
 downgrade_mut_inside_shared: false -> true
 fallback_to_outer: false -> true

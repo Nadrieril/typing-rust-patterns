@@ -33,7 +33,7 @@ fn trace_solver(test_case: TestCase<'_>) -> anyhow::Result<()> {
     let trace = typing_rust_patterns::trace_solver(
         test_case.request,
         test_case.options,
-        TypingRuleStyle::Expression,
+        PredicateStyle::Expression,
     )?;
     insta::with_settings!({
         prepend_module_to_snapshot => false,

@@ -27,10 +27,10 @@ impl<'a> TypingPredicate<'a> {
         format!("let {}: {} = {}", self.pat, self.expr.ty, self.expr)
     }
 
-    pub fn display(&self, style: TypingRuleStyle) -> String {
+    pub fn display(&self, style: PredicateStyle) -> String {
         match style {
-            TypingRuleStyle::Stateless => format!("{}: {}", self.pat, self.expr.ty),
-            TypingRuleStyle::Sequent => {
+            PredicateStyle::Stateless => format!("{}: {}", self.pat, self.expr.ty),
+            PredicateStyle::Sequent => {
                 let bm = match self.expr.binding_mode().ok() {
                     None => "b",
                     Some(BindingMode::ByMove) => "place",
@@ -160,11 +160,11 @@ impl Display for TypingRequest<'_> {
 
 impl Display for TypingPredicate<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.display(TypingRuleStyle::Expression))
+        write!(f, "{}", self.display(PredicateStyle::Expression))
     }
 }
 
-impl Display for TypingRuleStyle {
+impl Display for PredicateStyle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", serde_yaml::to_string(self).unwrap().trim())
     }

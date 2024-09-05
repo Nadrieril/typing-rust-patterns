@@ -33,15 +33,16 @@ static COMMANDS: &[(&str, &str)] = &[
 struct CliState {
     history: Vec<String>,
     options: RuleOptions,
-    rules_display_style: TypingRuleStyle,
+    predicate_style: PredicateStyle,
     saved: Option<RuleOptions>,
 }
 
 impl CliState {
     pub const CLI_OPTIONS: &[(&str, &[&str], &str)] = &[(
-        "rules_display_style",
+        "predicate_style",
         &["Expression", "Sequent", "BindingMode", "Stateless"],
-        "how to display typing rules (in the `rules` command)",
+        "the style of the typing predicate; not all rulesets can be expressed in all styles, \
+        only `Expression` is compatible with all rulesets",
     )];
 
     fn prompt(&self, interactive: bool) -> anyhow::Result<Option<String>> {
@@ -80,8 +81,8 @@ impl CliState {
                     .is_some()
                 {
                     self.options.set_key(key, val)?;
-                } else if key == "rules_display_style" {
-                    self.rules_display_style = serde_yaml::from_str(val)?;
+                } else if key == "predicate_style" {
+                    self.predicate_style = serde_yaml::from_str(val)?;
                 } else {
                     bail!("oops, forgot to implement `set {key}`; please open an issue")
                 }
@@ -103,7 +104,7 @@ impl CliState {
         right: RuleOptions,
     ) -> Result<String, IncompatibleStyle> {
         use DiffState::*;
-        let style = self.rules_display_style;
+        let style = self.predicate_style;
         let arenas = &Arenas::default();
         let joint_rules = compute_joint_rules(arenas, left, right);
 
@@ -139,7 +140,7 @@ fn main() -> anyhow::Result<()> {
     let mut state = CliState {
         history: Vec::new(),
         options: RuleOptions::DEFAULT,
-        rules_display_style: TypingRuleStyle::Sequent,
+        predicate_style: PredicateStyle::Sequent,
         saved: None,
     };
 
@@ -174,12 +175,12 @@ fn main() -> anyhow::Result<()> {
         } else if request == "options" {
             let options = serde_yaml::to_string(&state.options)?;
             print!("{options}");
-            let style = serde_yaml::to_string(&state.rules_display_style)?;
-            print!("rules_display_style: {}", style);
+            let style = serde_yaml::to_string(&state.predicate_style)?;
+            print!("predicate_style: {}", style);
         } else if request == "rules" {
             print!(
                 "{}",
-                display_rules(state.rules_display_style, state.options).unwrap()
+                display_rules(state.predicate_style, state.options).unwrap()
             );
         } else if request == "save" {
             println!("Current ruleset was saved");
@@ -219,7 +220,7 @@ fn main() -> anyhow::Result<()> {
             }
         } else if let Some(cmd) = request.strip_prefix("set") {
             state.history.push(request.to_string());
-            let old_style = state.rules_display_style;
+            let old_style = state.predicate_style;
             let old_options = state.options;
             match parse_set_cmd(cmd, &mut state) {
                 // Display what changed.
@@ -235,26 +236,26 @@ fn main() -> anyhow::Result<()> {
                                 state.options = old_options;
                                 print!(
                                     "Error: the new ruleset cannot be displayed with style {}. ",
-                                    state.rules_display_style
+                                    state.predicate_style
                                 );
                                 println!("Change the style and try again.");
                             }
                         }
                     } else {
-                        if display_rules(state.rules_display_style, state.options).is_err() {
+                        if display_rules(state.predicate_style, state.options).is_err() {
                             println!(
                                 "Error: the current ruleset cannot be displayed with style {}.",
-                                state.rules_display_style
+                                state.predicate_style
                             );
-                            state.rules_display_style = old_style;
+                            state.predicate_style = old_style;
                         } else if state.saved.is_some_and(|saved| {
-                            display_rules(state.rules_display_style, saved).is_err()
+                            display_rules(state.predicate_style, saved).is_err()
                         }) {
                             println!(
                                 "Error: the saved ruleset cannot be displayed with style {}.",
-                                state.rules_display_style
+                                state.predicate_style
                             );
-                            state.rules_display_style = old_style;
+                            state.predicate_style = old_style;
                         }
                     }
                 }
@@ -273,7 +274,7 @@ fn main() -> anyhow::Result<()> {
         } else {
             // TODO: run in parallel if compare mode
             state.history.push(request.to_string());
-            match trace_solver(&request, state.options, state.rules_display_style) {
+            match trace_solver(&request, state.options, state.predicate_style) {
                 Ok(trace) => println!("{trace}"),
                 Err(err) => {
                     println!(
@@ -323,10 +324,7 @@ fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
     }
 }
 
-fn display_rules(
-    style: TypingRuleStyle,
-    options: RuleOptions,
-) -> Result<String, IncompatibleStyle> {
+fn display_rules(style: PredicateStyle, options: RuleOptions) -> Result<String, IncompatibleStyle> {
     let arenas = &Arenas::default();
     let mut out = String::new();
     let _ = writeln!(
@@ -339,17 +337,17 @@ fn display_rules(
         TypingPredicate::new_abstract(arenas).display(style),
     );
     match style {
-        TypingRuleStyle::Expression | TypingRuleStyle::BindingMode => {
+        PredicateStyle::Expression | PredicateStyle::BindingMode => {
             let _ = writeln!(&mut out, "- `e` is an expression",);
         }
-        TypingRuleStyle::Sequent => {
+        PredicateStyle::Sequent => {
             let _ = writeln!(
                 &mut out,
                 "- `b` is `place` or `value` and indicates the place context aka binding mode;",
             );
             let _ = writeln!(&mut out, "- `m` is `rw` or `ro` and indicates whether we have mutable or read-only access to the original scrutinee;",);
         }
-        TypingRuleStyle::Stateless => {}
+        PredicateStyle::Stateless => {}
     }
     let _ = writeln!(&mut out, "- `p` is a pattern;");
     let _ = writeln!(&mut out, "- `T` is a type.");
@@ -438,10 +436,10 @@ impl DiffState {
 //     for (state, rule) in all_rules {
 //         match state {
 //             DiffState::Both => {
-//                 if old_options.rules_display_style != new_options.rules_display_style {
+//                 if old_options.predicate_style != new_options.predicate_style {
 //                     // Show the style diff if there is one.
-//                     let old_style = rule.display(old_options.rules_display_style).to_string();
-//                     let new_style = rule.display(new_options.rules_display_style).to_string();
+//                     let old_style = rule.display(old_options.predicate_style).to_string();
+//                     let new_style = rule.display(new_options.predicate_style).to_string();
 //                     if old_style == new_style {
 //                         continue;
 //                     }
@@ -450,11 +448,11 @@ impl DiffState {
 //                 }
 //             }
 //             DiffState::Old => {
-//                 let rule_str = rule.display(old_options.rules_display_style).to_string();
+//                 let rule_str = rule.display(old_options.predicate_style).to_string();
 //                 println!("{}\n", state.display(&rule_str));
 //             }
 //             DiffState::New => {
-//                 let rule_str = rule.display(new_options.rules_display_style).to_string();
+//                 let rule_str = rule.display(new_options.predicate_style).to_string();
 //                 println!("{}\n", state.display(&rule_str));
 //             }
 //         }

@@ -61,7 +61,7 @@ impl<'a> TypingSolver<'a> {
         }
     }
 
-    pub fn display_state(&self, style: TypingRuleStyle) -> impl fmt::Display + '_ {
+    pub fn display_state(&self, style: PredicateStyle) -> impl fmt::Display + '_ {
         self.done_predicates
             .iter()
             .map(|p| p.display_as_let())
@@ -72,7 +72,7 @@ impl<'a> TypingSolver<'a> {
     pub fn display_final_state(
         &self,
         ctx: TypingCtx<'a>,
-        _style: TypingRuleStyle,
+        _style: PredicateStyle,
     ) -> impl fmt::Display + '_ {
         assert!(self.predicates.is_empty());
         self.done_predicates
@@ -95,7 +95,7 @@ impl<'a> TypingSolver<'a> {
 pub fn trace_solver(
     request: &str,
     options: RuleOptions,
-    style: TypingRuleStyle,
+    style: PredicateStyle,
 ) -> anyhow::Result<String> {
     use std::fmt::Write;
     let arenas = &Arenas::default();

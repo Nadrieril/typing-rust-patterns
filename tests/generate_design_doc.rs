@@ -26,7 +26,7 @@ fn generate_design_doc() -> anyhow::Result<()> {
 
     let mut doc = String::new();
     for (example, comment) in examples {
-        let trace = trace_solver(example, options, TypingRuleStyle::Expression)?;
+        let trace = trace_solver(example, options, PredicateStyle::Expression)?;
         writeln!(&mut doc, "- `{example}` => {comment}")?;
         writeln!(&mut doc, "```rust")?;
         writeln!(&mut doc, "{trace}```")?;
