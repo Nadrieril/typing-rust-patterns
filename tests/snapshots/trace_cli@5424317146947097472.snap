@@ -2,9 +2,9 @@
 source: tests/trace_cli.rs
 info: "&x: &mut T"
 ---
-&x @ s: &mut T
+place, rw ⊢ &x: &mut T
 // Applying rule `DerefMutWithShared`
-x @ *&*s: T
+place, ro ⊢ x: T
 // Applying rule `Binding`
 let x: T = *&*s
 

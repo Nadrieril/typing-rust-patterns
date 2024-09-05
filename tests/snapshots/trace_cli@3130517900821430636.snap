@@ -6,66 +6,66 @@ downgrade_mut_inside_shared: false -> true
 
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
- p0 @ e.0: T0,  p1 @ e.1: T1                                                      | p0 @ e.0: T0,  p1 @ e.1: T1
- --------------------------- "Constructor"                                        | --------------------------- "Constructor"
- [p0, p1] @ e: [T0, T1]                                                           | [p0, p1] @ e: [T0, T1]
+ place, m ⊢ p0: T0,  place, m ⊢ p1: T1                                            | place, m ⊢ p0: T0,  place, m ⊢ p1: T1
+ ----------------------------------------- "Constructor"                          | ----------------------------------------- "Constructor"
+ place, m ⊢ [p0, p1]: [T0, T1]                                                    | place, m ⊢ [p0, p1]: [T0, T1]
 
- p0 @ &(*e).0: &T0,  p1 @ &(*e).1: &T1                                            | p0 @ &(*e).0: &T0,  p1 @ &(*e).1: &T1
- ------------------------------------- "ConstructorRef"                           | ------------------------------------- "ConstructorRef"
- [p0, p1] @ e: &[T0, T1]                                                          | [p0, p1] @ e: &[T0, T1]
+ value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1                                        | value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
+ --------------------------------------------- "ConstructorRef"                   | --------------------------------------------- "ConstructorRef"
+ b, m ⊢ [p0, p1]: &[T0, T1]                                                       | b, m ⊢ [p0, p1]: &[T0, T1]
 
- p0 @ &mut (*e).0: &mut T0,  p1 @ &mut (*e).1: &mut T1                            | p0 @ &(*e).0: &T0,  p1 @ &(*e).1: &T1
- ----------------------------------------------------- "ConstructorRef"           | ---------------------------------------- "ConstructorRef(ForceReadOnly)"
- [p0, p1] @ e: &mut [T0, T1], e read-only                                         | [p0, p1] @ e: &mut [T0, T1], e read-only
+ value, ro ⊢ p0: &mut T0,  value, ro ⊢ p1: &mut T1                                | value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
+ ----------------------------------------------------- "ConstructorRef"           | --------------------------------------------- "ConstructorRef(ForceReadOnly)"
+ b, ro ⊢ [p0, p1]: &mut [T0, T1]                                                  | b, ro ⊢ [p0, p1]: &mut [T0, T1]
 
- p0 @ &mut (*e).0: &mut T0,  p1 @ &mut (*e).1: &mut T1                            | p0 @ &mut (*e).0: &mut T0,  p1 @ &mut (*e).1: &mut T1
+ value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1                                | value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1
  ----------------------------------------------------- "ConstructorRef"           | ----------------------------------------------------- "ConstructorRef"
- [p0, p1] @ e: &mut [T0, T1], e mutable                                           | [p0, p1] @ e: &mut [T0, T1], e mutable
+ b, rw ⊢ [p0, p1]: &mut [T0, T1]                                                  | b, rw ⊢ [p0, p1]: &mut [T0, T1]
 
- [p0, p1] @ &**e: &T                                                              | [p0, p1] @ &**e: &T
- ------------------- "ConstructorMultiRef"                                        | ------------------- "ConstructorMultiRef"
- [p0, p1] @ e: &&T                                                                | [p0, p1] @ e: &&T
+ value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
+ -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
+ b, m ⊢ [p0, p1]: &&T                                                             | b, m ⊢ [p0, p1]: &&T
 
- [p0, p1] @ &**e: &T                                                              | [p0, p1] @ &**e: &T
- --------------------- "ConstructorMultiRef"                                      | --------------------- "ConstructorMultiRef"
- [p0, p1] @ e: &&mut T                                                            | [p0, p1] @ e: &&mut T
+ value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
+ -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
+ b, m ⊢ [p0, p1]: &&mut T                                                         | b, m ⊢ [p0, p1]: &&mut T
 
- [p0, p1] @ &**e: &T                                                              | [p0, p1] @ &**e: &T
- --------------------- "ConstructorMultiRef"                                      | --------------------- "ConstructorMultiRef"
- [p0, p1] @ e: &mut &T                                                            | [p0, p1] @ e: &mut &T
+ value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
+ -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
+ b, m ⊢ [p0, p1]: &mut &T                                                         | b, m ⊢ [p0, p1]: &mut &T
 
- [p0, p1] @ &mut **e: &mut T                                                      | [p0, p1] @ &**e: &T
- -------------------------------------- "ConstructorMultiRef"                     | -------------------------------------- "ConstructorMultiRef(ForceReadOnly)"
- [p0, p1] @ e: &mut &mut T, e read-only                                           | [p0, p1] @ e: &mut &mut T, e read-only
+ value, ro ⊢ [p0, p1]: &mut T                                                     | value, ro ⊢ [p0, p1]: &T
+ ------------------------------- "ConstructorMultiRef"                            | ------------------------------- "ConstructorMultiRef(ForceReadOnly)"
+ b, ro ⊢ [p0, p1]: &mut &mut T                                                    | b, ro ⊢ [p0, p1]: &mut &mut T
 
- [p0, p1] @ &mut **e: &mut T                                                      | [p0, p1] @ &mut **e: &mut T
- ------------------------------------ "ConstructorMultiRef"                       | ------------------------------------ "ConstructorMultiRef"
- [p0, p1] @ e: &mut &mut T, e mutable                                             | [p0, p1] @ e: &mut &mut T, e mutable
+ value, rw ⊢ [p0, p1]: &mut T                                                     | value, rw ⊢ [p0, p1]: &mut T
+ ------------------------------- "ConstructorMultiRef"                            | ------------------------------- "ConstructorMultiRef"
+ b, rw ⊢ [p0, p1]: &mut &mut T                                                    | b, rw ⊢ [p0, p1]: &mut &mut T
 
- p @ *e: T                                                                        | p @ *e: T
- ---------- "Deref"                                                               | ---------- "Deref"
- &p @ e: &T                                                                       | &p @ e: &T
-
- p @ *e: T                                                                        | p @ *e: T
+ place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
  ------------------ "Deref"                                                       | ------------------ "Deref"
- &mut p @ e: &mut T                                                               | &mut p @ e: &mut T
+ b, m ⊢ &p: &T                                                                    | b, m ⊢ &p: &T
 
- p @ *&*e: T                                                                      | p @ *&*e: T
- -------------- "DerefMutWithShared"                                              | -------------- "DerefMutWithShared"
- &p @ e: &mut T                                                                   | &p @ e: &mut T
+ place, m ⊢ p: T                                                                  | place, m ⊢ p: T
+ ----------------------- "Deref"                                                  | ----------------------- "Deref"
+ b, m ⊢ &mut p: &mut T                                                            | b, m ⊢ &mut p: &mut T
 
- x @ &e: &T                                                                       | x @ &e: &T
- ---------------------------------- "BindingBorrow"                               | ---------------------------------- "BindingBorrow"
- ref x @ e: T, e is not a reference                                               | ref x @ e: T, e is not a reference
+ place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
+ ------------------- "DerefMutWithShared"                                         | ------------------- "DerefMutWithShared"
+ b, m ⊢ &p: &mut T                                                                | b, m ⊢ &p: &mut T
 
- x @ &mut e: &mut T                                                               | x @ &mut e: &mut T
- -------------------------------------- "BindingBorrow"                           | -------------------------------------- "BindingBorrow"
- ref mut x @ e: T, e is not a reference                                           | ref mut x @ e: T, e is not a reference
+ value, m ⊢ x: &T                                                                 | value, m ⊢ x: &T
+ --------------------- "BindingBorrow"                                            | --------------------- "BindingBorrow"
+ place, m ⊢ ref x: T                                                              | place, m ⊢ ref x: T
+
+ value, m ⊢ x: &mut T                                                             | value, m ⊢ x: &mut T
+ ------------------------- "BindingBorrow"                                        | ------------------------- "BindingBorrow"
+ place, m ⊢ ref mut x: T                                                          | place, m ⊢ ref mut x: T
 
                                                                                   | 
- -------- "Binding"                                                               | -------- "Binding"
- x @ e: T                                                                         | x @ e: T
+ ------------- "Binding"                                                          | ------------- "Binding"
+ b, m ⊢ x: T                                                                      | b, m ⊢ x: T
 
                                                                                   | 
- ------------ "Binding"                                                           | ------------ "Binding"
- mut x @ e: T                                                                     | mut x @ e: T
+ ----------------- "Binding"                                                      | ----------------- "Binding"
+ b, m ⊢ mut x: T                                                                  | b, m ⊢ mut x: T

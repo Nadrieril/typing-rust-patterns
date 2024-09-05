@@ -16,12 +16,12 @@ fn trace_cli() -> anyhow::Result<()> {
         "set downgrade_mut_inside_shared true",
         "set ergo2024\noptions",
         "&x: &mut T",
+        "&[[x]]: &[&mut [x]]",
         "set allow_ref_pat_on_ref_mut false\n&x: &mut T",
         "set structural\nrules",
         "set ergo2024\nset rules_display_style BindingMode\nrules",
         "save\nset structural\nswap\ncompare",
         "set rules_display_style Stateless",
-        "set rules_display_style Sequent\nrules\n&[[x]]: &[&mut [x]]",
     ];
     for &test_case in test_cases {
         let success = Command::cargo_bin("typing-rust-patterns")?

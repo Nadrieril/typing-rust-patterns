@@ -139,7 +139,7 @@ fn main() -> anyhow::Result<()> {
     let mut state = CliState {
         history: Vec::new(),
         options: RuleOptions::DEFAULT,
-        rules_display_style: TypingRuleStyle::Expression,
+        rules_display_style: TypingRuleStyle::Sequent,
         saved: None,
     };
 
