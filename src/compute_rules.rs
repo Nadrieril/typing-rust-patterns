@@ -314,7 +314,7 @@ impl<'a> TypingRule<'a> {
             _ => {}
         }
 
-        let mut postconditions_str = rule.postcondition.display_with_style(style);
+        let mut postconditions_str = rule.postcondition.display(style);
 
         match style {
             Expression => {
@@ -359,7 +359,7 @@ impl<'a> TypingRule<'a> {
         let mut preconditions_str = rule
             .preconditions
             .iter()
-            .map(|pred| pred.display_with_style(style))
+            .map(|pred| pred.display(style))
             .join(",  ");
 
         if let BindingMode = style

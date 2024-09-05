@@ -1,6 +1,6 @@
 ---
 source: tests/trace_cli.rs
-info: "set rules_display_style Sequent\nrules"
+info: "set rules_display_style Sequent\nrules\n&[[x]]: &[&mut [x]]"
 ---
 The current options can be fully described as the following set of rules.
 The typing predicate looks like `b, m ⊢ p: T`, where
@@ -64,3 +64,16 @@ b, m ⊢ x: T
 
 ----------------- "Binding"
 b, m ⊢ mut x: T
+
+place, rw ⊢ &[[x]]: &[&mut [x]]
+// Applying rule `Deref(EatOuter)`
+place, ro ⊢ [[x]]: [&mut [x]]
+// Applying rule `Constructor`
+place, ro ⊢ [x]: &mut [x]
+// Applying rule `ConstructorRef`
+value, ro ⊢ x: &mut x
+// Applying rule `Binding`
+let x: &mut x = &mut (*(*s).0).0
+
+// Final bindings (simplified):
+let x: &mut x = &mut (*(*s).0).0; // Borrow-check error: MutBorrowBehindSharedBorrow

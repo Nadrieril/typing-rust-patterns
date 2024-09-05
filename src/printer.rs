@@ -22,26 +22,12 @@ impl BindingMode {
 }
 
 impl<'a> TypingPredicate<'a> {
-    pub fn display(&self) -> String {
-        format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty)
-    }
-
     /// Display as `let ...`.
     pub fn display_as_let(&self) -> String {
         format!("let {}: {} = {}", self.pat, self.expr.ty, self.expr)
     }
 
-    /// Display with the binding mode on the pattern. This doesn't make complete sense.
-    pub fn display_with_bm(&self) -> String {
-        if let Ok(bm) = self.expr.binding_mode() {
-            let expr = self.expr.reset_binding_mode().unwrap();
-            format!("{} ({}) @ {}: {}", bm.name(), self.pat, expr, expr.ty)
-        } else {
-            self.to_string()
-        }
-    }
-
-    pub fn display_with_style(&self, style: TypingRuleStyle) -> String {
+    pub fn display(&self, style: TypingRuleStyle) -> String {
         match style {
             TypingRuleStyle::Stateless => format!("{}: {}", self.pat, self.expr.ty),
             TypingRuleStyle::Sequent => {
@@ -57,14 +43,7 @@ impl<'a> TypingPredicate<'a> {
                 };
                 format!("{bm}, {scrut_access} ⊢ {}: {}", self.pat, self.expr.ty)
             }
-            _ => self.display(),
-        }
-    }
-
-    pub fn display_as_let_with_style(&self, style: TypingRuleStyle) -> String {
-        match style {
-            TypingRuleStyle::Stateless => format!("let {}: {}", self.pat, self.expr.ty),
-            _ => self.display_as_let(),
+            _ => format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty),
         }
     }
 }
@@ -150,7 +129,7 @@ impl Display for TypingRequest<'_> {
 
 impl Display for TypingPredicate<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.display())
+        write!(f, "{}", self.display(TypingRuleStyle::Expression))
     }
 }
 

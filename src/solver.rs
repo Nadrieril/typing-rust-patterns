@@ -61,15 +61,19 @@ impl<'a> TypingSolver<'a> {
         }
     }
 
-    pub fn display_state(&self) -> impl fmt::Display + '_ {
+    pub fn display_state(&self, style: TypingRuleStyle) -> impl fmt::Display + '_ {
         self.done_predicates
             .iter()
             .map(|p| p.display_as_let())
-            .chain(self.predicates.iter().map(|p| p.to_string()))
+            .chain(self.predicates.iter().map(|p| p.display(style)))
             .join("\n")
     }
 
-    pub fn display_final_state(&self, ctx: TypingCtx<'a>) -> impl fmt::Display + '_ {
+    pub fn display_final_state(
+        &self,
+        ctx: TypingCtx<'a>,
+        _style: TypingRuleStyle,
+    ) -> impl fmt::Display + '_ {
         assert!(self.predicates.is_empty());
         self.done_predicates
             .iter()
@@ -88,28 +92,36 @@ impl<'a> TypingSolver<'a> {
 }
 
 /// Run the solver on this request and returns the trace as a string.
-pub fn trace_solver(request: &str, options: RuleOptions) -> anyhow::Result<String> {
+pub fn trace_solver(
+    request: &str,
+    options: RuleOptions,
+    style: TypingRuleStyle,
+) -> anyhow::Result<String> {
     use std::fmt::Write;
     let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
     let request = TypingRequest::parse(&arenas, request)?;
     let mut solver = TypingSolver::new(request);
     let mut trace = String::new();
-    let _ = write!(&mut trace, "{}\n", solver.display_state());
+    let _ = write!(&mut trace, "{}\n", solver.display_state(style));
     loop {
         match solver.step(ctx) {
             Ok(rule) => {
                 let _ = write!(&mut trace, "// Applying rule `{rule:?}`\n");
-                let _ = write!(&mut trace, "{}\n", solver.display_state());
+                let _ = write!(&mut trace, "{}\n", solver.display_state(style));
             }
             Err(e) => {
                 match e {
                     CantStep::Done => {
                         let _ = write!(&mut trace, "\n// Final bindings (simplified):\n");
-                        let _ = write!(&mut trace, "{}\n", solver.display_final_state(ctx));
+                        let _ = write!(&mut trace, "{}\n", solver.display_final_state(ctx, style));
                     }
                     CantStep::NoApplicableRule(pred, err) => {
-                        let _ = write!(&mut trace, "// Type error for `{pred}`: {err:?}\n");
+                        let _ = write!(
+                            &mut trace,
+                            "// Type error for `{}`: {err:?}\n",
+                            pred.display(style)
+                        );
                     }
                 }
                 break;

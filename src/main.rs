@@ -273,7 +273,7 @@ fn main() -> anyhow::Result<()> {
         } else {
             // TODO: run in parallel if compare mode
             state.history.push(request.to_string());
-            match trace_solver(&request, state.options) {
+            match trace_solver(&request, state.options, state.rules_display_style) {
                 Ok(trace) => println!("{trace}"),
                 Err(err) => {
                     println!(
@@ -336,7 +336,7 @@ fn display_rules(
     let _ = writeln!(
         &mut out,
         "The typing predicate looks like `{}`, where",
-        TypingPredicate::new_abstract(arenas).display_with_style(style),
+        TypingPredicate::new_abstract(arenas).display(style),
     );
     match style {
         TypingRuleStyle::Expression | TypingRuleStyle::BindingMode => {
