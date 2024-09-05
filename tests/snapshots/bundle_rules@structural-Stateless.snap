@@ -18,11 +18,11 @@ p0: T0,  p1: T1
 [p0, p1]: [T0, T1]
 
 p: T
------- "Deref(EatOuter)"
+------ "Deref"
 &p: &T
 
 p: T
--------------- "Deref(EatOuter)"
+-------------- "Deref"
 &mut p: &mut T
 
 x: &T

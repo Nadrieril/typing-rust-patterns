@@ -35,15 +35,15 @@ The two rulesets are described by the following sets of rules, with differences 
  [p0, p1] @ e: &mut &mut T                                                        | [p0, p1] @ e: &mut &mut T
 
  p @ *e: T                                                                        | p @ *e: T
- ---------- "Deref(EatOuter)"                                                     | ---------- "Deref(EatOuter)"
+ ---------- "Deref"                                                               | ---------- "Deref"
  &p @ e: &T                                                                       | &p @ e: &T
 
  p @ *e: T                                                                        | p @ *e: T
- ------------------ "Deref(EatOuter)"                                             | ------------------ "Deref(EatOuter)"
+ ------------------ "Deref"                                                       | ------------------ "Deref"
  &mut p @ e: &mut T                                                               | &mut p @ e: &mut T
 
  p @ *&*e: T                                                                      |  
- -------------- "DerefMutWithShared(EatOuter)"                                    |  
+ -------------- "DerefMutWithShared"                                              |  
  &p @ e: &mut T                                                                   |  
 
  x @ &e: &T                                                                       | x @ &e: &T

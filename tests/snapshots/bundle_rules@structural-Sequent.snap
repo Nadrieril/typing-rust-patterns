@@ -18,11 +18,11 @@ place, m ⊢ p0: T0,  place, m ⊢ p1: T1
 place, m ⊢ [p0, p1]: [T0, T1]
 
 place, ro ⊢ p: T
------------------- "Deref(EatOuter)"
+------------------ "Deref"
 b, m ⊢ &p: &T
 
 place, m ⊢ p: T
------------------------ "Deref(EatOuter)"
+----------------------- "Deref"
 b, m ⊢ &mut p: &mut T
 
 value, m ⊢ x: &T

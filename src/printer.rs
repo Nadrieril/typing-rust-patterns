@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use std::fmt::{Debug, Display};
+use std::fmt::{Debug, Display, Write};
 
 use crate::*;
 
@@ -45,6 +45,37 @@ impl<'a> TypingPredicate<'a> {
             }
             _ => format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty),
         }
+    }
+}
+
+impl Rule {
+    pub fn display(&self, options: RuleOptions) -> String {
+        use DowngradeMutToRef::*;
+        use InheritedRefOnRefBehavior::*;
+        use Rule::*;
+        let debug = format!("{self:?}");
+        let variant_name = debug.split("(").next().unwrap_or(&debug);
+
+        // Only display extra info if it can change.
+        let mut extras = vec![];
+        if let Deref(x, _) | DerefMutWithShared(x) = *self {
+            match options.inherited_ref_on_ref {
+                EatOuter => {}
+                EatBoth | EatInner => extras.push(format!("{x:?}")),
+            }
+        }
+        if let ConstructorRef(x) | ConstructorMultiRef(x) | Deref(_, x) = *self
+            && options.downgrade_mut_inside_shared
+            && x == ForceReadOnly
+        {
+            extras.push(format!("{x:?}"))
+        }
+
+        let mut out = variant_name.to_string();
+        if !extras.is_empty() {
+            let _ = write!(&mut out, "({})", extras.iter().format(", "));
+        }
+        out
     }
 }
 

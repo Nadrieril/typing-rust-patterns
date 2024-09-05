@@ -107,7 +107,7 @@ pub fn trace_solver(
     loop {
         match solver.step(ctx) {
             Ok(rule) => {
-                let _ = write!(&mut trace, "// Applying rule `{rule:?}`\n");
+                let _ = write!(&mut trace, "// Applying rule `{}`\n", rule.display(options));
                 let _ = write!(&mut trace, "{}\n", solver.display_state(style));
             }
             Err(e) => {

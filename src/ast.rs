@@ -5,8 +5,6 @@
 use BindingMode::*;
 use Mutability::*;
 
-use crate::TypeError;
-
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Mutability {
     Shared,
@@ -115,20 +113,6 @@ impl<'a> Expression<'a> {
             ty: self.ty.borrow(mtbl).alloc(arenas),
             kind: ExprKind::Ref(mtbl, self.alloc(arenas)),
         }
-    }
-
-    /// Borrow the expression. If `cap_mutability` is set, we will downgrade `&mut` to `&` if we
-    /// only have shared access to the scrutinee.
-    pub fn borrow_cap_mutability(
-        &self,
-        arenas: &'a Arenas<'a>,
-        mut mtbl: Mutability,
-        cap_mutability: bool,
-    ) -> Result<Self, TypeError> {
-        if cap_mutability && mtbl == Mutable {
-            mtbl = self.scrutinee_mutability()?;
-        }
-        Ok(self.borrow(arenas, mtbl))
     }
 
     pub fn field(&self, arenas: &'a Arenas<'a>, n: usize) -> Self {

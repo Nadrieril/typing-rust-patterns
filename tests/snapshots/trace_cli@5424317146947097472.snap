@@ -3,7 +3,7 @@ source: tests/trace_cli.rs
 info: "&x: &mut T"
 ---
 &x @ s: &mut T
-// Applying rule `DerefMutWithShared(EatOuter)`
+// Applying rule `DerefMutWithShared`
 x @ *&*s: T
 // Applying rule `Binding`
 let x: T = *&*s

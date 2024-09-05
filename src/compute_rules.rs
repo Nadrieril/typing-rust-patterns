@@ -13,6 +13,8 @@ pub struct TypingRule<'a> {
     pub name: Rule,
     pub preconditions: Vec<TypingPredicate<'a>>,
     pub postcondition: TypingPredicate<'a>,
+    /// Remember the options used.
+    pub options: RuleOptions,
 }
 
 impl<'a> TypingPredicate<'a> {
@@ -23,6 +25,7 @@ impl<'a> TypingPredicate<'a> {
             name: rule,
             preconditions,
             postcondition: *self,
+            options: ctx.options,
         })
     }
 
@@ -373,7 +376,7 @@ impl<'a> TypingRule<'a> {
         let bar = "-".repeat(len);
         let mut out = String::new();
         let _ = write!(&mut out, "{preconditions_str}\n");
-        let _ = write!(&mut out, "{bar} \"{:?}\"\n", self.name);
+        let _ = write!(&mut out, "{bar} \"{}\"\n", self.name.display(self.options));
         let _ = write!(&mut out, "{postconditions_str}");
         Ok(out)
     }

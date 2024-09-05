@@ -15,7 +15,7 @@ info:
   request: "&ref mut x: &T"
 ---
 &ref mut x @ s: &T
-// Applying rule `Deref(EatOuter)`
+// Applying rule `Deref`
 ref mut x @ *s: T
 // Applying rule `BindingBorrow`
 x @ &mut *s: &mut T

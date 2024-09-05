@@ -42,15 +42,15 @@ p0: &mut T0,  p1: &mut T1
 [p0, p1]: &mut &mut T
 
 p: T
------- "Deref(EatOuter)"
+------ "Deref"
 &p: &T
 
 p: T
--------------- "Deref(EatOuter)"
+-------------- "Deref"
 &mut p: &mut T
 
 p: T
----------- "DerefMutWithShared(EatOuter)"
+---------- "DerefMutWithShared"
 &p: &mut T
 
 x: &T

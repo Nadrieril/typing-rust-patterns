@@ -38,15 +38,15 @@ value, m ⊢ [p0, p1]: &mut T
 b, m ⊢ [p0, p1]: &mut &mut T
 
 place, ro ⊢ p: T
------------------- "Deref(EatOuter)"
+------------------ "Deref"
 b, m ⊢ &p: &T
 
 place, m ⊢ p: T
------------------------ "Deref(EatOuter)"
+----------------------- "Deref"
 b, m ⊢ &mut p: &mut T
 
 place, ro ⊢ p: T
-------------------- "DerefMutWithShared(EatOuter)"
+------------------- "DerefMutWithShared"
 b, m ⊢ &p: &mut T
 
 value, m ⊢ x: &T
@@ -66,7 +66,7 @@ b, m ⊢ x: T
 b, m ⊢ mut x: T
 
 place, rw ⊢ &[[x]]: &[&mut [x]]
-// Applying rule `Deref(EatOuter)`
+// Applying rule `Deref`
 place, ro ⊢ [[x]]: [&mut [x]]
 // Applying rule `Constructor`
 place, ro ⊢ [x]: &mut [x]

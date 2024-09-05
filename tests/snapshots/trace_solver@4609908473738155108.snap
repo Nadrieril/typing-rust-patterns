@@ -21,7 +21,7 @@ x @ &(*s).0: &T
 // Applying rule `Binding`
 let x: &T = &(*s).0
 &y @ &(*s).1: &U
-// Applying rule `Deref(EatOuter)`
+// Applying rule `Deref`
 let x: &T = &(*s).0
 y @ *&(*s).1: U
 // Applying rule `Binding`

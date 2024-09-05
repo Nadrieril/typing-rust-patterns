@@ -35,35 +35,35 @@ The two rulesets are described by the following sets of rules, with differences 
  [p0, p1] @ e: &mut &mut T                                                        | [p0, p1] @ e: &mut &mut T
 
  p @ *e: T                                                                        | p @ *e: T
- -------------------------------- "Deref(EatOuter)"                               | -------------------------------- "Deref(EatOuter)"
+ -------------------------------- "Deref"                                         | -------------------------------- "Deref(EatOuter)"
  &p @ e: &T, e is not a reference                                                 | &p @ e: &T, e is not a reference
 
  p @ *&e: T                                                                       | p @ *&e: T
- --------------------------------- "Deref(EatOuter)"                              | --------------------------------- "Deref(EatOuter)"
+ --------------------------------- "Deref"                                        | --------------------------------- "Deref(EatOuter)"
  &p @ &e: &T, T is not a reference                                                | &p @ &e: &T, T is not a reference
 
  p @ *&e: &T                                                                      | p @ &*e: &T
- ------------ "Deref(EatOuter)"                                                   | ------------ "Deref(EatInner)"
+ ------------ "Deref"                                                             | ------------ "Deref(EatInner)"
  &p @ &e: &&T                                                                     | &p @ &e: &&T
 
  p @ *&e: &mut T                                                                  | p @ &*&*e: &T
- ---------------- "Deref(EatOuter)"                                               | ---------------- "DerefMutWithShared(EatInner)"
+ ---------------- "Deref"                                                         | ---------------- "DerefMutWithShared(EatInner)"
  &p @ &e: &&mut T                                                                 | &p @ &e: &&mut T
 
  p @ *e: T                                                                        | p @ *e: T
- ---------------------------------------- "Deref(EatOuter)"                       | ---------------------------------------- "Deref(EatOuter)"
+ ---------------------------------------- "Deref"                                 | ---------------------------------------- "Deref(EatOuter)"
  &mut p @ e: &mut T, e is not a reference                                         | &mut p @ e: &mut T, e is not a reference
 
  p @ *&mut e: T                                                                   | p @ e: T
- --------------------------------------------- "Deref(EatOuter)"                  | --------------------------------------------- "Deref(EatOuter)"
+ --------------------------------------------- "Deref"                            | --------------------------------------------- "Deref(EatOuter)"
  &mut p @ &mut e: &mut T, T is not a reference                                    | &mut p @ &mut e: &mut T, T is not a reference
 
  p @ *&mut e: &T                                                                  |  
- ------------------------ "Deref(EatOuter)"                                       |  
+ ------------------------ "Deref"                                                 |  
  &mut p @ &mut e: &mut &T                                                         |  
 
  p @ *&mut e: &mut T                                                              | p @ &mut *e: &mut T
- ---------------------------- "Deref(EatOuter)"                                   | ---------------------------- "Deref(EatInner)"
+ ---------------------------- "Deref"                                             | ---------------------------- "Deref(EatInner)"
  &mut p @ &mut e: &mut &mut T                                                     | &mut p @ &mut e: &mut &mut T
 
                                                                                   | p @ &*e: &T
@@ -71,19 +71,19 @@ The two rulesets are described by the following sets of rules, with differences 
                                                                                   | &mut p @ &e: &&mut T
 
  p @ *&*e: T                                                                      | p @ *&*e: T
- ------------------------------------ "DerefMutWithShared(EatOuter)"              | ------------------------------------ "DerefMutWithShared(EatOuter)"
+ ------------------------------------ "DerefMutWithShared"                        | ------------------------------------ "DerefMutWithShared(EatOuter)"
  &p @ e: &mut T, e is not a reference                                             | &p @ e: &mut T, e is not a reference
 
  p @ *&*&mut e: T                                                                 | p @ *&e: T
- ----------------------------------------- "DerefMutWithShared(EatOuter)"         | ----------------------------------------- "DerefMutWithShared(EatOuter)"
+ ----------------------------------------- "DerefMutWithShared"                   | ----------------------------------------- "DerefMutWithShared(EatOuter)"
  &p @ &mut e: &mut T, T is not a reference                                        | &p @ &mut e: &mut T, T is not a reference
 
  p @ *&*&mut e: &T                                                                | p @ &mut *e: &mut T
- -------------------- "DerefMutWithShared(EatOuter)"                              | -------------------- "Deref(EatInner)"
+ -------------------- "DerefMutWithShared"                                        | -------------------- "Deref(EatInner)"
  &p @ &mut e: &mut &T                                                             | &p @ &mut e: &mut &T
 
  p @ *&*&mut e: &mut T                                                            | p @ &mut *&*e: &mut T
- ------------------------ "DerefMutWithShared(EatOuter)"                          | ------------------------ "DerefMutWithShared(EatInner)"
+ ------------------------ "DerefMutWithShared"                                    | ------------------------ "DerefMutWithShared(EatInner)"
  &p @ &mut e: &mut &mut T                                                         | &p @ &mut e: &mut &mut T
 
  x @ &e: &T                                                                       | x @ &e: &T

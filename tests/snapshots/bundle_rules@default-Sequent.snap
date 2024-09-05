@@ -42,15 +42,15 @@ value, m ⊢ [p0, p1]: &mut T
 b, m ⊢ [p0, p1]: &mut &mut T
 
 place, ro ⊢ p: T
------------------- "Deref(EatOuter)"
+------------------ "Deref"
 b, m ⊢ &p: &T
 
 place, m ⊢ p: T
------------------------ "Deref(EatOuter)"
+----------------------- "Deref"
 b, m ⊢ &mut p: &mut T
 
 place, ro ⊢ p: T
-------------------- "DerefMutWithShared(EatOuter)"
+------------------- "DerefMutWithShared"
 b, m ⊢ &p: &mut T
 
 value, m ⊢ x: &T

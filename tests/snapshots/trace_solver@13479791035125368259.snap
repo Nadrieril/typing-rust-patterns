@@ -15,7 +15,7 @@ info:
   request: "&ref x: &T"
 ---
 &ref x @ s: &T
-// Applying rule `Deref(EatOuter)`
+// Applying rule `Deref`
 ref x @ *s: T
 // Applying rule `BindingBorrow`
 x @ &*s: &T

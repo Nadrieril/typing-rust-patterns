@@ -17,7 +17,7 @@ info:
 [&x] @ s: &[&T]
 // Applying rule `ConstructorRef`
 &x @ &(*s).0: &&T
-// Applying rule `Deref(EatOuter)`
+// Applying rule `Deref`
 x @ *&(*s).0: &T
 // Applying rule `Binding`
 let x: &T = *&(*s).0

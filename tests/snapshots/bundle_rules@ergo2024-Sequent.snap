@@ -21,13 +21,13 @@ value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
 --------------------------------------------- "ConstructorRef"
 b, m ⊢ [p0, p1]: &[T0, T1]
 
-value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
---------------------------------------------- "ConstructorRef"
-b, ro ⊢ [p0, p1]: &mut [T0, T1]
-
 value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1
 ----------------------------------------------------- "ConstructorRef"
 b, rw ⊢ [p0, p1]: &mut [T0, T1]
+
+value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
+--------------------------------------------- "ConstructorRef(ForceReadOnly)"
+b, ro ⊢ [p0, p1]: &mut [T0, T1]
 
 value, ro ⊢ [p0, p1]: &T
 -------------------------- "ConstructorMultiRef"
@@ -41,13 +41,13 @@ value, ro ⊢ [p0, p1]: &T
 -------------------------- "ConstructorMultiRef"
 b, m ⊢ [p0, p1]: &mut &T
 
-value, ro ⊢ [p0, p1]: &T
-------------------------------- "ConstructorMultiRef"
-b, ro ⊢ [p0, p1]: &mut &mut T
-
 value, rw ⊢ [p0, p1]: &mut T
 ------------------------------- "ConstructorMultiRef"
 b, rw ⊢ [p0, p1]: &mut &mut T
+
+value, ro ⊢ [p0, p1]: &T
+------------------------------- "ConstructorMultiRef(ForceReadOnly)"
+b, ro ⊢ [p0, p1]: &mut &mut T
 
 place, ro ⊢ p: T
 ------------------- "Deref(EatOuter)"
@@ -69,10 +69,6 @@ value, ro ⊢ p: &T
 -------------------- "Deref(EatInner)"
 value, m ⊢ &p: &&T
 
-value, ro ⊢ p: &T
------------------------- "Deref(EatInner)"
-value, m ⊢ &p: &mut &T
-
 value, m ⊢ p: &T
 ---------------------------- "Deref(EatInner)"
 value, m ⊢ &mut p: &&mut T
@@ -81,13 +77,17 @@ b, m ⊢ p: &T
 ---------------------------- "Deref(EatInner)"
 value, m ⊢ &mut p: &mut &T
 
-value, ro ⊢ p: &T
---------------------------------- "Deref(EatInner)"
-value, ro ⊢ &mut p: &mut &mut T
-
 value, rw ⊢ p: &mut T
 --------------------------------- "Deref(EatInner)"
 value, rw ⊢ &mut p: &mut &mut T
+
+value, ro ⊢ p: &T
+------------------------ "Deref(EatInner, ForceReadOnly)"
+value, m ⊢ &p: &mut &T
+
+value, ro ⊢ p: &T
+--------------------------------- "Deref(EatInner, ForceReadOnly)"
+value, ro ⊢ &mut p: &mut &mut T
 
 place, ro ⊢ p: T
 ----------------------- "DerefMutWithShared(EatOuter)"

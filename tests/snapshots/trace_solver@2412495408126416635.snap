@@ -15,7 +15,7 @@ info:
   request: "&mut x: &mut &mut T"
 ---
 &mut x @ s: &mut &mut T
-// Applying rule `Deref(EatOuter)`
+// Applying rule `Deref`
 x @ *s: &mut T
 // Applying rule `Binding`
 let x: &mut T = *s

@@ -153,15 +153,21 @@ impl RuleOptions {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Rule {
     Constructor,
-    ConstructorRef,
-    ConstructorMultiRef,
-    Deref(InheritedRefOnRefBehavior),
+    ConstructorRef(DowngradeMutToRef),
+    ConstructorMultiRef(DowngradeMutToRef),
+    Deref(InheritedRefOnRefBehavior, DowngradeMutToRef),
     DerefMutWithShared(InheritedRefOnRefBehavior),
     RefBindingResetBindingMode,
     MutBindingResetBindingMode,
     BindingBorrow,
     Binding,
     ExprSimplification,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum DowngradeMutToRef {
+    Normal,
+    ForceReadOnly,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -212,35 +218,41 @@ impl<'a> TypingPredicate<'a> {
                 Ok((Rule::Constructor, preds))
             }
             (P::Tuple(_), T::Tuple(_)) => Err(TypeError::TypeMismatch),
-            (P::Tuple(pats), T::Ref(mtbl, T::Tuple(tys)))
+            (P::Tuple(pats), T::Ref(mut mtbl, T::Tuple(tys)))
                 if pats.len() == tys.len() && o.match_constructor_through_ref =>
             {
+                let mut downgrade = DowngradeMutToRef::Normal;
+                if ctx.options.downgrade_mut_inside_shared && mtbl == Mutable {
+                    mtbl = self.expr.scrutinee_mutability()?;
+                    if mtbl == Shared {
+                        downgrade = DowngradeMutToRef::ForceReadOnly;
+                    }
+                }
                 let preds = pats
                     .iter()
                     .enumerate()
                     .map(|(i, pat)| {
-                        let expr = self.expr.deref(a).field(a, i).borrow_cap_mutability(
-                            a,
-                            mtbl,
-                            ctx.options.downgrade_mut_inside_shared,
-                        )?;
+                        let expr = self.expr.deref(a).field(a, i).borrow(a, mtbl);
                         Ok(Self { pat, expr })
                     })
                     .try_collect()?;
-                Ok((Rule::ConstructorRef, preds))
+                Ok((Rule::ConstructorRef(downgrade), preds))
             }
             (P::Tuple(_), T::Ref(_, T::Tuple(_))) => Err(TypeError::TypeMismatch),
             (P::Tuple(_), T::Ref(outer_mtbl, &T::Ref(inner_mtbl, _)))
                 if o.match_constructor_through_ref =>
             {
-                let mtbl = min(outer_mtbl, inner_mtbl);
-                let expr = self.expr.deref(a).deref(a).borrow_cap_mutability(
-                    a,
-                    mtbl,
-                    ctx.options.downgrade_mut_inside_shared,
-                )?;
+                let mut mtbl = min(outer_mtbl, inner_mtbl);
+                let mut downgrade = DowngradeMutToRef::Normal;
+                if ctx.options.downgrade_mut_inside_shared && mtbl == Mutable {
+                    mtbl = self.expr.scrutinee_mutability()?;
+                    if mtbl == Shared {
+                        downgrade = DowngradeMutToRef::ForceReadOnly;
+                    }
+                }
+                let expr = self.expr.deref(a).deref(a).borrow(a, mtbl);
                 Ok((
-                    Rule::ConstructorMultiRef,
+                    Rule::ConstructorMultiRef(downgrade),
                     vec![Self {
                         pat: self.pat,
                         expr,
@@ -334,8 +346,10 @@ impl<'a> TypingPredicate<'a> {
                 };
 
                 // Match the pattern reference against the appropriate type reference.
-                let (rule, mut expr) = match (p_mtbl, t_mtbl) {
-                    (Shared, Shared) | (Mutable, Mutable) => (Rule::Deref(rule_variant), expr),
+                let (mut rule, mut expr) = match (p_mtbl, t_mtbl) {
+                    (Shared, Shared) | (Mutable, Mutable) => {
+                        (Rule::Deref(rule_variant, DowngradeMutToRef::Normal), expr)
+                    }
                     (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => (
                         Rule::DerefMutWithShared(rule_variant),
                         expr.borrow(a, Shared).deref(a),
@@ -345,13 +359,17 @@ impl<'a> TypingPredicate<'a> {
                     }
                 };
 
-                if let Some(mtbl) = reborrow_after {
+                if let Some(mut mtbl) = reborrow_after {
+                    if ctx.options.downgrade_mut_inside_shared && mtbl == Mutable {
+                        mtbl = expr.scrutinee_mutability()?;
+                        if mtbl == Shared
+                            && let Rule::Deref(_, downgrade) = &mut rule
+                        {
+                            *downgrade = DowngradeMutToRef::ForceReadOnly;
+                        }
+                    }
                     // If we were matching under the inherited reference, we restore it here.
-                    expr = expr.borrow_cap_mutability(
-                        a,
-                        mtbl,
-                        ctx.options.downgrade_mut_inside_shared,
-                    )?;
+                    expr = expr.borrow(a, mtbl);
                 }
 
                 let pred = Self { pat: p_inner, expr };

@@ -17,7 +17,7 @@ info:
 [&mut ref x] @ s: [&mut T]
 // Applying rule `Constructor`
 &mut ref x @ s.0: &mut T
-// Applying rule `Deref(EatOuter)`
+// Applying rule `Deref`
 ref x @ *s.0: T
 // Applying rule `BindingBorrow`
 x @ &*s.0: &T

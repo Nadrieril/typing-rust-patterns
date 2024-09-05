@@ -17,7 +17,7 @@ info:
 [&x] @ s: &mut [&T]
 // Applying rule `ConstructorRef`
 &x @ &mut (*s).0: &mut &T
-// Applying rule `DerefMutWithShared(EatOuter)`
+// Applying rule `DerefMutWithShared`
 x @ *&(*s).0: &T
 // Applying rule `Binding`
 let x: &T = *&(*s).0
