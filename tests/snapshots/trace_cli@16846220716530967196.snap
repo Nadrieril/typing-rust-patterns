@@ -11,7 +11,7 @@ The typing predicate looks like `b, m ⊢ p: T`, where
 
 place, m ⊢ p0: T0,  place, m ⊢ p1: T1
 ----------------------------------------- "Constructor"
-b, m ⊢ [p0, p1]: [T0, T1]
+place, m ⊢ [p0, p1]: [T0, T1]
 
 value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
 --------------------------------------------- "ConstructorRef"

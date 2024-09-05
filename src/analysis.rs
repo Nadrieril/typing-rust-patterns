@@ -134,7 +134,12 @@ impl<'a> Expression<'a> {
             } => ByMove,
             ExprKind::Abstract {
                 not_a_ref: false, ..
-            } => return Err(TypeError::OverlyGeneral(DeepeningRequest::BindingMode)),
+            } => match self.ty {
+                Type::NonRef(..) | Type::Tuple(..) => ByMove,
+                Type::Abstract(_) | Type::Ref(..) => {
+                    return Err(TypeError::OverlyGeneral(DeepeningRequest::BindingMode))
+                }
+            },
             ExprKind::Ref(mtbl, _) => ByRef(mtbl),
         })
     }
