@@ -23,7 +23,7 @@ Options are:
     how to handle a `ref x` binding on an inherited reference
 - mut_binding_on_inherited: ResetBindingMode | Keep | Error
     how to handle a `mut x` binding on an inherited reference
-- rules_display_style: Expression | BindingMode | Stateless
+- rules_display_style: Expression | Sequent | BindingMode | Stateless
     how to display typing rules (in the `rules` command)
 
 There also exist some predefined option-bundles. Activate one with `set <bundle>`

@@ -44,6 +44,19 @@ impl<'a> TypingPredicate<'a> {
     pub fn display_with_style(&self, style: TypingRuleStyle) -> String {
         match style {
             TypingRuleStyle::Stateless => format!("{}: {}", self.pat, self.expr.ty),
+            TypingRuleStyle::Sequent => {
+                let bm = match self.expr.binding_mode().ok() {
+                    None => "b",
+                    Some(BindingMode::ByMove) => "place",
+                    Some(BindingMode::ByRef(_)) => "value",
+                };
+                let scrut_access = match self.expr.scrutinee_mutability().ok() {
+                    None => "m",
+                    Some(Mutability::Mutable) => "rw",
+                    Some(Mutability::Shared) => "ro",
+                };
+                format!("{bm}, {scrut_access} ⊢ {}: {}", self.pat, self.expr.ty)
+            }
             _ => self.display(),
         }
     }

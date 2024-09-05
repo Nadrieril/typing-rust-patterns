@@ -40,7 +40,7 @@ struct CliState {
 impl CliState {
     pub const CLI_OPTIONS: &[(&str, &[&str], &str)] = &[(
         "rules_display_style",
-        &["Expression", "BindingMode", "Stateless"],
+        &["Expression", "Sequent", "BindingMode", "Stateless"],
         "how to display typing rules (in the `rules` command)",
     )];
 
@@ -327,14 +327,34 @@ fn display_rules(
     style: TypingRuleStyle,
     options: RuleOptions,
 ) -> Result<String, IncompatibleStyle> {
+    let arenas = &Arenas::default();
     let mut out = String::new();
     let _ = writeln!(
         &mut out,
         "The current options can be fully described as the following set of rules."
     );
+    let _ = writeln!(
+        &mut out,
+        "The typing predicate looks like `{}`, where",
+        TypingPredicate::new_abstract(arenas).display_with_style(style),
+    );
+    match style {
+        TypingRuleStyle::Expression | TypingRuleStyle::BindingMode => {
+            let _ = writeln!(&mut out, "- `e` is an expression",);
+        }
+        TypingRuleStyle::Sequent => {
+            let _ = writeln!(
+                &mut out,
+                "- `b` is `place` or `value` and indicates the place context aka binding mode;",
+            );
+            let _ = writeln!(&mut out, "- `m` is `rw` or `ro` and indicates whether we have mutable or read-only access to the original scrutinee;",);
+        }
+        TypingRuleStyle::Stateless => {}
+    }
+    let _ = writeln!(&mut out, "- `p` is a pattern;");
+    let _ = writeln!(&mut out, "- `T` is a type.");
     let _ = writeln!(&mut out);
 
-    let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
     let typing_rules = compute_rules(ctx);
     for rule in typing_rules {

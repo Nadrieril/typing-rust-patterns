@@ -27,7 +27,7 @@ impl<'a> TypingPredicate<'a> {
     }
 
     /// A predicate with abstract patterns, type and expression.
-    fn new_abstract(a: &'a Arenas<'a>) -> Self {
+    pub fn new_abstract(a: &'a Arenas<'a>) -> Self {
         TypingPredicate {
             pat: &Pattern::Abstract("p"),
             expr: Expression {
@@ -268,6 +268,8 @@ impl<'a> Expression<'a> {
 pub enum TypingRuleStyle {
     /// Draws the expression as-is.
     Expression,
+    /// Tracks the two bits of state on the lhs of a sequent.
+    Sequent,
     /// Replaces the expression with a binding-mode side-constraint.
     BindingMode,
     /// Doesn't draw the expression.
@@ -291,7 +293,7 @@ impl<'a> TypingRule<'a> {
         let a = &Arenas::default();
 
         let mut cstrs = self.collect_side_constraints();
-        if matches!(style, BindingMode | Stateless) {
+        if matches!(style, Sequent | BindingMode | Stateless) {
             // Interpret the expression as a binding mode if possible.
             cstrs.binding_mode = self.postcondition.expr.as_binding_mode()?;
         }
@@ -348,6 +350,8 @@ impl<'a> TypingRule<'a> {
                     };
                     let _ = write!(&mut postconditions_str, ", {abstract_expr} {mtbl}",);
                 }
+                // We already print this information with the predicate.
+                Sequent => {}
                 Stateless => return Err(IncompatibleStyle),
             }
         }
@@ -392,6 +396,7 @@ fn bundle_rules() -> anyhow::Result<()> {
         .copied()
         .cartesian_product([
             TypingRuleStyle::Expression,
+            TypingRuleStyle::Sequent,
             TypingRuleStyle::BindingMode,
             TypingRuleStyle::Stateless,
         ])

@@ -143,6 +143,10 @@ The two rulesets are described by the following sets of rules, with differences 
  mut x @ &mut e: &mut T                                                           |  
 
 The current options can be fully described as the following set of rules.
+The typing predicate looks like `p @ e: T`, where
+- `e` is an expression
+- `p` is a pattern;
+- `T` is a type.
 
 p0 @ e.0: T0,  p1 @ e.1: T1
 --------------------------- "Constructor"
