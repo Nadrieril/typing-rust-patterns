@@ -219,10 +219,31 @@ fn compare() -> anyhow::Result<()> {
             TypeBased(RuleOptions::ERGO2024),
         ),
         (
-            "ergo2024_nonbreaking_transition_to_stateless",
-            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
+            "minimal_breaking_transition_to_stateless",
+            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
             Less,
             TypeBased(RuleOptions::STATELESS),
+        ),
+        (
+            "minimal_breaking_transition_to_stateless_with_rule3",
+            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
+            Less,
+            TypeBased(RuleOptions {
+                downgrade_mut_inside_shared: true,
+                ..RuleOptions::STATELESS
+            }),
+        ),
+        (
+            "minimal_breaking_transition_to_rfc3627_breaking",
+            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
+            Less,
+            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
+        ),
+        (
+            "minimal_breaking_transition_to_waffle",
+            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
+            Less,
+            TypeBased(RuleOptions::WAFFLE),
         ),
         (
             "non_breaking_on_stable",
@@ -251,15 +272,17 @@ fn compare() -> anyhow::Result<()> {
             TypeBased(RuleOptions {
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
-                allow_ref_pat_on_ref_mut: false,
-                downgrade_mut_inside_shared: false,
+                allow_ref_pat_on_ref_mut: true,
+                downgrade_mut_inside_shared: true,
+                dont_eat_mut_inside_shared: true,
                 ..RuleOptions::ERGO2024
             }),
             Equal,
             TypeBased(RuleOptions {
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
-                allow_ref_pat_on_ref_mut: false,
+                allow_ref_pat_on_ref_mut: true,
+                downgrade_mut_inside_shared: true,
                 ..RuleOptions::STATELESS
             }),
         ),

@@ -72,6 +72,12 @@ impl RuleOptions {
         ..RuleOptions::STABLE_RUST
     };
 
+    pub const ERGO2024_BREAKING_ONLY_EXT: Self = RuleOptions {
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+        dont_eat_mut_inside_shared: true,
+        ..RuleOptions::ERGO2024_BREAKING_ONLY
+    };
+
     pub const WAFFLE: Self = RuleOptions {
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: false,
