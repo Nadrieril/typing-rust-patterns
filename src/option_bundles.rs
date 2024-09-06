@@ -12,6 +12,7 @@ impl RuleOptions {
         simplify_deref_mut: true,
         eat_inherited_ref_alone: false,
         downgrade_mut_inside_shared: false,
+        dont_eat_mut_inside_shared: false,
     };
 
     /// Reproduces RFC3627 (match ergonomics 2024) behavior
@@ -25,6 +26,7 @@ impl RuleOptions {
         simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
         downgrade_mut_inside_shared: true,
+        dont_eat_mut_inside_shared: false,
     };
 
     /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
@@ -39,6 +41,7 @@ impl RuleOptions {
         simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
         downgrade_mut_inside_shared: false,
+        dont_eat_mut_inside_shared: false,
     };
 
     /// The default setting for the solver. A reasonable proposal.

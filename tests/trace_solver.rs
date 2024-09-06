@@ -164,6 +164,13 @@ fn test_solver_traces() -> anyhow::Result<()> {
             ],
         ),
         (
+            RuleOptions {
+                dont_eat_mut_inside_shared: true,
+                ..RuleOptions::ERGO2024_BREAKING_ONLY
+            },
+            &["[&mut x]: &[&mut T]"],
+        ),
+        (
             RuleOptions::WAFFLE,
             &[
                 "&[x]: &[&mut T]", // The tricky rule 3 variant

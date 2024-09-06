@@ -64,6 +64,8 @@ pub struct RuleOptions {
     /// If we've dereferenced a shared reference, any subsequent `&mut` inherited reference becomes
     /// `&`. This is RFC3627 rule 3.
     pub downgrade_mut_inside_shared: bool,
+    /// In `EatInner` or `EatBoth`, disallow eating an inner `&mut T` with `&mut p` from under a `&`.
+    pub dont_eat_mut_inside_shared: bool,
     /// What happens with a `ref mut? x` binding and an inherited reference.
     pub ref_binding_on_inherited: RefBindingOnInheritedBehavior,
     /// What happens with a `mut x` binding and an inherited reference.
@@ -109,6 +111,11 @@ impl RuleOptions {
             "downgrade_mut_inside_shared",
             &["true", "false"],
             "RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref",
+        ),
+        (
+            "dont_eat_mut_inside_shared",
+            &["true", "false"],
+            "in `EatInner` or `EatBoth`, disallow eating an inner `&mut T` with `&mut p` from under a `&`",
         ),
         (
             "ref_binding_on_inherited",
@@ -300,7 +307,11 @@ impl<'a> TypingPredicate<'a> {
                                 }
                                 InheritedRefOnRefBehavior::EatInner => {
                                     let can_eat_inner = match (p_mtbl, *inner_mtbl) {
-                                        (Shared, Shared) | (Mutable, Mutable) => true,
+                                        (Shared, Shared) => true,
+                                        (Mutable, Mutable) => {
+                                            bm_mtbl == Mutable
+                                                || !ctx.options.dont_eat_mut_inside_shared
+                                        }
                                         (Shared, Mutable) => ctx.options.allow_ref_pat_on_ref_mut,
                                         (Mutable, Shared) => false,
                                     };
@@ -321,7 +332,11 @@ impl<'a> TypingPredicate<'a> {
                                 }
                                 InheritedRefOnRefBehavior::EatBoth => {
                                     let can_eat_inner = match (p_mtbl, *inner_mtbl) {
-                                        (Shared, Shared) | (Mutable, Mutable) => true,
+                                        (Shared, Shared) => true,
+                                        (Mutable, Mutable) => {
+                                            bm_mtbl == Mutable
+                                                || !ctx.options.dont_eat_mut_inside_shared
+                                        }
                                         (Shared, Mutable) => ctx.options.allow_ref_pat_on_ref_mut,
                                         (Mutable, Shared) => false,
                                     };
