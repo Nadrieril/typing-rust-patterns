@@ -335,7 +335,7 @@ fn compare() -> anyhow::Result<()> {
         )?;
         if trace.lines().count() <= 4 * 3 {
             // Try deeper patterns.
-            trace = compare_rulesets(
+            trace += &compare_rulesets(
                 a,
                 &deep_test_cases,
                 left_ruleset,
