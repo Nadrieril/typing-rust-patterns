@@ -11,16 +11,17 @@ pub enum RuleSet {
 
 pub type ParseError = String;
 
-use AnalysisResult::*;
+use AnalysisResult::{BorrowError, Success};
 #[derive(Debug)]
 pub enum AnalysisResult<'a> {
     Success(Type<'a>),
-    BorrowError(Type<'a>, String),
-    TypeError(String),
+    BorrowError(Type<'a>, BorrowCheckError),
+    TypeError(TypeError),
 }
 
 impl<'a> AnalysisResult<'a> {
     pub fn cmp(&self, other: &Self) -> Option<Ordering> {
+        use AnalysisResult::*;
         use Ordering::*;
         match (self, other) {
             // These borrow errors only come from this solver, whose borrow checker is more
@@ -36,6 +37,17 @@ impl<'a> AnalysisResult<'a> {
             (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => Some(Equal),
             (TypeError(_) | BorrowError(..), Success(_)) => Some(Less),
             (Success(_), TypeError(_) | BorrowError(..)) => Some(Greater),
+        }
+    }
+}
+
+impl std::fmt::Display for AnalysisResult<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Success(ty) => write!(f, "Success({ty})"),
+            BorrowError(ty, s) => write!(f, "BorrowError({ty:?}, \"{s:?}\")"),
+            AnalysisResult::TypeError(TypeError::External(e)) => write!(f, "TypeError(\"{e}\")"),
+            AnalysisResult::TypeError(e) => write!(f, "TypeError(\"{e:?}\")"),
         }
     }
 }
@@ -74,10 +86,10 @@ fn analyze_with_this_crate<'a>(
             match pred.expr.simplify(ctx).borrow_check() {
                 // This error isn't handled by `match-ergo-formality` so we ignore it.
                 Ok(()) | Err(BorrowCheckError::CantCopyNestedRefMut) => Success(ty),
-                Err(err) => BorrowError(ty, format!("{err:?}")),
+                Err(err) => BorrowError(ty, err),
             }
         }
-        CantStep::NoApplicableRule(_, err) => TypeError(format!("{err:?}")),
+        CantStep::NoApplicableRule(_, err) => AnalysisResult::TypeError(err),
     })
 }
 
@@ -96,7 +108,7 @@ fn analyze_with_formality<'a>(
             let ty: Type = Type::parse(a, &ty)?;
             Success(ty)
         }
-        Err(e) => TypeError(e.to_string()),
+        Err(e) => AnalysisResult::TypeError(TypeError::External(e)),
     })
 }
 
@@ -351,8 +363,8 @@ fn compare() -> anyhow::Result<()> {
             for (test_case, left_res, right_res) in differences {
                 let test_case_str = test_case.to_string();
                 let _ = writeln!(&mut trace, "Difference on `{test_case_str}`:");
-                let _ = writeln!(&mut trace, "   left returned: {left_res:?}");
-                let _ = writeln!(&mut trace, "  right returned: {right_res:?}");
+                let _ = writeln!(&mut trace, "   left returned: {left_res}");
+                let _ = writeln!(&mut trace, "  right returned: {right_res}");
             }
 
             insta::with_settings!({
