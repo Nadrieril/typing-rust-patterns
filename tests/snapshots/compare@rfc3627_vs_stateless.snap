@@ -2,10 +2,22 @@
 source: src/compare.rs
 info: rfc3627_vs_stateless
 ---
+Difference on `[&&mut ref x]: &[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(&T)
+Difference on `[&&mut ref x]: &mut [&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(&T)
 Difference on `[&&mut x]: &[&mut T]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(T)
 Difference on `[&&mut x]: &mut [&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(T)
+Difference on `[&&mut mut x]: &[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(T)
+Difference on `[&&mut mut x]: &mut [&mut T]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(T)
 Difference on `[&ref x]: &[&T]`:

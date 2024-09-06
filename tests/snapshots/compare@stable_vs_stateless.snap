@@ -2,10 +2,22 @@
 source: src/compare.rs
 info: stable_vs_stateless
 ---
+Difference on `[&&ref x]: &[&T]`:
+   left returned: TypeError("TypeMismatch")
+  right returned: Success(&T)
 Difference on `[&&x]: &[&T]`:
    left returned: TypeError("TypeMismatch")
   right returned: Success(T)
+Difference on `[&&(mut x)]: &[&T]`:
+   left returned: TypeError("TypeMismatch")
+  right returned: Success(T)
+Difference on `[&&mut ref x]: &[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(&T)
 Difference on `[&&mut x]: &[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(T)
+Difference on `[&&mut mut x]: &[&mut T]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(T)
 Difference on `[&ref x]: &[&T]`:
@@ -29,10 +41,25 @@ Difference on `[&(mut x)]: &[&T]`:
 Difference on `[&(mut x)]: &mut [&T]`:
    left returned: Success(T)
   right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut &ref x]: &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(&T)
 Difference on `[&mut &x]: &mut [&T]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(T)
+Difference on `[&mut &(mut x)]: &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(T)
+Difference on `[&mut &mut ref x]: &mut [&mut T]`:
+   left returned: TypeError("TypeMismatch")
+  right returned: Success(&T)
+Difference on `[&mut &mut ref mut x]: &mut [&mut T]`:
+   left returned: TypeError("TypeMismatch")
+  right returned: Success(&mut T)
 Difference on `[&mut &mut x]: &mut [&mut T]`:
+   left returned: TypeError("TypeMismatch")
+  right returned: Success(T)
+Difference on `[&mut &mut mut x]: &mut [&mut T]`:
    left returned: TypeError("TypeMismatch")
   right returned: Success(T)
 Difference on `[&mut ref x]: &[&mut T]`:

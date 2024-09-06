@@ -2,13 +2,31 @@
 source: src/compare.rs
 info: default
 ---
+Difference on `[&&ref x]: &mut [&T]`:
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
+Difference on `[&&ref x]: &mut [&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut [&T]`:
    left returned: Success(T)
   right returned: TypeError("mismatched types")
 Difference on `[&&x]: &mut [&mut T]`:
    left returned: Success(T)
   right returned: TypeError("mismatched types")
+Difference on `[&&(mut x)]: &mut [&T]`:
+   left returned: Success(T)
+  right returned: TypeError("mismatched types")
+Difference on `[&&(mut x)]: &mut [&mut T]`:
+   left returned: Success(T)
+  right returned: TypeError("mismatched types")
+Difference on `[&&mut ref x]: &mut [&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("mismatched types")
 Difference on `[&&mut x]: &mut [&mut T]`:
+   left returned: Success(T)
+  right returned: TypeError("mismatched types")
+Difference on `[&&mut mut x]: &mut [&mut T]`:
    left returned: Success(T)
   right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&T]`:

@@ -73,36 +73,30 @@ impl<'a> Type<'a> {
     /// Replace abstract subtypes with all the possible more-precise types.
     // TODO: explain what's up with `many`.
     pub fn deepen(&'a self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
-        let mk_tuple = |name: &str| {
-            let subnames: &[&str] = if many {
-                // We assume no rules depend on the length. We use length 2 for demo
-                // purposes.
-                &[&(name.to_string() + "0"), &(name.to_string() + "1")]
-            } else {
-                &[name]
-            };
-            let subtypes = subnames
-                .iter()
-                .map(|name| Type::Abstract(a.str_arena.alloc_str(&name)));
-            Type::Tuple(a.type_arena.alloc_extend(subtypes))
-        };
-
         match *self {
             Type::Abstract(name) => {
-                vec![
-                    if many {
-                        Type::NonRef(name)
-                    } else {
-                        mk_tuple(name)
-                    },
+                let mut out = vec![
+                    Type::NonRef(name),
                     Type::Ref(Shared, self),
                     Type::Ref(Mutable, self),
-                ]
+                ];
+                if !many {
+                    // In `!many` mode, `NonRef` and `Tuple` are considered disjoint.
+                    out.push(Type::Tuple(std::slice::from_ref(self)));
+                }
+                out
             }
             Type::NonRef(name) => {
                 if many {
-                    vec![mk_tuple(name)]
+                    // We assume no rules depend on the length. We use length 2 for demo
+                    // purposes.
+                    let subnames: &[&str] = &[&(name.to_string() + "0"), &(name.to_string() + "1")];
+                    let subtypes = subnames
+                        .iter()
+                        .map(|name| Type::Abstract(a.str_arena.alloc_str(&name)));
+                    vec![Type::Tuple(a.type_arena.alloc_extend(subtypes))]
                 } else {
+                    // In `!many` mode, this is considered a leaf.
                     vec![]
                 }
             }
@@ -252,53 +246,62 @@ impl<'a> TypingPredicate<'a> {
 impl<'a> Pattern<'a> {
     /// Automatically generate concrete patterns up to a given depth.
     pub fn generate(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Self> {
-        pub fn generate<'a>(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Pattern<'a>> {
-            if depth == 0 {
-                return vec![&Pattern::Abstract("p")];
-            }
-            generate(a, depth - 1)
-                .into_iter()
-                .flat_map(|pat| {
-                    pat.deepen(a, false)
-                        .into_iter()
-                        .map(|pat| pat.alloc(a))
-                        .chain((!pat.contains_abstract()).then_some(pat))
-                })
-                .collect()
-        }
-        let base_pat = Pattern::Binding(Mutability::Shared, BindingMode::ByMove, "x");
-        generate(a, depth)
+        let abstract_pat = Pattern::Abstract("p").alloc(a);
+        // We have on one side leaf patterns (i.e. bindings) and on the other patterns of depth 1
+        // around an abstract variable. We will nest nodes up to `depth` times, then replace the
+        // inner abstract variable with leaves.
+        let (leaves, depth_1s): (Vec<_>, Vec<_>) = abstract_pat
+            .deepen(a, false)
             .into_iter()
-            .map(|pat| pat.subst(a, base_pat))
-            .map(|pat| pat.alloc(a))
-            .collect()
+            .partition(|pat| !pat.contains_abstract());
+
+        let mut out = Vec::new();
+        let mut depth_ns = vec![abstract_pat];
+        for _ in 0..depth + 1 {
+            out.extend(depth_ns.iter().flat_map(|with_hole| {
+                leaves.iter().map(|leaf| with_hole.subst(a, *leaf).alloc(a))
+            }));
+            depth_ns = depth_ns
+                .into_iter()
+                .flat_map(|depthn| {
+                    depth_1s
+                        .iter()
+                        .map(|depth1| depth1.subst(a, *depthn).alloc(a))
+                })
+                .collect();
+        }
+        out
     }
 }
 
 impl<'a> Type<'a> {
     /// Automatically generate concrete types up to a given depth.
     pub fn generate(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Self> {
-        pub fn generate<'a>(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Type<'a>> {
-            if depth == 0 {
-                return vec![&Type::Abstract("T")];
-            }
-            let base_ty = Type::NonRef("T");
-            generate(a, depth - 1)
-                .into_iter()
-                .flat_map(|ty| {
-                    [ty.subst(a, base_ty)]
-                        .into_iter()
-                        .chain(ty.deepen(a, false))
-                        .map(|ty| ty.alloc(a))
-                })
-                .collect()
-        }
-        let base_ty = Type::NonRef("T");
-        generate(a, depth)
+        let abstract_ty = Type::Abstract("T").alloc(a);
+        // We have on one side leaf types (i.e. non-ref `T`) and on the other types of depth 1
+        // around an abstract variable. We will nest nodes up to `depth` times, then replace the
+        // inner abstract variable with leaves.
+        let (leaves, depth_1s): (Vec<_>, Vec<_>) = abstract_ty
+            .deepen(a, false)
             .into_iter()
-            .map(|ty| ty.subst(a, base_ty))
-            .map(|ty| ty.alloc(a))
-            .collect()
+            .partition(|ty| !ty.contains_abstract());
+
+        let mut out = Vec::new();
+        let mut depth_ns = vec![abstract_ty];
+        for _ in 0..depth + 1 {
+            out.extend(depth_ns.iter().flat_map(|with_hole| {
+                leaves.iter().map(|leaf| with_hole.subst(a, *leaf).alloc(a))
+            }));
+            depth_ns = depth_ns
+                .into_iter()
+                .flat_map(|depthn| {
+                    depth_1s
+                        .iter()
+                        .map(|depth1| depth1.subst(a, *depthn).alloc(a))
+                })
+                .collect();
+        }
+        out
     }
 }
 
