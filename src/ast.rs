@@ -160,7 +160,7 @@ impl<'a> Expression<'a> {
 }
 
 /// The input to our solver: the question of whether `pat` can be used at type `ty`.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TypingRequest<'a> {
     pub pat: &'a Pattern<'a>,
     pub ty: &'a Type<'a>,

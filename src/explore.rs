@@ -312,7 +312,7 @@ impl<'a> TypingRequest<'a> {
             .cartesian_product(types)
             .map(|(pat, ty)| TypingRequest { pat, ty })
             .collect_vec();
-        out.sort_by_key(|req| req.depth());
+        out.sort_by_key(|req| (req.depth(), *req));
         out
     }
 }

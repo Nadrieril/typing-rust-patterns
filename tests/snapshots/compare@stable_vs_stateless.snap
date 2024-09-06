@@ -8,6 +8,15 @@ Difference on `[&&x]: &[&T]`:
 Difference on `[&&mut x]: &[&mut T]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(T)
+Difference on `[&ref x]: &[&T]`:
+   left returned: Success(&T)
+  right returned: Success(&&T)
+Difference on `[&ref x]: &[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(&&mut T)
+Difference on `[&ref x]: &mut [&T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
 Difference on `[&x]: &[&T]`:
    left returned: Success(T)
   right returned: Success(&T)
@@ -20,21 +29,27 @@ Difference on `[&(mut x)]: &[&T]`:
 Difference on `[&(mut x)]: &mut [&T]`:
    left returned: Success(T)
   right returned: TypeError("MutabilityMismatch")
-Difference on `[&ref x]: &[&T]`:
-   left returned: Success(&T)
-  right returned: Success(&&T)
-Difference on `[&ref x]: &[&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(&&mut T)
-Difference on `[&ref x]: &mut [&T]`:
-   left returned: Success(&T)
-  right returned: TypeError("MutabilityMismatch")
 Difference on `[&mut &x]: &mut [&T]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(T)
 Difference on `[&mut &mut x]: &mut [&mut T]`:
    left returned: TypeError("TypeMismatch")
   right returned: Success(T)
+Difference on `[&mut ref x]: &[&mut T]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut ref x]: &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(&&T)
+Difference on `[&mut ref x]: &mut [&mut T]`:
+   left returned: Success(&T)
+  right returned: Success(&&mut T)
+Difference on `[&mut ref mut x]: &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(&mut &T)
+Difference on `[&mut ref mut x]: &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: Success(&mut &mut T)
 Difference on `[&mut x]: &[&mut T]`:
    left returned: Success(T)
   right returned: TypeError("MutabilityMismatch")
@@ -53,18 +68,3 @@ Difference on `[&mut mut x]: &mut [&T]`:
 Difference on `[&mut mut x]: &mut [&mut T]`:
    left returned: Success(T)
   right returned: BorrowError(&mut T, "CantCopyRefMut")
-Difference on `[&mut ref x]: &[&mut T]`:
-   left returned: Success(&T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[&mut ref x]: &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(&&T)
-Difference on `[&mut ref x]: &mut [&mut T]`:
-   left returned: Success(&T)
-  right returned: Success(&&mut T)
-Difference on `[&mut ref mut x]: &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(&mut &T)
-Difference on `[&mut ref mut x]: &mut [&mut T]`:
-   left returned: Success(&mut T)
-  right returned: Success(&mut &mut T)
