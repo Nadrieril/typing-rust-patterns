@@ -137,9 +137,33 @@ pub fn compare_rulesets<'a>(
 fn compare() -> anyhow::Result<()> {
     use Ordering::*;
     use RuleSet::*;
+    use TestKind::*;
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum TestKind {
+        /// The comparison must really hold.
+        ForReal,
+        /// The comparison doesn't hold, and we store a snapshot of the differences.
+        Somewhat,
+    }
+
+    impl TestKind {
+        fn expect(self, expected_order: Ordering) -> TestSettings {
+            TestSettings {
+                kind: self,
+                expected_order,
+            }
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    struct TestSettings {
+        kind: TestKind,
+        expected_order: Ordering,
+    }
 
     let a = &Arenas::default();
-    let compare: &[(&str, RuleSet, Ordering, RuleSet)] = &[
+    let compare: &[(&str, RuleSet, TestSettings, RuleSet)] = &[
         (
             "default",
             TypeBased(RuleOptions {
@@ -149,7 +173,7 @@ fn compare() -> anyhow::Result<()> {
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
                 ..RuleOptions::DEFAULT
             }),
-            Equal,
+            Somewhat.expect(Equal),
             BindingModeBased({
                 let mut c = Conf::default();
                 c.rule1 = true;
@@ -161,37 +185,37 @@ fn compare() -> anyhow::Result<()> {
         (
             "stable_rust",
             TypeBased(RuleOptions::STABLE_RUST),
-            Equal,
+            ForReal.expect(Equal),
             BindingModeBased(Conf::rfc2005()),
         ),
         (
             "structural",
             TypeBased(RuleOptions::STRUCTURAL),
-            Equal,
+            ForReal.expect(Equal),
             BindingModeBased(Conf::pre_rfc2005()),
         ),
         (
             "ergo2024",
             TypeBased(RuleOptions::ERGO2024),
-            Equal,
+            ForReal.expect(Equal),
             BindingModeBased(Conf::rfc3627_2024()),
         ),
         (
             "rfc3627_2021",
             TypeBased(RuleOptions::RFC3627_2021),
-            Equal,
+            ForReal.expect(Equal),
             BindingModeBased(Conf::rfc3627_2021()),
         ),
         (
             "ergo2024_breaking_only",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
-            Equal,
+            ForReal.expect(Equal),
             BindingModeBased(Conf::rfc_3627_2024_min()),
         ),
         (
             "waffle",
             TypeBased(RuleOptions::WAFFLE),
-            Equal,
+            ForReal.expect(Equal),
             BindingModeBased({
                 let mut c = Conf::waffle_2024();
                 // Supporting the rule3 extension is too complicated.
@@ -203,31 +227,31 @@ fn compare() -> anyhow::Result<()> {
         (
             "rpjohnst",
             TypeBased(RuleOptions::RPJOHNST),
-            Equal,
+            Somewhat.expect(Equal),
             BindingModeBased(Conf::rpjohnst_2024()),
         ),
         (
             "ergo2024_nonbreaking_transition_bm_based",
             BindingModeBased(Conf::rfc_3627_2024_min()),
-            Less,
+            Somewhat.expect(Less),
             BindingModeBased(Conf::rfc3627_2024()),
         ),
         (
             "ergo2024_nonbreaking_transition_type_based",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
-            Less,
+            ForReal.expect(Less),
             TypeBased(RuleOptions::ERGO2024),
         ),
         (
             "minimal_breaking_transition_to_stateless",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
-            Less,
+            ForReal.expect(Less),
             TypeBased(RuleOptions::STATELESS),
         ),
         (
             "minimal_breaking_transition_to_stateless_with_rule3",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
-            Less,
+            ForReal.expect(Less),
             TypeBased(RuleOptions {
                 downgrade_mut_inside_shared: true,
                 ..RuleOptions::STATELESS
@@ -236,19 +260,19 @@ fn compare() -> anyhow::Result<()> {
         (
             "minimal_breaking_transition_to_rfc3627_breaking",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
-            Less,
+            ForReal.expect(Less),
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
         ),
         (
             "minimal_breaking_transition_to_waffle",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
-            Less,
+            ForReal.expect(Less),
             TypeBased(RuleOptions::WAFFLE),
         ),
         (
             "non_breaking_on_stable",
             TypeBased(RuleOptions::STABLE_RUST),
-            Less,
+            ForReal.expect(Less),
             TypeBased(RuleOptions::RFC3627_2021),
         ),
         (
@@ -258,7 +282,7 @@ fn compare() -> anyhow::Result<()> {
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
                 ..RuleOptions::STABLE_RUST
             }),
-            Equal,
+            Somewhat.expect(Equal),
             TypeBased(RuleOptions {
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
@@ -277,7 +301,7 @@ fn compare() -> anyhow::Result<()> {
                 dont_eat_mut_inside_shared: true,
                 ..RuleOptions::ERGO2024
             }),
-            Equal,
+            Somewhat.expect(Equal),
             TypeBased(RuleOptions {
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
@@ -289,7 +313,7 @@ fn compare() -> anyhow::Result<()> {
         (
             "stateless_add_rule3",
             TypeBased(RuleOptions::STATELESS),
-            Less,
+            Somewhat.expect(Less),
             TypeBased(RuleOptions {
                 downgrade_mut_inside_shared: true,
                 ..RuleOptions::STATELESS
@@ -301,12 +325,12 @@ fn compare() -> anyhow::Result<()> {
     let (shallow_test_cases, deep_test_cases): (Vec<_>, Vec<_>) =
         test_cases.into_iter().partition(|req| req.depth() <= 3);
 
-    for &(name, left_ruleset, expected_order, right_ruleset) in compare {
+    for &(name, left_ruleset, settings, right_ruleset) in compare {
         let mut trace = compare_rulesets(
             a,
             &shallow_test_cases,
             left_ruleset,
-            expected_order,
+            settings.expected_order,
             right_ruleset,
         )?;
         if trace.lines().count() <= 4 * 3 {
@@ -315,12 +339,15 @@ fn compare() -> anyhow::Result<()> {
                 a,
                 &deep_test_cases,
                 left_ruleset,
-                expected_order,
+                settings.expected_order,
                 right_ruleset,
             )?
         }
 
-        if !trace.is_empty() {
+        if trace.is_empty() {
+            assert_eq!(settings.kind, ForReal, "`{name}`: comparison did hold");
+        } else {
+            assert_eq!(settings.kind, Somewhat, "`{name}`: comparison did not hold");
             insta::with_settings!({
                 snapshot_path => "../tests/snapshots",
                 snapshot_suffix => format!("{name}"),
