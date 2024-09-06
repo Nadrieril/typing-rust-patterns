@@ -246,7 +246,7 @@ impl<'a> TypingPredicate<'a> {
 impl<'a> Pattern<'a> {
     /// Automatically generate concrete patterns up to a given depth.
     pub fn generate(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Self> {
-        let abstract_pat = Pattern::Abstract("p").alloc(a);
+        let abstract_pat = &Pattern::ABSTRACT;
         // We have on one side leaf patterns (i.e. bindings) and on the other patterns of depth 1
         // around an abstract variable. We will nest nodes up to `depth` times, then replace the
         // inner abstract variable with leaves.

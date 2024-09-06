@@ -334,7 +334,7 @@ fn display_rules(style: PredicateStyle, options: RuleOptions) -> Result<String, 
     let _ = writeln!(
         &mut out,
         "The typing predicate looks like `{}`, where",
-        TypingPredicate::new_abstract(arenas).display(style),
+        TypingPredicate::ABSTRACT.display(style),
     );
     match style {
         PredicateStyle::Expression | PredicateStyle::BindingMode => {

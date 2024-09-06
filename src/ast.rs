@@ -2,6 +2,7 @@
 //!
 //! Note: we arena-allocate everything to make pattern-matching easy.
 
+use crate::*;
 use BindingMode::*;
 use Mutability::*;
 
@@ -126,13 +127,29 @@ impl<'a> Expression<'a> {
     }
 }
 
+impl Pattern<'_> {
+    pub const ABSTRACT: Self = Pattern::Abstract("p");
+}
+impl Type<'_> {
+    pub const ABSTRACT: Self = Type::Abstract("T");
+}
 impl ExprKind<'_> {
-    pub fn new_abstract() -> Self {
-        ExprKind::Abstract {
-            not_a_ref: false,
-            scrutinee_mutability: None,
-        }
-    }
+    pub const ABSTRACT: Self = ExprKind::Abstract {
+        not_a_ref: false,
+        scrutinee_mutability: None,
+    };
+}
+impl Expression<'_> {
+    pub const ABSTRACT: Self = Expression {
+        kind: ExprKind::ABSTRACT,
+        ty: &Type::ABSTRACT,
+    };
+}
+impl TypingPredicate<'_> {
+    pub const ABSTRACT: Self = TypingPredicate {
+        pat: &Pattern::ABSTRACT,
+        expr: Expression::ABSTRACT,
+    };
 }
 
 #[derive(Default)]

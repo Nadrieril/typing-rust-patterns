@@ -28,17 +28,6 @@ impl<'a> TypingPredicate<'a> {
             options: ctx.options,
         })
     }
-
-    /// A predicate with abstract patterns, type and expression.
-    pub fn new_abstract(a: &'a Arenas<'a>) -> Self {
-        TypingPredicate {
-            pat: &Pattern::Abstract("p"),
-            expr: Expression {
-                kind: ExprKind::new_abstract(),
-                ty: Type::Abstract("T").alloc(a),
-            },
-        }
-    }
 }
 
 const TRACE: bool = false;
@@ -48,7 +37,7 @@ const TRACE: bool = false;
 /// long as we get `OverlyGeneral` errors. This ensures we explore all possible cases.
 pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
     let a = ctx.arenas;
-    let mut predicates = vec![TypingPredicate::new_abstract(a)];
+    let mut predicates = vec![TypingPredicate::ABSTRACT];
 
     let mut rules = Vec::new();
     while let Some(pred) = predicates.pop() {
@@ -97,7 +86,7 @@ pub fn compute_joint_rules<'a>(
     right: RuleOptions,
 ) -> Vec<EitherOrBoth<TypingRule<'a>>> {
     use EitherOrBoth::*;
-    let mut predicates = vec![TypingPredicate::new_abstract(a)];
+    let mut predicates = vec![TypingPredicate::ABSTRACT];
     let left = TypingCtx {
         arenas: a,
         options: left,
@@ -292,7 +281,7 @@ impl<'a> TypingRule<'a> {
 
     pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
         use PredicateStyle::*;
-        let abstract_expr = ExprKind::new_abstract();
+        let abstract_expr = ExprKind::ABSTRACT;
         let a = &Arenas::default();
 
         let mut cstrs = self.collect_side_constraints();
