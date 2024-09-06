@@ -58,17 +58,23 @@ impl Rule {
 
         // Only display extra info if it can change.
         let mut extras = vec![];
-        if let Deref(x, _) | DerefMutWithShared(x) = *self {
+        if let Deref(x, _, _) | DerefMutWithShared(x) = *self {
             match options.inherited_ref_on_ref {
                 EatOuter => {}
                 EatBoth | EatInner => extras.push(format!("{x:?}")),
             }
         }
-        if let ConstructorRef(x) | ConstructorMultiRef(x) | Deref(_, x) = *self
+        if let ConstructorRef(x) | ConstructorMultiRef(x) | Deref(_, x, _) = *self
             && options.downgrade_mut_inside_shared
             && x == ForceReadOnly
         {
             extras.push(format!("{x:?}"))
+        }
+        if let Deref(_, _, x) = *self
+            && options.fallback_to_outer
+            && x == FallbackToOuter(true)
+        {
+            extras.push(format!("FallbackToOuter"))
         }
 
         let mut out = variant_name.to_string();

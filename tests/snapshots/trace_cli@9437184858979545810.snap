@@ -71,7 +71,7 @@ The two rulesets are described by the following sets of rules, with differences 
  value, m ⊢ &mut p: &mut T, T is not a reference                                  | value, m ⊢ &mut p: &mut T, T is not a reference
 
  place, m ⊢ p: &T                                                                 | b, m ⊢ p: &T
- ---------------------------- "Deref"                                             | ---------------------------- "Deref(EatInner)"
+ ---------------------------- "Deref"                                             | ---------------------------- "Deref(EatInner, FallbackToOuter)"
  value, m ⊢ &mut p: &mut &T                                                       | value, m ⊢ &mut p: &mut &T
 
  place, ro ⊢ p: &mut T                                                            | value, ro ⊢ p: &T
@@ -208,13 +208,13 @@ p @ &**e: &T
 ------------------------------------------ "Deref(EatInner)"
 &mut p @ e: &&mut T, binding_mode(e) = ref
 
-p @ *e: &T
----------------------------------------------- "Deref(EatInner)"
-&mut p @ e: &mut &T, binding_mode(e) = ref mut
-
 p @ &mut **e: &mut T
 ------------------------------------------------------------- "Deref(EatInner)"
 &mut p @ e: &mut &mut T, binding_mode(e) = ref mut, e mutable
+
+p @ *e: &T
+---------------------------------------------- "Deref(EatInner, FallbackToOuter)"
+&mut p @ e: &mut &T, binding_mode(e) = ref mut
 
 p @ &**e: &T
 ------------------------------------------ "Deref(EatInner, ForceReadOnly)"

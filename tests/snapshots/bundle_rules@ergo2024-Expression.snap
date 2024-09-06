@@ -73,13 +73,13 @@ p @ &*e: &T
 -------------------- "Deref(EatInner)"
 &mut p @ &e: &&mut T
 
-p @ e: &T
------------------------- "Deref(EatInner)"
-&mut p @ &mut e: &mut &T
-
 p @ &mut *e: &mut T
 --------------------------------------- "Deref(EatInner)"
 &mut p @ &mut e: &mut &mut T, e mutable
+
+p @ e: &T
+------------------------ "Deref(EatInner, FallbackToOuter)"
+&mut p @ &mut e: &mut &T
 
 p @ &*e: &T
 -------------------- "Deref(EatInner, ForceReadOnly)"

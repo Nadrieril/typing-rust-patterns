@@ -77,13 +77,13 @@ p @ *e: T
 -------------------- "Deref(EatBoth)"
 &mut p @ &e: &&mut T
 
-p @ e: &T
------------------------- "Deref(EatBoth)"
-&mut p @ &mut e: &mut &T
-
 p @ *e: T
 ---------------------------- "Deref(EatBoth)"
 &mut p @ &mut e: &mut &mut T
+
+p @ e: &T
+------------------------ "Deref(EatBoth, FallbackToOuter)"
+&mut p @ &mut e: &mut &T
 
 p @ *&*e: T
 ------------------------------------ "DerefMutWithShared(EatOuter)"

@@ -73,13 +73,13 @@ p @ &**e: &T
 ------------------------------------------ "Deref(EatInner)"
 &mut p @ e: &&mut T, binding_mode(e) = ref
 
-p @ *e: &T
----------------------------------------------- "Deref(EatInner)"
-&mut p @ e: &mut &T, binding_mode(e) = ref mut
-
 p @ &mut **e: &mut T
 ------------------------------------------------------------- "Deref(EatInner)"
 &mut p @ e: &mut &mut T, binding_mode(e) = ref mut, e mutable
+
+p @ *e: &T
+---------------------------------------------- "Deref(EatInner, FallbackToOuter)"
+&mut p @ e: &mut &T, binding_mode(e) = ref mut
 
 p @ &**e: &T
 ------------------------------------------ "Deref(EatInner, ForceReadOnly)"

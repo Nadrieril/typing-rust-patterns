@@ -77,13 +77,13 @@ place, m ⊢ p: T
 ---------------------------- "Deref(EatBoth)"
 value, m ⊢ &mut p: &&mut T
 
-b, m ⊢ p: &T
----------------------------- "Deref(EatBoth)"
-value, m ⊢ &mut p: &mut &T
-
 place, m ⊢ p: T
 -------------------------------- "Deref(EatBoth)"
 value, m ⊢ &mut p: &mut &mut T
+
+b, m ⊢ p: &T
+---------------------------- "Deref(EatBoth, FallbackToOuter)"
+value, m ⊢ &mut p: &mut &T
 
 place, ro ⊢ p: T
 ----------------------- "DerefMutWithShared(EatOuter)"

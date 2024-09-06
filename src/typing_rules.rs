@@ -155,7 +155,11 @@ pub enum Rule {
     Constructor,
     ConstructorRef(DowngradeMutToRef),
     ConstructorMultiRef(DowngradeMutToRef),
-    Deref(InheritedRefOnRefBehavior, DowngradeMutToRef),
+    Deref(
+        InheritedRefOnRefBehavior,
+        DowngradeMutToRef,
+        FallbackToOuter,
+    ),
     DerefMutWithShared(InheritedRefOnRefBehavior),
     RefBindingResetBindingMode,
     MutBindingResetBindingMode,
@@ -169,6 +173,9 @@ pub enum DowngradeMutToRef {
     Normal,
     ForceReadOnly,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FallbackToOuter(pub bool);
 
 #[derive(Debug, Clone, Copy)]
 pub enum TypeError {
@@ -268,6 +275,7 @@ impl<'a> TypingPredicate<'a> {
             // Dereference rules
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
                 let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
+                let mut fallback_to_outer = FallbackToOuter(false);
                 let mut reborrow_after = None;
 
                 // We only inspect the binding mode if there are options that need it.
@@ -296,16 +304,19 @@ impl<'a> TypingPredicate<'a> {
                                         (Shared, Mutable) => ctx.options.allow_ref_pat_on_ref_mut,
                                         (Mutable, Shared) => false,
                                     };
-                                    if can_eat_inner || !o.fallback_to_outer {
+                                    if can_eat_inner {
                                         reborrow_after = Some(t_mtbl);
                                         t_mtbl = *inner_mtbl;
                                         underlying_place.deref(a)
-                                    } else {
+                                    } else if o.fallback_to_outer {
+                                        fallback_to_outer = FallbackToOuter(true);
                                         if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
                                             underlying_place
                                         } else {
                                             self.expr.deref(a)
                                         }
+                                    } else {
+                                        return Err(TypeError::MutabilityMismatch);
                                     }
                                 }
                                 InheritedRefOnRefBehavior::EatBoth => {
@@ -314,15 +325,18 @@ impl<'a> TypingPredicate<'a> {
                                         (Shared, Mutable) => ctx.options.allow_ref_pat_on_ref_mut,
                                         (Mutable, Shared) => false,
                                     };
-                                    if can_eat_inner || !o.fallback_to_outer {
+                                    if can_eat_inner {
                                         t_mtbl = *inner_mtbl;
                                         underlying_place.deref(a)
-                                    } else {
+                                    } else if o.fallback_to_outer {
+                                        fallback_to_outer = FallbackToOuter(true);
                                         if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
                                             underlying_place
                                         } else {
                                             self.expr.deref(a)
                                         }
+                                    } else {
+                                        return Err(TypeError::MutabilityMismatch);
                                     }
                                 }
                             }
@@ -347,9 +361,10 @@ impl<'a> TypingPredicate<'a> {
 
                 // Match the pattern reference against the appropriate type reference.
                 let (mut rule, mut expr) = match (p_mtbl, t_mtbl) {
-                    (Shared, Shared) | (Mutable, Mutable) => {
-                        (Rule::Deref(rule_variant, DowngradeMutToRef::Normal), expr)
-                    }
+                    (Shared, Shared) | (Mutable, Mutable) => (
+                        Rule::Deref(rule_variant, DowngradeMutToRef::Normal, fallback_to_outer),
+                        expr,
+                    ),
                     (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => (
                         Rule::DerefMutWithShared(rule_variant),
                         expr.borrow(a, Shared).deref(a),
@@ -363,7 +378,7 @@ impl<'a> TypingPredicate<'a> {
                     if ctx.options.downgrade_mut_inside_shared && mtbl == Mutable {
                         mtbl = expr.scrutinee_mutability()?;
                         if mtbl == Shared
-                            && let Rule::Deref(_, downgrade) = &mut rule
+                            && let Rule::Deref(_, downgrade, _) = &mut rule
                         {
                             *downgrade = DowngradeMutToRef::ForceReadOnly;
                         }

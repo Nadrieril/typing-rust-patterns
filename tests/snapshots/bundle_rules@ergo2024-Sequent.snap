@@ -73,13 +73,13 @@ value, m ⊢ p: &T
 ---------------------------- "Deref(EatInner)"
 value, m ⊢ &mut p: &&mut T
 
-b, m ⊢ p: &T
----------------------------- "Deref(EatInner)"
-value, m ⊢ &mut p: &mut &T
-
 value, rw ⊢ p: &mut T
 --------------------------------- "Deref(EatInner)"
 value, rw ⊢ &mut p: &mut &mut T
+
+b, m ⊢ p: &T
+---------------------------- "Deref(EatInner, FallbackToOuter)"
+value, m ⊢ &mut p: &mut &T
 
 value, ro ⊢ p: &T
 ------------------------ "Deref(EatInner, ForceReadOnly)"

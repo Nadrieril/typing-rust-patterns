@@ -77,13 +77,13 @@ p @ **e: T
 ------------------------------------------ "Deref(EatBoth)"
 &mut p @ e: &&mut T, binding_mode(e) = ref
 
-p @ *e: &T
----------------------------------------------- "Deref(EatBoth)"
-&mut p @ e: &mut &T, binding_mode(e) = ref mut
-
 p @ **e: T
 -------------------------------------------------- "Deref(EatBoth)"
 &mut p @ e: &mut &mut T, binding_mode(e) = ref mut
+
+p @ *e: &T
+---------------------------------------------- "Deref(EatBoth, FallbackToOuter)"
+&mut p @ e: &mut &T, binding_mode(e) = ref mut
 
 p @ *&*e: T
 -------------------------------------- "DerefMutWithShared(EatOuter)"
