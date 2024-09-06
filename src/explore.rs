@@ -1,3 +1,5 @@
+use std::mem;
+
 use itertools::Itertools;
 
 use crate::*;
@@ -243,63 +245,70 @@ impl<'a> TypingPredicate<'a> {
 
 //--- Generation ---
 
+/// Patterns of depth 0 and 1. This is the same as `Pattern::ABSTRACT.deepen(_, false)`.
+pub static DEPTH1_PATS: &[Pattern<'static>] = &[
+    Pattern::Tuple(&[Pattern::ABSTRACT]),
+    Pattern::Ref(Shared, &Pattern::ABSTRACT),
+    Pattern::Ref(Mutable, &Pattern::ABSTRACT),
+    Pattern::Binding(Shared, ByMove, "x"),
+    Pattern::Binding(Mutable, ByMove, "x"),
+    Pattern::Binding(Shared, ByRef(Shared), "x"),
+    Pattern::Binding(Shared, ByRef(Mutable), "x"),
+];
+
 impl<'a> Pattern<'a> {
     /// Automatically generate concrete patterns up to a given depth.
     pub fn generate(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Self> {
-        let abstract_pat = &Pattern::ABSTRACT;
-        // We have on one side leaf patterns (i.e. bindings) and on the other patterns of depth 1
-        // around an abstract variable. We will nest nodes up to `depth` times, then replace the
-        // inner abstract variable with leaves.
-        let (leaves, depth_1s): (Vec<_>, Vec<_>) = abstract_pat
-            .deepen(a, false)
-            .into_iter()
-            .partition(|pat| !pat.contains_abstract());
-
         let mut out = Vec::new();
-        let mut depth_ns = vec![abstract_pat];
+        // This contains patterns that have an abstract variable at depth exactly `n` if `n` is the
+        // loop counter.
+        let mut depth_ns = vec![&Pattern::ABSTRACT];
         for _ in 0..depth + 1 {
-            out.extend(depth_ns.iter().flat_map(|with_hole| {
-                leaves.iter().map(|leaf| with_hole.subst(a, *leaf).alloc(a))
-            }));
-            depth_ns = depth_ns
-                .into_iter()
-                .flat_map(|depthn| {
-                    depth_1s
-                        .iter()
-                        .map(|depth1| depth1.subst(a, *depthn).alloc(a))
-                })
-                .collect();
+            for depthn in mem::take(&mut depth_ns) {
+                for pat in &*DEPTH1_PATS {
+                    let deeper = depthn.subst(a, *pat).alloc(a);
+                    if pat.contains_abstract() {
+                        // Keep the abstract patterns for next steps.
+                        depth_ns.push(deeper);
+                    } else {
+                        // Output the concrete patterns.
+                        out.push(deeper)
+                    }
+                }
+            }
         }
         out
     }
 }
 
+/// Types of depth 0 and 1. This is the same as `Type::ABSTRACT.deepen(_, false)`.
+pub static DEPTH1_TYS: &[Type<'_>] = &[
+    Type::NonRef("T"),
+    Type::Ref(Shared, &Type::ABSTRACT),
+    Type::Ref(Mutable, &Type::ABSTRACT),
+    Type::Tuple(&[Type::ABSTRACT]),
+];
+
 impl<'a> Type<'a> {
     /// Automatically generate concrete types up to a given depth.
     pub fn generate(a: &'a Arenas<'a>, depth: usize) -> Vec<&'a Self> {
-        let abstract_ty = Type::Abstract("T").alloc(a);
-        // We have on one side leaf types (i.e. non-ref `T`) and on the other types of depth 1
-        // around an abstract variable. We will nest nodes up to `depth` times, then replace the
-        // inner abstract variable with leaves.
-        let (leaves, depth_1s): (Vec<_>, Vec<_>) = abstract_ty
-            .deepen(a, false)
-            .into_iter()
-            .partition(|ty| !ty.contains_abstract());
-
         let mut out = Vec::new();
-        let mut depth_ns = vec![abstract_ty];
+        // This contains types that have an abstract variable at depth exactly `n` if `n` is the
+        // loop counter.
+        let mut depth_ns = vec![&Type::ABSTRACT];
         for _ in 0..depth + 1 {
-            out.extend(depth_ns.iter().flat_map(|with_hole| {
-                leaves.iter().map(|leaf| with_hole.subst(a, *leaf).alloc(a))
-            }));
-            depth_ns = depth_ns
-                .into_iter()
-                .flat_map(|depthn| {
-                    depth_1s
-                        .iter()
-                        .map(|depth1| depth1.subst(a, *depthn).alloc(a))
-                })
-                .collect();
+            for depthn in mem::take(&mut depth_ns) {
+                for ty in &*DEPTH1_TYS {
+                    let deeper = depthn.subst(a, *ty).alloc(a);
+                    if ty.contains_abstract() {
+                        // Keep the abstract types for next steps.
+                        depth_ns.push(deeper);
+                    } else {
+                        // Output the concrete types.
+                        out.push(deeper)
+                    }
+                }
+            }
         }
         out
     }
