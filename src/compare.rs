@@ -286,7 +286,7 @@ fn compare() -> anyhow::Result<()> {
             expected_order,
             right_ruleset,
         )?;
-        if trace.is_empty() {
+        if trace.lines().count() <= 4 * 3 {
             // Try deeper patterns.
             trace = compare_rulesets(
                 a,
