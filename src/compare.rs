@@ -106,35 +106,33 @@ pub fn compare_rulesets<'a>(
     left_ruleset: RuleSet,
     expected_order: Ordering,
     right_ruleset: RuleSet,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<Vec<(TypingRequest<'a>, AnalysisResult<'a>, AnalysisResult<'a>)>> {
     use anyhow::Context;
-    use std::fmt::Write;
     use Ordering::*;
-    let mut trace = String::new();
+    let mut out = Vec::new();
     for test_case in test_cases {
         let test_case_str = test_case.to_string();
-        let left_res = &left_ruleset
+        let left_res = left_ruleset
             .analyze(a, *test_case)
             .context(test_case_str.clone())?;
-        let right_res = &right_ruleset
+        let right_res = right_ruleset
             .analyze(a, *test_case)
-            .context(test_case_str.clone())?;
-        match (left_res.cmp(right_res), expected_order) {
+            .context(test_case_str)?;
+        match (left_res.cmp(&right_res), expected_order) {
             (Some(Equal), _) => continue,
             (Some(Less), Less) => continue,
             (Some(Greater), Greater) => continue,
             _ => {}
         }
-        let _ = writeln!(&mut trace, "Difference on `{test_case_str}`:");
-        let _ = writeln!(&mut trace, "   left returned: {left_res:?}");
-        let _ = writeln!(&mut trace, "  right returned: {right_res:?}");
+        out.push((*test_case, left_res, right_res));
     }
-    Ok(trace)
+    Ok(out)
 }
 
 #[test]
 /// Compare rulesets with the `ergo-formality` reference implementation.
 fn compare() -> anyhow::Result<()> {
+    use std::fmt::Write;
     use Ordering::*;
     use RuleSet::*;
     use TestKind::*;
@@ -326,28 +324,37 @@ fn compare() -> anyhow::Result<()> {
         test_cases.into_iter().partition(|req| req.depth() <= 3);
 
     for &(name, left_ruleset, settings, right_ruleset) in compare {
-        let mut trace = compare_rulesets(
+        let mut differences = compare_rulesets(
             a,
             &shallow_test_cases,
             left_ruleset,
             settings.expected_order,
             right_ruleset,
         )?;
-        if trace.lines().count() <= 4 * 3 {
+        if differences.len() <= 4 {
             // Try deeper patterns.
-            trace += &compare_rulesets(
+            differences.extend(compare_rulesets(
                 a,
                 &deep_test_cases,
                 left_ruleset,
                 settings.expected_order,
                 right_ruleset,
-            )?
+            )?);
         }
 
-        if trace.is_empty() {
+        if differences.is_empty() {
             assert_eq!(settings.kind, ForReal, "`{name}`: comparison did hold");
         } else {
             assert_eq!(settings.kind, Somewhat, "`{name}`: comparison did not hold");
+
+            let mut trace = String::new();
+            for (test_case, left_res, right_res) in differences {
+                let test_case_str = test_case.to_string();
+                let _ = writeln!(&mut trace, "Difference on `{test_case_str}`:");
+                let _ = writeln!(&mut trace, "   left returned: {left_res:?}");
+                let _ = writeln!(&mut trace, "  right returned: {right_res:?}");
+            }
+
             insta::with_settings!({
                 snapshot_path => "../tests/snapshots",
                 snapshot_suffix => format!("{name}"),
