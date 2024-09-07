@@ -390,6 +390,7 @@ fn parse_set_cmd(cmd: &str, state: &mut CliState) -> anyhow::Result<()> {
 }
 
 fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
+    use colored::Colorize;
     let old_options = old_options.to_map();
     let new_options = new_options.to_map();
     for (k, v) in &old_options {
@@ -397,7 +398,11 @@ fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
         if v == new_v {
             println!("{k}: {v}");
         } else {
-            println!("{k}: {v} -> {new_v}");
+            println!(
+                "{k}: {} -> {}",
+                v.to_string().color(Color::Red),
+                new_v.to_string().color(Color::Green)
+            );
         }
     }
 }
