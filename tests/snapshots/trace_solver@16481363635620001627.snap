@@ -1,0 +1,28 @@
+---
+source: tests/trace_solver.rs
+info:
+  options:
+    match_constructor_through_ref: true
+    eat_inherited_ref_alone: true
+    inherited_ref_on_ref: EatOuter
+    fallback_to_outer: false
+    allow_ref_pat_on_ref_mut: true
+    simplify_deref_mut: true
+    downgrade_mut_inside_shared: false
+    dont_eat_mut_inside_shared: false
+    ref_binding_on_inherited: AllocTemporary
+    mut_binding_on_inherited: Keep
+    always_inspect_bm: false
+  bundle_name: stateless
+  request: "&ref x: &T"
+---
+&ref x @ s: &T
+// Applying rule `Deref`
+ref x @ *s: T
+// Applying rule `BindingBorrow`
+x @ &*s: &T
+// Applying rule `Binding`
+let x: &T = &*s
+
+// Final bindings (simplified):
+let x: &T = s;

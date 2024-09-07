@@ -70,6 +70,7 @@ pub struct RuleOptions {
     pub ref_binding_on_inherited: RefBindingOnInheritedBehavior,
     /// What happens with a `mut x` binding and an inherited reference.
     pub mut_binding_on_inherited: MutBindingOnInheritedBehavior,
+    pub always_inspect_bm: bool,
     // TODO: double_ref: Last | Min
 }
 
@@ -106,6 +107,11 @@ impl RuleOptions {
             "simplify_deref_mut",
             &["true", "false"],
             "whether to simplify `*&mut expr`, which removes some borrow errors",
+        ),
+        (
+            "always_inspect_bm",
+            &["true", "false"],
+            "whether to always branch on the binding mode when computing rules. this is required for the `SequentBindingMode` style",
         ),
         (
             "downgrade_mut_inside_shared",
@@ -219,6 +225,9 @@ impl<'a> TypingPredicate<'a> {
         use Type as T;
         let a = ctx.arenas;
         let o = ctx.options;
+        if ctx.options.always_inspect_bm && !matches!(self.expr.ty, Type::Abstract(..)) {
+            let _ = self.expr.binding_mode()?;
+        }
 
         match (*self.pat, *self.expr.ty) {
             // Constructor rules

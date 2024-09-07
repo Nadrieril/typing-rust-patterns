@@ -13,6 +13,7 @@ info:
     dont_eat_mut_inside_shared: false
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: Error
+    always_inspect_bm: false
 ---
 place, m ⊢ p0: T0,  place, m ⊢ p1: T1
 ----------------------------------------- "Constructor"

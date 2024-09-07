@@ -18,6 +18,8 @@ Options are:
     whether to allow `&p: &mut T`
 - simplify_deref_mut: true | false
     whether to simplify `*&mut expr`, which removes some borrow errors
+- always_inspect_bm: true | false
+    whether to always branch on the binding mode when computing rules. this is required for the `SequentBindingMode` style
 - downgrade_mut_inside_shared: true | false
     RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref
 - dont_eat_mut_inside_shared: true | false
