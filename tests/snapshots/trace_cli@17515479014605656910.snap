@@ -27,7 +27,7 @@ Options are:
     how to handle a `ref x` binding on an inherited reference
 - mut_binding_on_inherited: ResetBindingMode | Keep | Error
     how to handle a `mut x` binding on an inherited reference
-- predicate_style: Expression | Sequent | BindingMode | Stateless
+- predicate_style: Expression | Sequent | BindingMode | SequentBindingMode | Stateless
     the style of the typing predicate; not all rulesets can be expressed in all styles, only `Expression` is compatible with all rulesets
 
 There also exist some predefined option-bundles. Activate one with `set <bundle>`

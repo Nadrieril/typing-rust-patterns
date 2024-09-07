@@ -43,6 +43,37 @@ impl<'a> TypingPredicate<'a> {
                 };
                 format!("{bm}, {scrut_access} ⊢ {}: {}", self.pat, self.expr.ty)
             }
+            PredicateStyle::SequentBindingMode => {
+                let bm = self.expr.binding_mode().ok();
+                let scrut_access = match self.expr.scrutinee_mutability().ok() {
+                    None => "m",
+                    Some(Mutability::Mutable) => "rw",
+                    Some(Mutability::Shared) => "ro",
+                };
+                let ty = match bm {
+                    Some(BindingMode::ByMove) => self.expr.ty.to_string(),
+                    Some(BindingMode::ByRef(_)) => {
+                        self.expr.reset_binding_mode().unwrap().ty.to_string()
+                    }
+                    None => match self.expr.ty {
+                        Type::Ref(_, inner_ty) => {
+                            format!("{} or {}", self.expr.ty, inner_ty)
+                        }
+                        Type::Abstract(_) => self.expr.ty.to_string(),
+                        _ => unreachable!(),
+                    },
+                };
+                let bm = match bm {
+                    None => match self.expr.ty {
+                        Type::Ref(Mutability::Shared, _) => "move or ref",
+                        Type::Ref(Mutability::Mutable, _) => "move or ref mut",
+                        Type::Abstract(_) => "bm",
+                        _ => unreachable!(),
+                    },
+                    Some(bm) => bm.name(),
+                };
+                format!("{bm}, {scrut_access} ⊢ {}: {ty}", self.pat)
+            }
             _ => format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty),
         }
     }

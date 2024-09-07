@@ -40,7 +40,13 @@ struct CliState {
 impl CliState {
     pub const CLI_OPTIONS: &[(&str, &[&str], &str)] = &[(
         "predicate_style",
-        &["Expression", "Sequent", "BindingMode", "Stateless"],
+        &[
+            "Expression",
+            "Sequent",
+            "BindingMode",
+            "SequentBindingMode",
+            "Stateless",
+        ],
         "the style of the typing predicate; not all rulesets can be expressed in all styles, \
         only `Expression` is compatible with all rulesets",
     )];
@@ -371,6 +377,13 @@ fn display_rules(style: PredicateStyle, options: RuleOptions) -> Result<String, 
             let _ = writeln!(
                 &mut out,
                 "- `b` is `place` or `value` and indicates the place context aka binding mode;",
+            );
+            let _ = writeln!(&mut out, "- `m` is `rw` or `ro` and indicates whether we have mutable or read-only access to the original scrutinee;",);
+        }
+        PredicateStyle::SequentBindingMode => {
+            let _ = writeln!(
+                &mut out,
+                "- `bm` is `move`, `ref` or `ref mut` and indicates the binding mode;",
             );
             let _ = writeln!(&mut out, "- `m` is `rw` or `ro` and indicates whether we have mutable or read-only access to the original scrutinee;",);
         }

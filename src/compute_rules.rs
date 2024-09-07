@@ -260,10 +260,12 @@ impl<'a> Expression<'a> {
 pub enum PredicateStyle {
     /// Draws the expression as-is.
     Expression,
-    /// Tracks the two bits of state on the lhs of a sequent.
-    Sequent,
     /// Replaces the expression with a binding-mode side-constraint.
     BindingMode,
+    /// Tracks the two bits of state on the lhs of a sequent.
+    Sequent,
+    /// Like `Sequent` but hides the inherited reference and uses DBM terminology.
+    SequentBindingMode,
     /// Doesn't draw the expression.
     Stateless,
 }
@@ -300,8 +302,12 @@ impl<'a> TypingRule<'a> {
                     pred.expr = pred.expr.set_abstract_bm(a, cstrs.binding_mode);
                 }
             }
-            Stateless if cstrs.binding_mode.is_some() => {
-                return Err(IncompatibleStyle);
+            Stateless if cstrs.binding_mode.is_some() => return Err(IncompatibleStyle),
+            SequentBindingMode
+                if rule.postcondition.expr.binding_mode().is_err()
+                    && matches!(rule.postcondition.expr.ty, Type::Ref(..)) =>
+            {
+                return Err(IncompatibleStyle)
             }
             _ => {}
         }
@@ -343,7 +349,7 @@ impl<'a> TypingRule<'a> {
                     let _ = write!(&mut postconditions_str, ", {abstract_expr} {mtbl}",);
                 }
                 // We already print this information with the predicate.
-                Sequent => {}
+                Sequent | SequentBindingMode => {}
                 Stateless => return Err(IncompatibleStyle),
             }
         }
@@ -389,13 +395,17 @@ fn bundle_rules() -> anyhow::Result<()> {
         .cartesian_product([
             PredicateStyle::Expression,
             PredicateStyle::Sequent,
+            PredicateStyle::SequentBindingMode,
             PredicateStyle::BindingMode,
             PredicateStyle::Stateless,
         ])
         .map(|((name, options, _), style)| (name, options, style));
 
     for (name, options, style) in bundles {
-        let ctx = TypingCtx { arenas, options };
+        let mut ctx = TypingCtx { arenas, options };
+        if matches!(style, PredicateStyle::SequentBindingMode) {
+            ctx.options.always_inspect_bm = true;
+        }
 
         let mut typing_rules = compute_rules(ctx);
         typing_rules.sort_by_key(|rule| rule.name);
