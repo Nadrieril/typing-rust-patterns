@@ -52,26 +52,6 @@ impl CliState {
         only `Expression` is compatible with all rulesets",
     )];
 
-    fn prompt(&self, interactive: bool) -> anyhow::Result<Option<String>> {
-        if interactive {
-            Ok(Text::new("")
-                .with_placeholder("[&x]: &mut [&T]")
-                .with_autocomplete(Autocomplete)
-                .with_history(SimpleHistory::new(
-                    self.history.iter().rev().cloned().collect(),
-                ))
-                .prompt_skippable()?)
-        } else {
-            let mut buffer = String::new();
-            std::io::stdin().read_line(&mut buffer)?;
-            Ok(if buffer.is_empty() {
-                None
-            } else {
-                Some(buffer)
-            })
-        }
-    }
-
     fn settings() -> impl Iterator<Item = (&'static str, &'static [&'static str], &'static str)> {
         RuleOptions::OPTIONS_DOC
             .into_iter()
@@ -356,10 +336,33 @@ fn main() -> anyhow::Result<()> {
         println!("");
     }
 
-    while let Some(request) = state.prompt(is_interactive)? {
-        match state.step(&request)? {
-            ControlFlow::Continue(()) => continue,
-            ControlFlow::Break(()) => break,
+    if is_interactive {
+        while let Some(request) = Text::new("")
+            .with_placeholder("[&x]: &mut [&T]")
+            .with_autocomplete(Autocomplete)
+            .with_history(SimpleHistory::new(
+                state.history.iter().rev().cloned().collect(),
+            ))
+            .prompt_skippable()?
+        {
+            match state.step(&request)? {
+                ControlFlow::Break(()) => break,
+                ControlFlow::Continue(()) => {}
+            }
+        }
+    } else {
+        let mut buffer = String::new();
+        while {
+            buffer.clear();
+            std::io::stdin().read_line(&mut buffer)?;
+            !buffer.is_empty()
+        } {
+            for cmd in buffer.split(";") {
+                match state.step(&cmd)? {
+                    ControlFlow::Break(()) => break,
+                    ControlFlow::Continue(()) => {}
+                }
+            }
         }
     }
     Ok(())

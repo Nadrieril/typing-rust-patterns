@@ -1,6 +1,6 @@
 ---
 source: tests/trace_cli.rs
-info: "save\nset structural\noptions"
+info: save;set structural;options
 ---
 Current ruleset was saved
 The two rulesets are described by the following sets of rules, with differences highlighted.
