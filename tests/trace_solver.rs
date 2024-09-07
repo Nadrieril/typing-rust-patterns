@@ -30,11 +30,10 @@ fn trace_solver(test_case: TestCase<'_>) -> anyhow::Result<()> {
         test_case.hash(&mut hasher);
         hasher.finish().to_string()
     };
-    let trace = typing_rust_patterns::trace_solver(
-        test_case.request,
-        test_case.options,
-        PredicateStyle::Expression,
-    )?;
+    let a = &Arenas::default();
+    let req = TypingRequest::parse(a, &test_case.request).unwrap();
+    let trace =
+        typing_rust_patterns::trace_solver(req, test_case.options, PredicateStyle::Expression);
     insta::with_settings!({
         prepend_module_to_snapshot => false,
         omit_expression => true,

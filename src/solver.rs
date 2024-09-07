@@ -92,15 +92,14 @@ impl<'a> TypingSolver<'a> {
 }
 
 /// Run the solver on this request and returns the trace as a string.
-pub fn trace_solver(
-    request: &str,
+pub fn trace_solver<'a>(
+    request: TypingRequest<'a>,
     options: RuleOptions,
     style: PredicateStyle,
-) -> anyhow::Result<String> {
+) -> String {
     use std::fmt::Write;
     let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
-    let request = TypingRequest::parse(&arenas, request)?;
     let mut solver = TypingSolver::new(request);
     let mut trace = String::new();
     let _ = write!(&mut trace, "{}\n", solver.display_state(style));
@@ -128,5 +127,5 @@ pub fn trace_solver(
             }
         }
     }
-    Ok(trace)
+    trace
 }

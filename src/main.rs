@@ -297,8 +297,8 @@ impl CliState {
         } else {
             // TODO: run in parallel if compare mode
             self.history.push(request.to_string());
-            match trace_solver(&request, self.options, self.predicate_style) {
-                Ok(trace) => println!("{trace}"),
+            let a = &Arenas::default();
+            match TypingRequest::parse(a, request) {
                 Err(err) => {
                     println!(
                         "Couldn't parse typing request ({err}).\n\n\
@@ -312,6 +312,10 @@ impl CliState {
                         - references `&T`\n\
                         - tuples `[T]`, `[T, U]`"
                     )
+                }
+                Ok(request) => {
+                    let trace = trace_solver(request, self.options, self.predicate_style);
+                    println!("{trace}")
                 }
             }
         }
