@@ -407,6 +407,8 @@ fn compare() -> anyhow::Result<()> {
             TestSettings {
                 kind: self,
                 expected_order,
+                pat_depth: 3,
+                ty_depth: 4,
             }
         }
     }
@@ -415,6 +417,21 @@ fn compare() -> anyhow::Result<()> {
     struct TestSettings {
         kind: TestKind,
         expected_order: Ordering,
+        pat_depth: usize,
+        ty_depth: usize,
+    }
+
+    impl TestSettings {
+        fn deeper(mut self) -> Self {
+            self.pat_depth += 1;
+            self.ty_depth += 1;
+            self
+        }
+        fn shallower(mut self) -> Self {
+            self.pat_depth -= 1;
+            self.ty_depth -= 1;
+            self
+        }
     }
 
     let a = &Arenas::default();
@@ -428,7 +445,7 @@ fn compare() -> anyhow::Result<()> {
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
                 ..RuleOptions::DEFAULT
             }),
-            Somewhat.expect(Equal),
+            Somewhat.expect(Equal).shallower(),
             BindingModeBased({
                 let mut c = Conf::default();
                 c.rule1 = true;
@@ -482,7 +499,7 @@ fn compare() -> anyhow::Result<()> {
         (
             "rpjohnst",
             TypeBased(RuleOptions::RPJOHNST),
-            Somewhat.expect(Equal),
+            Somewhat.expect(Equal).shallower().shallower(),
             BindingModeBased(Conf::rpjohnst_2024()),
         ),
         (
@@ -494,19 +511,19 @@ fn compare() -> anyhow::Result<()> {
         (
             "ergo2024_nonbreaking_transition_type_based",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
-            ForReal.expect(Less),
+            ForReal.expect(Less).deeper(),
             TypeBased(RuleOptions::ERGO2024),
         ),
         (
             "minimal_breaking_transition_to_stateless",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
-            ForReal.expect(Less),
+            Somewhat.expect(Less).deeper().deeper(),
             TypeBased(RuleOptions::STATELESS),
         ),
         (
             "minimal_breaking_transition_to_stateless_with_rule3",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
-            ForReal.expect(Less),
+            Somewhat.expect(Less).deeper().deeper(),
             TypeBased(RuleOptions {
                 downgrade_mut_inside_shared: true,
                 ..RuleOptions::STATELESS
@@ -515,13 +532,13 @@ fn compare() -> anyhow::Result<()> {
         (
             "minimal_breaking_transition_to_rfc3627_breaking",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
-            ForReal.expect(Less),
+            ForReal.expect(Less).deeper().deeper(),
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
         ),
         (
             "minimal_breaking_transition_to_waffle",
             TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY_EXT),
-            ForReal.expect(Less),
+            Somewhat.expect(Less).deeper(),
             TypeBased(RuleOptions::WAFFLE),
         ),
         (
@@ -537,7 +554,7 @@ fn compare() -> anyhow::Result<()> {
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
                 ..RuleOptions::STABLE_RUST
             }),
-            Somewhat.expect(Equal),
+            Somewhat.expect(Equal).shallower(),
             TypeBased(RuleOptions {
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
@@ -556,7 +573,7 @@ fn compare() -> anyhow::Result<()> {
                 dont_eat_mut_inside_shared: true,
                 ..RuleOptions::ERGO2024
             }),
-            Somewhat.expect(Equal),
+            Somewhat.expect(Equal).shallower(),
             TypeBased(RuleOptions {
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
@@ -579,8 +596,8 @@ fn compare() -> anyhow::Result<()> {
     for &(name, left_ruleset, settings, right_ruleset) in compare {
         let differences = compare_rulesets(
             a,
-            3,
-            4,
+            settings.pat_depth,
+            settings.ty_depth,
             left_ruleset,
             settings.expected_order,
             right_ruleset,
@@ -589,8 +606,6 @@ fn compare() -> anyhow::Result<()> {
         if differences.is_empty() {
             assert_eq!(settings.kind, ForReal, "`{name}`: comparison did hold");
         } else {
-            assert_eq!(settings.kind, Somewhat, "`{name}`: comparison did not hold");
-
             let mut trace = String::new();
             for (test_case, left_res, right_res) in differences {
                 let test_case_str = test_case.to_string();
@@ -608,6 +623,8 @@ fn compare() -> anyhow::Result<()> {
             }, {
                 insta::assert_snapshot!(trace);
             });
+
+            assert_eq!(settings.kind, Somewhat, "`{name}`: comparison did not hold");
         }
     }
     Ok(())

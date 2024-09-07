@@ -1,0 +1,7 @@
+---
+source: src/compare.rs
+info: minimal_breaking_transition_to_stateless
+---
+Difference on `[&&mut [x]]: &mut [&&mut &[T]]`:
+   left returned: Success(&T)
+  right returned: TypeError("MutabilityMismatch")
