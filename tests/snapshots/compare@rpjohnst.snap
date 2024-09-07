@@ -2,165 +2,165 @@
 source: src/compare.rs
 info: rpjohnst
 ---
-Difference on `[ref x]: &[T]`:
-   left returned: Success(&&T)
-  right returned: Success(&T)
-Difference on `[ref x]: &mut [T]`:
-   left returned: Success(&&mut T)
-  right returned: Success(&T)
-Difference on `[ref mut x]: &mut [T]`:
-   left returned: Success(&mut &mut T)
-  right returned: Success(&mut T)
-Difference on `[mut x]: &[T]`:
-   left returned: Success(&T)
+Difference on `[ref x]: &[CT]`:
+   left returned: Success(&&CT)
+  right returned: Success(&CT)
+Difference on `[ref x]: &mut [CT]`:
+   left returned: Success(&&mut CT)
+  right returned: Success(&CT)
+Difference on `[ref mut x]: &mut [CT]`:
+   left returned: Success(&mut &mut CT)
+  right returned: Success(&mut CT)
+Difference on `[mut x]: &[CT]`:
+   left returned: Success(&CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &mut [T]`:
-   left returned: Success(&mut T)
+Difference on `[mut x]: &mut [CT]`:
+   left returned: Success(&mut CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[[ref x]]: [&[T]]`:
-   left returned: Success(&&T)
-  right returned: Success(&T)
-Difference on `[[ref x]]: [&mut [T]]`:
-   left returned: Success(&&mut T)
-  right returned: Success(&T)
-Difference on `[[ref x]]: &[[T]]`:
-   left returned: Success(&&T)
-  right returned: Success(&T)
-Difference on `[[ref x]]: &mut [[T]]`:
-   left returned: Success(&&mut T)
-  right returned: Success(&T)
-Difference on `[[ref mut x]]: [&mut [T]]`:
-   left returned: Success(&mut &mut T)
-  right returned: Success(&mut T)
-Difference on `[[ref mut x]]: &mut [[T]]`:
-   left returned: Success(&mut &mut T)
-  right returned: Success(&mut T)
-Difference on `[[mut x]]: [&[T]]`:
-   left returned: Success(&T)
+Difference on `[[ref x]]: [&[CT]]`:
+   left returned: Success(&&CT)
+  right returned: Success(&CT)
+Difference on `[[ref x]]: [&mut [CT]]`:
+   left returned: Success(&&mut CT)
+  right returned: Success(&CT)
+Difference on `[[ref x]]: &[[CT]]`:
+   left returned: Success(&&CT)
+  right returned: Success(&CT)
+Difference on `[[ref x]]: &mut [[CT]]`:
+   left returned: Success(&&mut CT)
+  right returned: Success(&CT)
+Difference on `[[ref mut x]]: [&mut [CT]]`:
+   left returned: Success(&mut &mut CT)
+  right returned: Success(&mut CT)
+Difference on `[[ref mut x]]: &mut [[CT]]`:
+   left returned: Success(&mut &mut CT)
+  right returned: Success(&mut CT)
+Difference on `[[mut x]]: [&[CT]]`:
+   left returned: Success(&CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[[mut x]]: [&mut [T]]`:
-   left returned: Success(&mut T)
+Difference on `[[mut x]]: [&mut [CT]]`:
+   left returned: Success(&mut CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[[mut x]]: &[[T]]`:
-   left returned: Success(&T)
+Difference on `[[mut x]]: &[[CT]]`:
+   left returned: Success(&CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[[mut x]]: &mut [[T]]`:
-   left returned: Success(&mut T)
+Difference on `[[mut x]]: &mut [[CT]]`:
+   left returned: Success(&mut CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[&ref x]: &&mut [T]`:
-   left returned: Success(&T)
+Difference on `[&ref x]: &&mut [CT]`:
+   left returned: Success(&CT)
   right returned: TypeError("mismatched types")
-Difference on `[&x]: &&mut [T]`:
-   left returned: Success(T)
+Difference on `[&x]: &&mut [CT]`:
+   left returned: Success(CT)
   right returned: TypeError("mismatched types")
-Difference on `[&(mut x)]: &&mut [T]`:
-   left returned: Success(T)
+Difference on `[&(mut x)]: &&mut [CT]`:
+   left returned: Success(CT)
   right returned: TypeError("mismatched types")
-Difference on `[&mut ref x]: &&mut [T]`:
+Difference on `[&mut ref x]: &&mut [CT]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(&T)
-Difference on `[&mut x]: &&mut [T]`:
+  right returned: Success(&CT)
+Difference on `[&mut x]: &&mut [CT]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(T)
-Difference on `[&mut mut x]: &&mut [T]`:
+  right returned: Success(CT)
+Difference on `[&mut mut x]: &&mut [CT]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(T)
-Difference on `[ref x]: &[[T]]`:
-   left returned: Success(&&[T])
-  right returned: Success(&[T])
-Difference on `[ref x]: &[&T]`:
-   left returned: Success(&&&T)
-  right returned: Success(&&T)
-Difference on `[ref x]: &[&mut T]`:
-   left returned: Success(&&&mut T)
-  right returned: Success(&&mut T)
-Difference on `[ref x]: &&[T]`:
-   left returned: Success(&&T)
-  right returned: Success(&T)
-Difference on `[ref x]: &&mut [T]`:
-   left returned: Success(&&T)
-  right returned: Success(&T)
-Difference on `[ref x]: &mut [[T]]`:
-   left returned: Success(&&mut [T])
-  right returned: Success(&[T])
-Difference on `[ref x]: &mut [&T]`:
-   left returned: Success(&&mut &T)
-  right returned: Success(&&T)
-Difference on `[ref x]: &mut [&mut T]`:
-   left returned: Success(&&mut &mut T)
-  right returned: Success(&&mut T)
-Difference on `[ref x]: &mut &[T]`:
-   left returned: Success(&&T)
-  right returned: Success(&T)
-Difference on `[ref x]: &mut &mut [T]`:
-   left returned: Success(&&mut T)
-  right returned: Success(&T)
-Difference on `[ref mut x]: &mut [[T]]`:
-   left returned: Success(&mut &mut [T])
-  right returned: Success(&mut [T])
-Difference on `[ref mut x]: &mut [&T]`:
-   left returned: Success(&mut &mut &T)
-  right returned: Success(&mut &T)
-Difference on `[ref mut x]: &mut [&mut T]`:
-   left returned: Success(&mut &mut &mut T)
-  right returned: Success(&mut &mut T)
-Difference on `[ref mut x]: &mut &mut [T]`:
-   left returned: Success(&mut &mut T)
-  right returned: Success(&mut T)
-Difference on `[mut x]: &[[T]]`:
-   left returned: Success(&[T])
+  right returned: Success(CT)
+Difference on `[ref x]: &[[CT]]`:
+   left returned: Success(&&[CT])
+  right returned: Success(&[CT])
+Difference on `[ref x]: &[&CT]`:
+   left returned: Success(&&&CT)
+  right returned: Success(&&CT)
+Difference on `[ref x]: &[&mut CT]`:
+   left returned: Success(&&&mut CT)
+  right returned: Success(&&mut CT)
+Difference on `[ref x]: &&[CT]`:
+   left returned: Success(&&CT)
+  right returned: Success(&CT)
+Difference on `[ref x]: &&mut [CT]`:
+   left returned: Success(&&CT)
+  right returned: Success(&CT)
+Difference on `[ref x]: &mut [[CT]]`:
+   left returned: Success(&&mut [CT])
+  right returned: Success(&[CT])
+Difference on `[ref x]: &mut [&CT]`:
+   left returned: Success(&&mut &CT)
+  right returned: Success(&&CT)
+Difference on `[ref x]: &mut [&mut CT]`:
+   left returned: Success(&&mut &mut CT)
+  right returned: Success(&&mut CT)
+Difference on `[ref x]: &mut &[CT]`:
+   left returned: Success(&&CT)
+  right returned: Success(&CT)
+Difference on `[ref x]: &mut &mut [CT]`:
+   left returned: Success(&&mut CT)
+  right returned: Success(&CT)
+Difference on `[ref mut x]: &mut [[CT]]`:
+   left returned: Success(&mut &mut [CT])
+  right returned: Success(&mut [CT])
+Difference on `[ref mut x]: &mut [&CT]`:
+   left returned: Success(&mut &mut &CT)
+  right returned: Success(&mut &CT)
+Difference on `[ref mut x]: &mut [&mut CT]`:
+   left returned: Success(&mut &mut &mut CT)
+  right returned: Success(&mut &mut CT)
+Difference on `[ref mut x]: &mut &mut [CT]`:
+   left returned: Success(&mut &mut CT)
+  right returned: Success(&mut CT)
+Difference on `[mut x]: &[[CT]]`:
+   left returned: Success(&[CT])
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &[&T]`:
-   left returned: Success(&&T)
+Difference on `[mut x]: &[&CT]`:
+   left returned: Success(&&CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &[&mut T]`:
-   left returned: Success(&&mut T)
+Difference on `[mut x]: &[&mut CT]`:
+   left returned: Success(&&mut CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &&[T]`:
-   left returned: Success(&T)
+Difference on `[mut x]: &&[CT]`:
+   left returned: Success(&CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &&mut [T]`:
-   left returned: Success(&T)
+Difference on `[mut x]: &&mut [CT]`:
+   left returned: Success(&CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &mut [[T]]`:
-   left returned: Success(&mut [T])
+Difference on `[mut x]: &mut [[CT]]`:
+   left returned: Success(&mut [CT])
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &mut [&T]`:
-   left returned: Success(&mut &T)
+Difference on `[mut x]: &mut [&CT]`:
+   left returned: Success(&mut &CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &mut [&mut T]`:
-   left returned: Success(&mut &mut T)
+Difference on `[mut x]: &mut [&mut CT]`:
+   left returned: Success(&mut &mut CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &mut &[T]`:
-   left returned: Success(&T)
+Difference on `[mut x]: &mut &[CT]`:
+   left returned: Success(&CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `[mut x]: &mut &mut [T]`:
-   left returned: Success(&mut T)
+Difference on `[mut x]: &mut &mut [CT]`:
+   left returned: Success(&mut CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `&[ref x]: &&[T]`:
-   left returned: Success(&&T)
-  right returned: Success(&T)
-Difference on `&[ref x]: &&mut [T]`:
-   left returned: BorrowError(&&mut T, "MutBorrowBehindSharedBorrow")
-  right returned: Success(&T)
-Difference on `&[x]: &&mut [T]`:
-   left returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
-  right returned: Success(&T)
-Difference on `&[mut x]: &&[T]`:
-   left returned: Success(&T)
+Difference on `&[ref x]: &&[CT]`:
+   left returned: Success(&&CT)
+  right returned: Success(&CT)
+Difference on `&[ref x]: &&mut [CT]`:
+   left returned: BorrowError(&&mut CT, "MutBorrowBehindSharedBorrow")
+  right returned: Success(&CT)
+Difference on `&[x]: &&mut [CT]`:
+   left returned: BorrowError(&mut CT, "MutBorrowBehindSharedBorrow")
+  right returned: Success(&CT)
+Difference on `&[mut x]: &&[CT]`:
+   left returned: Success(&CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `&mut [ref x]: &mut &[T]`:
-   left returned: Success(&&T)
-  right returned: Success(&T)
-Difference on `&mut [ref x]: &mut &mut [T]`:
-   left returned: Success(&&mut T)
-  right returned: Success(&T)
-Difference on `&mut [ref mut x]: &mut &mut [T]`:
-   left returned: Success(&mut &mut T)
-  right returned: Success(&mut T)
-Difference on `&mut [mut x]: &mut &[T]`:
-   left returned: Success(&T)
+Difference on `&mut [ref x]: &mut &[CT]`:
+   left returned: Success(&&CT)
+  right returned: Success(&CT)
+Difference on `&mut [ref x]: &mut &mut [CT]`:
+   left returned: Success(&&mut CT)
+  right returned: Success(&CT)
+Difference on `&mut [ref mut x]: &mut &mut [CT]`:
+   left returned: Success(&mut &mut CT)
+  right returned: Success(&mut CT)
+Difference on `&mut [mut x]: &mut &[CT]`:
+   left returned: Success(&CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")
-Difference on `&mut [mut x]: &mut &mut [T]`:
-   left returned: Success(&mut T)
+Difference on `&mut [mut x]: &mut &mut [CT]`:
+   left returned: Success(&mut CT)
   right returned: TypeError("`mut` on a binding is not allowed behind a reference")

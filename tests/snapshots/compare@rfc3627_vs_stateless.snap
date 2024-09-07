@@ -2,51 +2,51 @@
 source: src/compare.rs
 info: rfc3627_vs_stateless
 ---
-Difference on `[&&mut ref x]: &[&mut T]`:
+Difference on `[&&mut ref x]: &[&mut CT]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(&T)
-Difference on `[&&mut ref x]: &mut [&mut T]`:
+  right returned: Success(&CT)
+Difference on `[&&mut ref x]: &mut [&mut CT]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(&T)
-Difference on `[&&mut x]: &[&mut T]`:
+  right returned: Success(&CT)
+Difference on `[&&mut x]: &[&mut CT]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(T)
-Difference on `[&&mut x]: &mut [&mut T]`:
+  right returned: Success(CT)
+Difference on `[&&mut x]: &mut [&mut CT]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(T)
-Difference on `[&&mut mut x]: &[&mut T]`:
+  right returned: Success(CT)
+Difference on `[&&mut mut x]: &[&mut CT]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(T)
-Difference on `[&&mut mut x]: &mut [&mut T]`:
+  right returned: Success(CT)
+Difference on `[&&mut mut x]: &mut [&mut CT]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(T)
-Difference on `[&ref x]: &[&T]`:
+  right returned: Success(CT)
+Difference on `[&ref x]: &[&CT]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&T)
-Difference on `[&ref x]: &[&mut T]`:
+  right returned: Success(&&CT)
+Difference on `[&ref x]: &[&mut CT]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&mut T)
-Difference on `[&ref x]: &mut [&T]`:
+  right returned: Success(&&mut CT)
+Difference on `[&ref x]: &mut [&CT]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&T)
-Difference on `[&ref x]: &mut [&mut T]`:
+  right returned: Success(&&CT)
+Difference on `[&ref x]: &mut [&mut CT]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&mut T)
-Difference on `[&x]: &[&mut T]`:
-   left returned: Success(&T)
-  right returned: BorrowError(&mut T, "CantCopyRefMut")
-Difference on `[&x]: &mut [&mut T]`:
-   left returned: Success(&T)
-  right returned: BorrowError(&mut T, "CantCopyRefMut")
-Difference on `[&(mut x)]: &[&T]`:
+  right returned: Success(&&mut CT)
+Difference on `[&x]: &[&mut CT]`:
+   left returned: Success(&CT)
+  right returned: BorrowError(&mut CT, "CantCopyRefMut")
+Difference on `[&x]: &mut [&mut CT]`:
+   left returned: Success(&CT)
+  right returned: BorrowError(&mut CT, "CantCopyRefMut")
+Difference on `[&(mut x)]: &[&CT]`:
    left returned: TypeError("MutOnRef")
-  right returned: Success(&T)
-Difference on `[&(mut x)]: &mut [&T]`:
+  right returned: Success(&CT)
+Difference on `[&(mut x)]: &mut [&CT]`:
    left returned: TypeError("MutOnRef")
-  right returned: Success(&T)
-Difference on `[&mut ref x]: &mut [&mut T]`:
+  right returned: Success(&CT)
+Difference on `[&mut ref x]: &mut [&mut CT]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&mut T)
-Difference on `[&mut ref mut x]: &mut [&mut T]`:
+  right returned: Success(&&mut CT)
+Difference on `[&mut ref mut x]: &mut [&mut CT]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&mut &mut T)
+  right returned: Success(&mut &mut CT)

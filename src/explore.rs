@@ -85,7 +85,7 @@ impl<'a> Type<'a> {
                 } else {
                     // In `!many` mode, we directly expand an abstract type into a tuple or a leaf
                     // type.
-                    out.insert(0, Type::OtherNonRef(name));
+                    out.insert(0, Type::OtherNonRef(a.bump.alloc_str(&format!("C{name}"))));
                     out.push(Type::Tuple(std::slice::from_ref(self)));
                 }
                 out
@@ -297,7 +297,7 @@ impl<'a> Pattern<'a> {
 
 /// Types of depth 0 and 1. This is the same as `Type::ABSTRACT.deepen(_, false)`.
 pub static DEPTH1_TYS: &[Type<'_>] = &[
-    Type::OtherNonRef("T"),
+    Type::OtherNonRef("CT"),
     Type::Ref(Shared, &Type::ABSTRACT),
     Type::Ref(Mutable, &Type::ABSTRACT),
     Type::Tuple(&[Type::ABSTRACT]),
