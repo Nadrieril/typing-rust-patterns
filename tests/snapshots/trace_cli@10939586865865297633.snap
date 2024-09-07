@@ -79,7 +79,14 @@ The two rulesets are described by the following sets of rules, with differences 
 
 
 allow_ref_pat_on_ref_mut: true -> false
+always_inspect_bm: false
+dont_eat_mut_inside_shared: false
+downgrade_mut_inside_shared: false
+eat_inherited_ref_alone: true
+fallback_to_outer: false
+inherited_ref_on_ref: "EatOuter"
 match_constructor_through_ref: true -> false
+mut_binding_on_inherited: "Keep"
 ref_binding_on_inherited: "Error" -> "AllocTemporary"
 simplify_deref_mut: true -> false
 Current and saved rulesets were swapped
@@ -159,7 +166,14 @@ The two rulesets are described by the following sets of rules, with differences 
 
 
 allow_ref_pat_on_ref_mut: false -> true
+always_inspect_bm: false
+dont_eat_mut_inside_shared: false
+downgrade_mut_inside_shared: false
+eat_inherited_ref_alone: true
+fallback_to_outer: false
+inherited_ref_on_ref: "EatOuter"
 match_constructor_through_ref: false -> true
+mut_binding_on_inherited: "Keep"
 ref_binding_on_inherited: "AllocTemporary" -> "Error"
 simplify_deref_mut: false -> true
 The two rulesets are described by the following sets of rules, with differences highlighted.

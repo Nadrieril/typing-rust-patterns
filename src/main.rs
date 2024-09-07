@@ -358,7 +358,9 @@ fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
     let new_options = new_options.to_map();
     for (k, v) in &old_options {
         let new_v = &new_options[k];
-        if v != new_v {
+        if v == new_v {
+            println!("{k}: {v}");
+        } else {
             println!("{k}: {v} -> {new_v}");
         }
     }
