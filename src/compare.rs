@@ -405,27 +405,14 @@ fn compare() -> anyhow::Result<()> {
     ];
 
     let test_cases = TypingRequest::generate(a, 3, 4);
-    let (shallow_test_cases, deep_test_cases): (Vec<_>, Vec<_>) =
-        test_cases.into_iter().partition(|req| req.depth() <= 3);
-
     for &(name, left_ruleset, settings, right_ruleset) in compare {
-        let mut differences = compare_rulesets(
+        let differences = compare_rulesets(
             a,
-            &shallow_test_cases,
+            &test_cases,
             left_ruleset,
             settings.expected_order,
             right_ruleset,
         )?;
-        if differences.len() <= 4 {
-            // Try deeper patterns.
-            differences.extend(compare_rulesets(
-                a,
-                &deep_test_cases,
-                left_ruleset,
-                settings.expected_order,
-                right_ruleset,
-            )?);
-        }
 
         if differences.is_empty() {
             assert_eq!(settings.kind, ForReal, "`{name}`: comparison did hold");
