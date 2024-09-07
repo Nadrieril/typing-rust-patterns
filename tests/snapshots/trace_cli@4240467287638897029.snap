@@ -7,138 +7,138 @@ downgrade_mut_inside_shared: false -> true
 
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
- place, m ⊢ p0: T0,  place, m ⊢ p1: T1                                            | place, m ⊢ p0: T0,  place, m ⊢ p1: T1
- ----------------------------------------- "Constructor"                          | ----------------------------------------- "Constructor"
- place, m ⊢ [p0, p1]: [T0, T1]                                                    | place, m ⊢ [p0, p1]: [T0, T1]
+ real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
+ --------------------------------------- "Constructor"                            | --------------------------------------- "Constructor"
+ real, m ⊢ [p0, p1]: [T0, T1]                                                     | real, m ⊢ [p0, p1]: [T0, T1]
 
- value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1                                        | value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
- --------------------------------------------- "ConstructorRef"                   | --------------------------------------------- "ConstructorRef"
- b, m ⊢ [p0, p1]: &[T0, T1]                                                       | b, m ⊢ [p0, p1]: &[T0, T1]
+ inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+ ----------------------------------------- "ConstructorRef"                       | ----------------------------------------- "ConstructorRef"
+ r, m ⊢ [p0, p1]: &[T0, T1]                                                       | r, m ⊢ [p0, p1]: &[T0, T1]
 
- value, ro ⊢ p0: &mut T0,  value, ro ⊢ p1: &mut T1                                | value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
- ----------------------------------------------------- "ConstructorRef"           | --------------------------------------------- "ConstructorRef(ForceReadOnly)"
- b, ro ⊢ [p0, p1]: &mut [T0, T1]                                                  | b, ro ⊢ [p0, p1]: &mut [T0, T1]
+ inh, ro ⊢ p0: &mut T0,  inh, ro ⊢ p1: &mut T1                                    | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+ ------------------------------------------------- "ConstructorRef"               | ----------------------------------------- "ConstructorRef(ForceReadOnly)"
+ r, ro ⊢ [p0, p1]: &mut [T0, T1]                                                  | r, ro ⊢ [p0, p1]: &mut [T0, T1]
 
- value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1                                | value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1
- ----------------------------------------------------- "ConstructorRef"           | ----------------------------------------------------- "ConstructorRef"
- b, rw ⊢ [p0, p1]: &mut [T0, T1]                                                  | b, rw ⊢ [p0, p1]: &mut [T0, T1]
+ inh, rw ⊢ p0: &mut T0,  inh, rw ⊢ p1: &mut T1                                    | inh, rw ⊢ p0: &mut T0,  inh, rw ⊢ p1: &mut T1
+ ------------------------------------------------- "ConstructorRef"               | ------------------------------------------------- "ConstructorRef"
+ r, rw ⊢ [p0, p1]: &mut [T0, T1]                                                  | r, rw ⊢ [p0, p1]: &mut [T0, T1]
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
+ ------------------------ "ConstructorMultiRef"                                   | ------------------------ "ConstructorMultiRef"
+ r, m ⊢ [p0, p1]: &&T                                                             | r, m ⊢ [p0, p1]: &&T
+
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
  -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
- b, m ⊢ [p0, p1]: &&T                                                             | b, m ⊢ [p0, p1]: &&T
+ r, m ⊢ [p0, p1]: &&mut T                                                         | r, m ⊢ [p0, p1]: &&mut T
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
  -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
- b, m ⊢ [p0, p1]: &&mut T                                                         | b, m ⊢ [p0, p1]: &&mut T
+ r, m ⊢ [p0, p1]: &mut &T                                                         | r, m ⊢ [p0, p1]: &mut &T
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
- -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
- b, m ⊢ [p0, p1]: &mut &T                                                         | b, m ⊢ [p0, p1]: &mut &T
-
- value, ro ⊢ [p0, p1]: &mut T                                                     | value, ro ⊢ [p0, p1]: &T
+ inh, ro ⊢ [p0, p1]: &mut T                                                       | inh, ro ⊢ [p0, p1]: &T
  ------------------------------- "ConstructorMultiRef"                            | ------------------------------- "ConstructorMultiRef(ForceReadOnly)"
- b, ro ⊢ [p0, p1]: &mut &mut T                                                    | b, ro ⊢ [p0, p1]: &mut &mut T
+ r, ro ⊢ [p0, p1]: &mut &mut T                                                    | r, ro ⊢ [p0, p1]: &mut &mut T
 
- value, rw ⊢ [p0, p1]: &mut T                                                     | value, rw ⊢ [p0, p1]: &mut T
+ inh, rw ⊢ [p0, p1]: &mut T                                                       | inh, rw ⊢ [p0, p1]: &mut T
  ------------------------------- "ConstructorMultiRef"                            | ------------------------------- "ConstructorMultiRef"
- b, rw ⊢ [p0, p1]: &mut &mut T                                                    | b, rw ⊢ [p0, p1]: &mut &mut T
+ r, rw ⊢ [p0, p1]: &mut &mut T                                                    | r, rw ⊢ [p0, p1]: &mut &mut T
 
- place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
- ------------------ "Deref"                                                       | ------------------ "Deref"
- b, m ⊢ &p: &T                                                                    | b, m ⊢ &p: &T
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ ----------------- "Deref"                                                        | ----------------- "Deref"
+ r, m ⊢ &p: &T                                                                    | r, m ⊢ &p: &T
 
- place, m ⊢ p: T                                                                  | place, m ⊢ p: T
+ real, m ⊢ p: T                                                                   | real, m ⊢ p: T
  ----------------------- "Deref"                                                  | ----------------------- "Deref"
- b, m ⊢ &mut p: &mut T                                                            | b, m ⊢ &mut p: &mut T
+ r, m ⊢ &mut p: &mut T                                                            | r, m ⊢ &mut p: &mut T
 
- place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
  ------------------- "DerefMutWithShared"                                         | ------------------- "DerefMutWithShared"
- b, m ⊢ &p: &mut T                                                                | b, m ⊢ &p: &mut T
+ r, m ⊢ &p: &mut T                                                                | r, m ⊢ &p: &mut T
 
- value, m ⊢ x: &T                                                                 | value, m ⊢ x: &T
- --------------------- "BindingBorrow"                                            | --------------------- "BindingBorrow"
- place, m ⊢ ref x: T                                                              | place, m ⊢ ref x: T
+ inh, m ⊢ x: &T                                                                   | inh, m ⊢ x: &T
+ -------------------- "BindingBorrow"                                             | -------------------- "BindingBorrow"
+ real, m ⊢ ref x: T                                                               | real, m ⊢ ref x: T
 
- value, m ⊢ x: &mut T                                                             | value, m ⊢ x: &mut T
- ------------------------- "BindingBorrow"                                        | ------------------------- "BindingBorrow"
- place, m ⊢ ref mut x: T                                                          | place, m ⊢ ref mut x: T
+ inh, m ⊢ x: &mut T                                                               | inh, m ⊢ x: &mut T
+ ------------------------ "BindingBorrow"                                         | ------------------------ "BindingBorrow"
+ real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
 
                                                                                   | 
  ------------- "Binding"                                                          | ------------- "Binding"
- b, m ⊢ x: T                                                                      | b, m ⊢ x: T
+ r, m ⊢ x: T                                                                      | r, m ⊢ x: T
 
                                                                                   | 
  ----------------- "Binding"                                                      | ----------------- "Binding"
- b, m ⊢ mut x: T                                                                  | b, m ⊢ mut x: T
+ r, m ⊢ mut x: T                                                                  | r, m ⊢ mut x: T
 
 Current and saved rulesets were swapped
 downgrade_mut_inside_shared: true -> false
 
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
- place, m ⊢ p0: T0,  place, m ⊢ p1: T1                                            | place, m ⊢ p0: T0,  place, m ⊢ p1: T1
- ----------------------------------------- "Constructor"                          | ----------------------------------------- "Constructor"
- place, m ⊢ [p0, p1]: [T0, T1]                                                    | place, m ⊢ [p0, p1]: [T0, T1]
+ real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
+ --------------------------------------- "Constructor"                            | --------------------------------------- "Constructor"
+ real, m ⊢ [p0, p1]: [T0, T1]                                                     | real, m ⊢ [p0, p1]: [T0, T1]
 
- value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1                                        | value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
- --------------------------------------------- "ConstructorRef"                   | --------------------------------------------- "ConstructorRef"
- b, m ⊢ [p0, p1]: &[T0, T1]                                                       | b, m ⊢ [p0, p1]: &[T0, T1]
+ inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+ ----------------------------------------- "ConstructorRef"                       | ----------------------------------------- "ConstructorRef"
+ r, m ⊢ [p0, p1]: &[T0, T1]                                                       | r, m ⊢ [p0, p1]: &[T0, T1]
 
- value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1                                | value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1
- ----------------------------------------------------- "ConstructorRef"           | ----------------------------------------------------- "ConstructorRef"
- b, rw ⊢ [p0, p1]: &mut [T0, T1]                                                  | b, rw ⊢ [p0, p1]: &mut [T0, T1]
+ inh, rw ⊢ p0: &mut T0,  inh, rw ⊢ p1: &mut T1                                    | inh, rw ⊢ p0: &mut T0,  inh, rw ⊢ p1: &mut T1
+ ------------------------------------------------- "ConstructorRef"               | ------------------------------------------------- "ConstructorRef"
+ r, rw ⊢ [p0, p1]: &mut [T0, T1]                                                  | r, rw ⊢ [p0, p1]: &mut [T0, T1]
 
- value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1                                        | value, ro ⊢ p0: &mut T0,  value, ro ⊢ p1: &mut T1
- --------------------------------------------- "ConstructorRef(ForceReadOnly)"    | ----------------------------------------------------- "ConstructorRef"
- b, ro ⊢ [p0, p1]: &mut [T0, T1]                                                  | b, ro ⊢ [p0, p1]: &mut [T0, T1]
+ inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            | inh, ro ⊢ p0: &mut T0,  inh, ro ⊢ p1: &mut T1
+ ----------------------------------------- "ConstructorRef(ForceReadOnly)"        | ------------------------------------------------- "ConstructorRef"
+ r, ro ⊢ [p0, p1]: &mut [T0, T1]                                                  | r, ro ⊢ [p0, p1]: &mut [T0, T1]
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
+ ------------------------ "ConstructorMultiRef"                                   | ------------------------ "ConstructorMultiRef"
+ r, m ⊢ [p0, p1]: &&T                                                             | r, m ⊢ [p0, p1]: &&T
+
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
  -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
- b, m ⊢ [p0, p1]: &&T                                                             | b, m ⊢ [p0, p1]: &&T
+ r, m ⊢ [p0, p1]: &&mut T                                                         | r, m ⊢ [p0, p1]: &&mut T
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
  -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
- b, m ⊢ [p0, p1]: &&mut T                                                         | b, m ⊢ [p0, p1]: &&mut T
+ r, m ⊢ [p0, p1]: &mut &T                                                         | r, m ⊢ [p0, p1]: &mut &T
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
- -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
- b, m ⊢ [p0, p1]: &mut &T                                                         | b, m ⊢ [p0, p1]: &mut &T
-
- value, rw ⊢ [p0, p1]: &mut T                                                     | value, rw ⊢ [p0, p1]: &mut T
+ inh, rw ⊢ [p0, p1]: &mut T                                                       | inh, rw ⊢ [p0, p1]: &mut T
  ------------------------------- "ConstructorMultiRef"                            | ------------------------------- "ConstructorMultiRef"
- b, rw ⊢ [p0, p1]: &mut &mut T                                                    | b, rw ⊢ [p0, p1]: &mut &mut T
+ r, rw ⊢ [p0, p1]: &mut &mut T                                                    | r, rw ⊢ [p0, p1]: &mut &mut T
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &mut T
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &mut T
  ------------------------------- "ConstructorMultiRef(ForceReadOnly)"             | ------------------------------- "ConstructorMultiRef"
- b, ro ⊢ [p0, p1]: &mut &mut T                                                    | b, ro ⊢ [p0, p1]: &mut &mut T
+ r, ro ⊢ [p0, p1]: &mut &mut T                                                    | r, ro ⊢ [p0, p1]: &mut &mut T
 
- place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
- ------------------ "Deref"                                                       | ------------------ "Deref"
- b, m ⊢ &p: &T                                                                    | b, m ⊢ &p: &T
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ ----------------- "Deref"                                                        | ----------------- "Deref"
+ r, m ⊢ &p: &T                                                                    | r, m ⊢ &p: &T
 
- place, m ⊢ p: T                                                                  | place, m ⊢ p: T
+ real, m ⊢ p: T                                                                   | real, m ⊢ p: T
  ----------------------- "Deref"                                                  | ----------------------- "Deref"
- b, m ⊢ &mut p: &mut T                                                            | b, m ⊢ &mut p: &mut T
+ r, m ⊢ &mut p: &mut T                                                            | r, m ⊢ &mut p: &mut T
 
- place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
  ------------------- "DerefMutWithShared"                                         | ------------------- "DerefMutWithShared"
- b, m ⊢ &p: &mut T                                                                | b, m ⊢ &p: &mut T
+ r, m ⊢ &p: &mut T                                                                | r, m ⊢ &p: &mut T
 
- value, m ⊢ x: &T                                                                 | value, m ⊢ x: &T
- --------------------- "BindingBorrow"                                            | --------------------- "BindingBorrow"
- place, m ⊢ ref x: T                                                              | place, m ⊢ ref x: T
+ inh, m ⊢ x: &T                                                                   | inh, m ⊢ x: &T
+ -------------------- "BindingBorrow"                                             | -------------------- "BindingBorrow"
+ real, m ⊢ ref x: T                                                               | real, m ⊢ ref x: T
 
- value, m ⊢ x: &mut T                                                             | value, m ⊢ x: &mut T
- ------------------------- "BindingBorrow"                                        | ------------------------- "BindingBorrow"
- place, m ⊢ ref mut x: T                                                          | place, m ⊢ ref mut x: T
+ inh, m ⊢ x: &mut T                                                               | inh, m ⊢ x: &mut T
+ ------------------------ "BindingBorrow"                                         | ------------------------ "BindingBorrow"
+ real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
 
                                                                                   | 
  ------------- "Binding"                                                          | ------------- "Binding"
- b, m ⊢ x: T                                                                      | b, m ⊢ x: T
+ r, m ⊢ x: T                                                                      | r, m ⊢ x: T
 
                                                                                   | 
  ----------------- "Binding"                                                      | ----------------- "Binding"
- b, m ⊢ mut x: T                                                                  | b, m ⊢ mut x: T
+ r, m ⊢ mut x: T                                                                  | r, m ⊢ mut x: T
 
 Difference on `&[&mut ref x]: &&mut [T]`:
     saved returned: TypeError("MutabilityMismatch")

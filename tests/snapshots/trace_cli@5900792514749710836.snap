@@ -2,7 +2,7 @@
 source: tests/trace_cli.rs
 info: "&ap: &T"
 ---
-place, rw ⊢ &ap: &T
+real, rw ⊢ &ap: &T
 // Applying rule `Deref`
-place, ro ⊢ ap: T
-// Type error for `place, ro ⊢ ap: T`: OverlyGeneral(Pattern)
+real, ro ⊢ ap: T
+// Type error for `real, ro ⊢ ap: T`: OverlyGeneral(Pattern)

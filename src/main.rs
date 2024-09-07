@@ -376,7 +376,7 @@ fn display_rules(style: PredicateStyle, options: RuleOptions) -> Result<String, 
         PredicateStyle::Sequent => {
             let _ = writeln!(
                 &mut out,
-                "- `b` is `place` or `value` and indicates the place context aka binding mode;",
+                "- `r` is `inh` or `real` and indicates whether the outermost reference type is inherited or not;",
             );
             let _ = writeln!(&mut out, "- `m` is `rw` or `ro` and indicates whether we have mutable or read-only access to the original scrutinee;",);
         }

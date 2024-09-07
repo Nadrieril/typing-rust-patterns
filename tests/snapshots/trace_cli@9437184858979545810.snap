@@ -10,137 +10,137 @@ ref_binding_on_inherited: "Error" -> "ResetBindingMode"
 
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
- place, m ⊢ p0: T0,  place, m ⊢ p1: T1                                            | place, m ⊢ p0: T0,  place, m ⊢ p1: T1
- ----------------------------------------- "Constructor"                          | ----------------------------------------- "Constructor"
- place, m ⊢ [p0, p1]: [T0, T1]                                                    | place, m ⊢ [p0, p1]: [T0, T1]
+ real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
+ --------------------------------------- "Constructor"                            | --------------------------------------- "Constructor"
+ real, m ⊢ [p0, p1]: [T0, T1]                                                     | real, m ⊢ [p0, p1]: [T0, T1]
 
- value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1                                        | value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
- --------------------------------------------- "ConstructorRef"                   | --------------------------------------------- "ConstructorRef"
- b, m ⊢ [p0, p1]: &[T0, T1]                                                       | b, m ⊢ [p0, p1]: &[T0, T1]
+ inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+ ----------------------------------------- "ConstructorRef"                       | ----------------------------------------- "ConstructorRef"
+ r, m ⊢ [p0, p1]: &[T0, T1]                                                       | r, m ⊢ [p0, p1]: &[T0, T1]
 
- value, ro ⊢ p0: &mut T0,  value, ro ⊢ p1: &mut T1                                | value, ro ⊢ p0: &T0,  value, ro ⊢ p1: &T1
- ----------------------------------------------------- "ConstructorRef"           | --------------------------------------------- "ConstructorRef(ForceReadOnly)"
- b, ro ⊢ [p0, p1]: &mut [T0, T1]                                                  | b, ro ⊢ [p0, p1]: &mut [T0, T1]
+ inh, ro ⊢ p0: &mut T0,  inh, ro ⊢ p1: &mut T1                                    | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+ ------------------------------------------------- "ConstructorRef"               | ----------------------------------------- "ConstructorRef(ForceReadOnly)"
+ r, ro ⊢ [p0, p1]: &mut [T0, T1]                                                  | r, ro ⊢ [p0, p1]: &mut [T0, T1]
 
- value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1                                | value, rw ⊢ p0: &mut T0,  value, rw ⊢ p1: &mut T1
- ----------------------------------------------------- "ConstructorRef"           | ----------------------------------------------------- "ConstructorRef"
- b, rw ⊢ [p0, p1]: &mut [T0, T1]                                                  | b, rw ⊢ [p0, p1]: &mut [T0, T1]
+ inh, rw ⊢ p0: &mut T0,  inh, rw ⊢ p1: &mut T1                                    | inh, rw ⊢ p0: &mut T0,  inh, rw ⊢ p1: &mut T1
+ ------------------------------------------------- "ConstructorRef"               | ------------------------------------------------- "ConstructorRef"
+ r, rw ⊢ [p0, p1]: &mut [T0, T1]                                                  | r, rw ⊢ [p0, p1]: &mut [T0, T1]
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
+ ------------------------ "ConstructorMultiRef"                                   | ------------------------ "ConstructorMultiRef"
+ r, m ⊢ [p0, p1]: &&T                                                             | r, m ⊢ [p0, p1]: &&T
+
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
  -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
- b, m ⊢ [p0, p1]: &&T                                                             | b, m ⊢ [p0, p1]: &&T
+ r, m ⊢ [p0, p1]: &&mut T                                                         | r, m ⊢ [p0, p1]: &&mut T
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
  -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
- b, m ⊢ [p0, p1]: &&mut T                                                         | b, m ⊢ [p0, p1]: &&mut T
+ r, m ⊢ [p0, p1]: &mut &T                                                         | r, m ⊢ [p0, p1]: &mut &T
 
- value, ro ⊢ [p0, p1]: &T                                                         | value, ro ⊢ [p0, p1]: &T
- -------------------------- "ConstructorMultiRef"                                 | -------------------------- "ConstructorMultiRef"
- b, m ⊢ [p0, p1]: &mut &T                                                         | b, m ⊢ [p0, p1]: &mut &T
-
- value, ro ⊢ [p0, p1]: &mut T                                                     | value, ro ⊢ [p0, p1]: &T
+ inh, ro ⊢ [p0, p1]: &mut T                                                       | inh, ro ⊢ [p0, p1]: &T
  ------------------------------- "ConstructorMultiRef"                            | ------------------------------- "ConstructorMultiRef(ForceReadOnly)"
- b, ro ⊢ [p0, p1]: &mut &mut T                                                    | b, ro ⊢ [p0, p1]: &mut &mut T
+ r, ro ⊢ [p0, p1]: &mut &mut T                                                    | r, ro ⊢ [p0, p1]: &mut &mut T
 
- value, rw ⊢ [p0, p1]: &mut T                                                     | value, rw ⊢ [p0, p1]: &mut T
+ inh, rw ⊢ [p0, p1]: &mut T                                                       | inh, rw ⊢ [p0, p1]: &mut T
  ------------------------------- "ConstructorMultiRef"                            | ------------------------------- "ConstructorMultiRef"
- b, rw ⊢ [p0, p1]: &mut &mut T                                                    | b, rw ⊢ [p0, p1]: &mut &mut T
+ r, rw ⊢ [p0, p1]: &mut &mut T                                                    | r, rw ⊢ [p0, p1]: &mut &mut T
 
- place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
- ------------------- "Deref"                                                      | ------------------- "Deref(EatOuter)"
- place, m ⊢ &p: &T                                                                | place, m ⊢ &p: &T
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ ------------------ "Deref"                                                       | ------------------ "Deref(EatOuter)"
+ real, m ⊢ &p: &T                                                                 | real, m ⊢ &p: &T
 
- place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
- ----------------------------------------- "Deref"                                | ----------------------------------------- "Deref(EatOuter)"
- value, m ⊢ &p: &T, T is not a reference                                          | value, m ⊢ &p: &T, T is not a reference
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ --------------------------------------- "Deref"                                  | --------------------------------------- "Deref(EatOuter)"
+ inh, m ⊢ &p: &T, T is not a reference                                            | inh, m ⊢ &p: &T, T is not a reference
 
- place, ro ⊢ p: &T                                                                | value, ro ⊢ p: &T
- -------------------- "Deref"                                                     | -------------------- "Deref(EatInner)"
- value, m ⊢ &p: &&T                                                               | value, m ⊢ &p: &&T
+ real, ro ⊢ p: &T                                                                 | inh, ro ⊢ p: &T
+ ------------------ "Deref"                                                       | ------------------ "Deref(EatInner)"
+ inh, m ⊢ &p: &&T                                                                 | inh, m ⊢ &p: &&T
 
- place, ro ⊢ p: &mut T                                                            | value, ro ⊢ p: &T
- ------------------------ "Deref"                                                 | ------------------------ "DerefMutWithShared(EatInner)"
- value, m ⊢ &p: &&mut T                                                           | value, m ⊢ &p: &&mut T
+ real, ro ⊢ p: &mut T                                                             | inh, ro ⊢ p: &T
+ ---------------------- "Deref"                                                   | ---------------------- "DerefMutWithShared(EatInner)"
+ inh, m ⊢ &p: &&mut T                                                             | inh, m ⊢ &p: &&mut T
 
- place, m ⊢ p: T                                                                  | place, m ⊢ p: T
- --------------------------- "Deref"                                              | --------------------------- "Deref(EatOuter)"
- place, m ⊢ &mut p: &mut T                                                        | place, m ⊢ &mut p: &mut T
+ real, m ⊢ p: T                                                                   | real, m ⊢ p: T
+ -------------------------- "Deref"                                               | -------------------------- "Deref(EatOuter)"
+ real, m ⊢ &mut p: &mut T                                                         | real, m ⊢ &mut p: &mut T
 
- place, m ⊢ p: T                                                                  | place, m ⊢ p: T
- ------------------------------------------------- "Deref"                        | ------------------------------------------------- "Deref(EatOuter)"
- value, m ⊢ &mut p: &mut T, T is not a reference                                  | value, m ⊢ &mut p: &mut T, T is not a reference
+ real, m ⊢ p: T                                                                   | real, m ⊢ p: T
+ ----------------------------------------------- "Deref"                          | ----------------------------------------------- "Deref(EatOuter)"
+ inh, m ⊢ &mut p: &mut T, T is not a reference                                    | inh, m ⊢ &mut p: &mut T, T is not a reference
 
- place, m ⊢ p: &T                                                                 | b, m ⊢ p: &T
- ---------------------------- "Deref"                                             | ---------------------------- "Deref(EatInner, FallbackToOuter)"
- value, m ⊢ &mut p: &mut &T                                                       | value, m ⊢ &mut p: &mut &T
+ real, m ⊢ p: &T                                                                  | r, m ⊢ p: &T
+ -------------------------- "Deref"                                               | -------------------------- "Deref(EatInner, FallbackToOuter)"
+ inh, m ⊢ &mut p: &mut &T                                                         | inh, m ⊢ &mut p: &mut &T
 
- place, ro ⊢ p: &mut T                                                            | value, ro ⊢ p: &T
- --------------------------------- "Deref"                                        | --------------------------------- "Deref(EatInner, ForceReadOnly)"
- value, ro ⊢ &mut p: &mut &mut T                                                  | value, ro ⊢ &mut p: &mut &mut T
+ real, ro ⊢ p: &mut T                                                             | inh, ro ⊢ p: &T
+ ------------------------------- "Deref"                                          | ------------------------------- "Deref(EatInner, ForceReadOnly)"
+ inh, ro ⊢ &mut p: &mut &mut T                                                    | inh, ro ⊢ &mut p: &mut &mut T
 
- place, rw ⊢ p: &mut T                                                            | value, rw ⊢ p: &mut T
- --------------------------------- "Deref"                                        | --------------------------------- "Deref(EatInner)"
- value, rw ⊢ &mut p: &mut &mut T                                                  | value, rw ⊢ &mut p: &mut &mut T
+ real, rw ⊢ p: &mut T                                                             | inh, rw ⊢ p: &mut T
+ ------------------------------- "Deref"                                          | ------------------------------- "Deref(EatInner)"
+ inh, rw ⊢ &mut p: &mut &mut T                                                    | inh, rw ⊢ &mut p: &mut &mut T
 
-                                                                                  | value, m ⊢ p: &T
-                                                                                  | ---------------------------- "Deref(EatInner)"
-                                                                                  | value, m ⊢ &mut p: &&mut T
+                                                                                  | inh, m ⊢ p: &T
+                                                                                  | -------------------------- "Deref(EatInner)"
+                                                                                  | inh, m ⊢ &mut p: &&mut T
 
- place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
- ----------------------- "DerefMutWithShared"                                     | ----------------------- "DerefMutWithShared(EatOuter)"
- place, m ⊢ &p: &mut T                                                            | place, m ⊢ &p: &mut T
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ ---------------------- "DerefMutWithShared"                                      | ---------------------- "DerefMutWithShared(EatOuter)"
+ real, m ⊢ &p: &mut T                                                             | real, m ⊢ &p: &mut T
 
- place, ro ⊢ p: T                                                                 | place, ro ⊢ p: T
- --------------------------------------------- "DerefMutWithShared"               | --------------------------------------------- "DerefMutWithShared(EatOuter)"
- value, m ⊢ &p: &mut T, T is not a reference                                      | value, m ⊢ &p: &mut T, T is not a reference
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ ------------------------------------------- "DerefMutWithShared"                 | ------------------------------------------- "DerefMutWithShared(EatOuter)"
+ inh, m ⊢ &p: &mut T, T is not a reference                                        | inh, m ⊢ &p: &mut T, T is not a reference
 
- place, ro ⊢ p: &T                                                                | value, ro ⊢ p: &T
- ------------------------ "DerefMutWithShared"                                    | ------------------------ "Deref(EatInner, ForceReadOnly)"
- value, m ⊢ &p: &mut &T                                                           | value, m ⊢ &p: &mut &T
+ real, ro ⊢ p: &T                                                                 | inh, ro ⊢ p: &T
+ ---------------------- "DerefMutWithShared"                                      | ---------------------- "Deref(EatInner, ForceReadOnly)"
+ inh, m ⊢ &p: &mut &T                                                             | inh, m ⊢ &p: &mut &T
 
- place, ro ⊢ p: &mut T                                                            | value, ro ⊢ p: &T
- ---------------------------- "DerefMutWithShared"                                | ---------------------------- "DerefMutWithShared(EatInner)"
- value, m ⊢ &p: &mut &mut T                                                       | value, m ⊢ &p: &mut &mut T
+ real, ro ⊢ p: &mut T                                                             | inh, ro ⊢ p: &T
+ -------------------------- "DerefMutWithShared"                                  | -------------------------- "DerefMutWithShared(EatInner)"
+ inh, m ⊢ &p: &mut &mut T                                                         | inh, m ⊢ &p: &mut &mut T
 
-                                                                                  | b, m ⊢ ref x: T
-                                                                                  | ---------------------- "RefBindingResetBindingMode"
-                                                                                  | value, m ⊢ ref x: &T
+                                                                                  | r, m ⊢ ref x: T
+                                                                                  | -------------------- "RefBindingResetBindingMode"
+                                                                                  | inh, m ⊢ ref x: &T
 
-                                                                                  | b, m ⊢ ref x: T
-                                                                                  | -------------------------- "RefBindingResetBindingMode"
-                                                                                  | value, m ⊢ ref x: &mut T
+                                                                                  | r, m ⊢ ref x: T
+                                                                                  | ------------------------ "RefBindingResetBindingMode"
+                                                                                  | inh, m ⊢ ref x: &mut T
 
-                                                                                  | b, m ⊢ ref mut x: T
-                                                                                  | -------------------------- "RefBindingResetBindingMode"
-                                                                                  | value, m ⊢ ref mut x: &T
+                                                                                  | r, m ⊢ ref mut x: T
+                                                                                  | ------------------------ "RefBindingResetBindingMode"
+                                                                                  | inh, m ⊢ ref mut x: &T
 
-                                                                                  | b, m ⊢ ref mut x: T
-                                                                                  | ------------------------------ "RefBindingResetBindingMode"
-                                                                                  | value, m ⊢ ref mut x: &mut T
+                                                                                  | r, m ⊢ ref mut x: T
+                                                                                  | ---------------------------- "RefBindingResetBindingMode"
+                                                                                  | inh, m ⊢ ref mut x: &mut T
 
- value, m ⊢ x: &T                                                                 | value, m ⊢ x: &T
- --------------------- "BindingBorrow"                                            | --------------------- "BindingBorrow"
- place, m ⊢ ref x: T                                                              | place, m ⊢ ref x: T
+ inh, m ⊢ x: &T                                                                   | inh, m ⊢ x: &T
+ -------------------- "BindingBorrow"                                             | -------------------- "BindingBorrow"
+ real, m ⊢ ref x: T                                                               | real, m ⊢ ref x: T
 
- value, m ⊢ x: &mut T                                                             | value, m ⊢ x: &mut T
- ------------------------- "BindingBorrow"                                        | ------------------------- "BindingBorrow"
- place, m ⊢ ref mut x: T                                                          | place, m ⊢ ref mut x: T
+ inh, m ⊢ x: &mut T                                                               | inh, m ⊢ x: &mut T
+ ------------------------ "BindingBorrow"                                         | ------------------------ "BindingBorrow"
+ real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
 
                                                                                   | 
  ------------- "Binding"                                                          | ------------- "Binding"
- b, m ⊢ x: T                                                                      | b, m ⊢ x: T
+ r, m ⊢ x: T                                                                      | r, m ⊢ x: T
 
                                                                                   | 
- --------------------- "Binding"                                                  | --------------------- "Binding"
- place, m ⊢ mut x: T                                                              | place, m ⊢ mut x: T
+ -------------------- "Binding"                                                   | -------------------- "Binding"
+ real, m ⊢ mut x: T                                                               | real, m ⊢ mut x: T
 
                                                                                   |  
- ---------------------- "Binding"                                                 |  
- value, m ⊢ mut x: &T                                                             |  
+ -------------------- "Binding"                                                   |  
+ inh, m ⊢ mut x: &T                                                               |  
 
                                                                                   |  
- -------------------------- "Binding"                                             |  
- value, m ⊢ mut x: &mut T                                                         |  
+ ------------------------ "Binding"                                               |  
+ inh, m ⊢ mut x: &mut T                                                           |  
 
 The current options can be fully described as the following set of rules.
 The typing predicate looks like `p @ e: T`, where

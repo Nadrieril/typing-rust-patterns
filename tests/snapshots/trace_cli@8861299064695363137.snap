@@ -2,13 +2,13 @@
 source: tests/trace_cli.rs
 info: "&[[x]]: &[&mut [x]]"
 ---
-place, rw ⊢ &[[x]]: &[&mut [x]]
+real, rw ⊢ &[[x]]: &[&mut [x]]
 // Applying rule `Deref`
-place, ro ⊢ [[x]]: [&mut [x]]
+real, ro ⊢ [[x]]: [&mut [x]]
 // Applying rule `Constructor`
-place, ro ⊢ [x]: &mut [x]
+real, ro ⊢ [x]: &mut [x]
 // Applying rule `ConstructorRef`
-value, ro ⊢ x: &mut x
+inh, ro ⊢ x: &mut x
 // Applying rule `Binding`
 let x: &mut x = &mut (*(*s).0).0
 

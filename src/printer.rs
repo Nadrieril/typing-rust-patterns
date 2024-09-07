@@ -32,9 +32,9 @@ impl<'a> TypingPredicate<'a> {
             PredicateStyle::Stateless => format!("{}: {}", self.pat, self.expr.ty),
             PredicateStyle::Sequent => {
                 let bm = match self.expr.binding_mode().ok() {
-                    None => "b",
-                    Some(BindingMode::ByMove) => "place",
-                    Some(BindingMode::ByRef(_)) => "value",
+                    Some(BindingMode::ByRef(_)) => "inh",
+                    Some(BindingMode::ByMove) => "real",
+                    None => "r",
                 };
                 let scrut_access = match self.expr.scrutinee_mutability().ok() {
                     None => "m",
