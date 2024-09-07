@@ -2,8 +2,6 @@
 source: tests/trace_cli.rs
 info: set downgrade_mut_inside_shared true
 ---
-downgrade_mut_inside_shared: false -> true
-
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
@@ -69,3 +67,6 @@ The two rulesets are described by the following sets of rules, with differences 
                                                                                   | 
  ----------------- "Binding"                                                      | ----------------- "Binding"
  r, m ⊢ mut x: T                                                                  | r, m ⊢ mut x: T
+
+
+downgrade_mut_inside_shared: false -> true

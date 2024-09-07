@@ -2,12 +2,6 @@
 source: tests/trace_cli.rs
 info: "set ergo2024\nset predicate_style BindingMode\nrules"
 ---
-downgrade_mut_inside_shared: false -> true
-fallback_to_outer: false -> true
-inherited_ref_on_ref: "EatOuter" -> "EatInner"
-mut_binding_on_inherited: "Keep" -> "Error"
-ref_binding_on_inherited: "Error" -> "ResetBindingMode"
-
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
@@ -142,6 +136,12 @@ The two rulesets are described by the following sets of rules, with differences 
  ------------------------ "Binding"                                               |  
  inh, m ⊢ mut x: &mut T                                                           |  
 
+
+downgrade_mut_inside_shared: false -> true
+fallback_to_outer: false -> true
+inherited_ref_on_ref: "EatOuter" -> "EatInner"
+mut_binding_on_inherited: "Keep" -> "Error"
+ref_binding_on_inherited: "Error" -> "ResetBindingMode"
 The current options can be fully described as the following set of rules.
 The typing predicate looks like `p @ e: T`, where
 - `e` is an expression

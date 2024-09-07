@@ -2,8 +2,6 @@
 source: tests/trace_cli.rs
 info: set predicate_style SequentBindingMode
 ---
-always_inspect_bm: false -> true
-
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
  move, m ⊢ p0: T0,  move, m ⊢ p1: T1                                              | move, m ⊢ p0: T0,  move, m ⊢ p1: T1
@@ -97,3 +95,6 @@ The two rulesets are described by the following sets of rules, with differences 
                                                                                   | 
  ------------------ "Binding"                                                     | ------------------ "Binding"
  bm, m ⊢ mut x: T                                                                 | bm, m ⊢ mut x: T
+
+
+always_inspect_bm: false -> true

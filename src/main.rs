@@ -207,9 +207,8 @@ fn main() -> anyhow::Result<()> {
                 std::mem::swap(saved, &mut state.options);
                 let saved = *saved;
                 let s = state.display_joint_rules(saved, state.options).unwrap();
+                println!("{s}");
                 display_options_diff(saved, state.options);
-                println!();
-                print!("{s}")
             } else {
                 println!("Can't swap saved and current ruleset because there is no saved ruleset. Use `save` to save one.");
             }
@@ -270,9 +269,8 @@ fn main() -> anyhow::Result<()> {
                     if old_options != state.options {
                         match state.display_joint_rules(old_options, state.options) {
                             Ok(s) => {
+                                println!("{s}");
                                 display_options_diff(old_options, state.options);
-                                println!();
-                                print!("{s}")
                             }
                             Err(IncompatibleStyle) => {
                                 state.options = old_options;

@@ -3,8 +3,6 @@ source: tests/trace_cli.rs
 info: "save\nset downgrade_mut_inside_shared true\nswap\ncompare"
 ---
 Current ruleset was saved
-downgrade_mut_inside_shared: false -> true
-
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
@@ -71,9 +69,9 @@ The two rulesets are described by the following sets of rules, with differences 
  ----------------- "Binding"                                                      | ----------------- "Binding"
  r, m ⊢ mut x: T                                                                  | r, m ⊢ mut x: T
 
-Current and saved rulesets were swapped
-downgrade_mut_inside_shared: true -> false
 
+downgrade_mut_inside_shared: false -> true
+Current and saved rulesets were swapped
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
@@ -140,6 +138,8 @@ The two rulesets are described by the following sets of rules, with differences 
  ----------------- "Binding"                                                      | ----------------- "Binding"
  r, m ⊢ mut x: T                                                                  | r, m ⊢ mut x: T
 
+
+downgrade_mut_inside_shared: true -> false
 Difference on `&[&mut ref x]: &&mut [T]`:
     saved returned: TypeError("MutabilityMismatch")
   current returned: Success(&T)

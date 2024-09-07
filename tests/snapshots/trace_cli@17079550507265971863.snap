@@ -2,8 +2,6 @@
 source: tests/trace_cli.rs
 info: set inherited_ref_on_ref EatInner
 ---
-inherited_ref_on_ref: "EatOuter" -> "EatInner"
-
 The two rulesets are described by the following sets of rules, with differences highlighted.
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
@@ -101,3 +99,6 @@ The two rulesets are described by the following sets of rules, with differences 
                                                                                   | 
  ----------------- "Binding"                                                      | ----------------- "Binding"
  r, m ⊢ mut x: T                                                                  | r, m ⊢ mut x: T
+
+
+inherited_ref_on_ref: "EatOuter" -> "EatInner"
