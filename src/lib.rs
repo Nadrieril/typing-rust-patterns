@@ -1,3 +1,4 @@
+#![feature(control_flow_enum)]
 #![feature(if_let_guard)]
 #![feature(let_chains)]
 #![feature(try_blocks)]

@@ -150,6 +150,12 @@ impl Expression<'_> {
         ty: &Type::ABSTRACT,
     };
 }
+impl TypingRequest<'_> {
+    pub const ABSTRACT: Self = TypingRequest {
+        pat: &Pattern::ABSTRACT,
+        ty: &Type::ABSTRACT,
+    };
+}
 impl TypingPredicate<'_> {
     pub const ABSTRACT: Self = TypingPredicate {
         pat: &Pattern::ABSTRACT,

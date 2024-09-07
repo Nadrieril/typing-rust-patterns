@@ -2,11 +2,11 @@
 source: src/compare.rs
 info: stateless_add_rule3
 ---
-Difference on `&[&mut ref x]: &&mut [CT]`:
-   left returned: Success(&CT)
+Difference on `&[&mut ref x]: &&mut [T]`:
+   left returned: Success(&T)
   right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut ref x]: &mut &mut [CT]`:
-   left returned: Success(&CT)
+Difference on `&[&mut ref x]: &mut &mut [T]`:
+   left returned: Success(&T)
   right returned: TypeError("MutabilityMismatch")
 Difference on `&[&mut x]: &&mut [CT]`:
    left returned: Success(CT)
@@ -20,35 +20,17 @@ Difference on `&[&mut mut x]: &&mut [CT]`:
 Difference on `&[&mut mut x]: &mut &mut [CT]`:
    left returned: Success(CT)
   right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut ref x]: &&mut [[CT]]`:
-   left returned: Success(&[CT])
+Difference on `&[&mut ref x]: &&mut &mut [T]`:
+   left returned: Success(&T)
   right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut ref x]: &&mut [&CT]`:
-   left returned: Success(&&CT)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut ref x]: &&mut [&mut CT]`:
-   left returned: Success(&&mut CT)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut ref x]: &&mut &mut [CT]`:
-   left returned: Success(&CT)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut ref x]: &mut &mut [[CT]]`:
-   left returned: Success(&[CT])
-  right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut ref x]: &mut &mut [&CT]`:
-   left returned: Success(&&CT)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut ref x]: &mut &mut [&mut CT]`:
-   left returned: Success(&&mut CT)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut ref x]: &mut &mut &mut [CT]`:
-   left returned: Success(&CT)
+Difference on `&[&mut ref x]: &mut &mut &mut [T]`:
+   left returned: Success(&T)
   right returned: TypeError("MutabilityMismatch")
 Difference on `&[&mut x]: &&mut [[CT]]`:
    left returned: Success([CT])
   right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut x]: &&mut [&CT]`:
-   left returned: Success(&CT)
+Difference on `&[&mut x]: &&mut [&T]`:
+   left returned: Success(&T)
   right returned: TypeError("MutabilityMismatch")
 Difference on `&[&mut x]: &&mut &mut [CT]`:
    left returned: Success(CT)
@@ -56,8 +38,8 @@ Difference on `&[&mut x]: &&mut &mut [CT]`:
 Difference on `&[&mut x]: &mut &mut [[CT]]`:
    left returned: Success([CT])
   right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut x]: &mut &mut [&CT]`:
-   left returned: Success(&CT)
+Difference on `&[&mut x]: &mut &mut [&T]`:
+   left returned: Success(&T)
   right returned: TypeError("MutabilityMismatch")
 Difference on `&[&mut x]: &mut &mut &mut [CT]`:
    left returned: Success(CT)
@@ -65,8 +47,8 @@ Difference on `&[&mut x]: &mut &mut &mut [CT]`:
 Difference on `&[&mut mut x]: &&mut [[CT]]`:
    left returned: Success([CT])
   right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut mut x]: &&mut [&CT]`:
-   left returned: Success(&CT)
+Difference on `&[&mut mut x]: &&mut [&T]`:
+   left returned: Success(&T)
   right returned: TypeError("MutabilityMismatch")
 Difference on `&[&mut mut x]: &&mut &mut [CT]`:
    left returned: Success(CT)
@@ -74,8 +56,8 @@ Difference on `&[&mut mut x]: &&mut &mut [CT]`:
 Difference on `&[&mut mut x]: &mut &mut [[CT]]`:
    left returned: Success([CT])
   right returned: TypeError("MutabilityMismatch")
-Difference on `&[&mut mut x]: &mut &mut [&CT]`:
-   left returned: Success(&CT)
+Difference on `&[&mut mut x]: &mut &mut [&T]`:
+   left returned: Success(&T)
   right returned: TypeError("MutabilityMismatch")
 Difference on `&[&mut mut x]: &mut &mut &mut [CT]`:
    left returned: Success(CT)

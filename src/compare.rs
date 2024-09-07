@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, mem, ops::ControlFlow};
 
 use crate::*;
 use match_ergonomics_formality::Conf;
@@ -91,7 +91,7 @@ mod convert {
         }
     }
 
-    pub(super) fn convert_request(req: crate::TypingRequest<'_>) -> LetStmt {
+    pub(super) fn convert_request(req: &crate::TypingRequest<'_>) -> LetStmt {
         let span = Span::nop();
         let pat = convert_pattern(req.pat);
         let ty = convert_type(req.ty);
@@ -100,7 +100,7 @@ mod convert {
 }
 
 use AnalysisResult::{BorrowError, Success};
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum AnalysisResult<'a> {
     Success(Type<'a>),
     BorrowError(Type<'a>, BorrowCheckError),
@@ -114,6 +114,7 @@ impl<'a> AnalysisResult<'a> {
         match (self, other) {
             // These borrow errors only come from this solver, whose borrow checker is more
             // accurate. Hence if both agree on types we ignore the borrowck error.
+            // TODO: only allow this for the bm-based solver.
             (Success(lty), Success(rty))
             | (BorrowError(lty, _), Success(rty))
             | (Success(lty), BorrowError(rty, _))
@@ -125,6 +126,15 @@ impl<'a> AnalysisResult<'a> {
             (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => Some(Equal),
             (TypeError(_) | BorrowError(..), Success(_)) => Some(Less),
             (Success(_), TypeError(_) | BorrowError(..)) => Some(Greater),
+        }
+    }
+
+    /// Replace the abstract types (if any) with the given type.
+    pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
+        match *self {
+            Success(ty) => Success(ty.subst(a, replace)),
+            BorrowError(ty, e) => BorrowError(ty.subst(a, replace), e),
+            AnalysisResult::TypeError(_) => *self,
         }
     }
 }
@@ -141,7 +151,7 @@ impl std::fmt::Display for AnalysisResult<'_> {
 }
 
 impl RuleSet {
-    pub fn analyze<'a>(&self, a: &'a Arenas<'a>, req: TypingRequest<'a>) -> AnalysisResult<'a> {
+    pub fn analyze<'a>(&self, a: &'a Arenas<'a>, req: &TypingRequest<'a>) -> AnalysisResult<'a> {
         match *self {
             RuleSet::TypeBased(options) => analyze_with_this_crate(a, options, req),
             RuleSet::BindingModeBased(conf) => analyze_with_formality(a, conf, req),
@@ -152,10 +162,10 @@ impl RuleSet {
 fn analyze_with_this_crate<'a>(
     a: &'a Arenas<'a>,
     options: RuleOptions,
-    req: TypingRequest<'a>,
+    req: &TypingRequest<'a>,
 ) -> AnalysisResult<'a> {
     let ctx = TypingCtx { arenas: a, options };
-    let mut solver = TypingSolver::new(req);
+    let mut solver = TypingSolver::new(*req);
     let e = loop {
         match solver.step(ctx) {
             Ok(_) => {}
@@ -180,9 +190,15 @@ fn analyze_with_this_crate<'a>(
 fn analyze_with_formality<'a>(
     a: &'a Arenas<'a>,
     conf: Conf,
-    req: TypingRequest<'a>,
+    req: &TypingRequest<'a>,
 ) -> AnalysisResult<'a> {
     use match_ergonomics_formality::*;
+    if req.pat.contains_abstract() {
+        return AnalysisResult::TypeError(TypeError::OverlyGeneral(DeepeningRequest::Pattern));
+    } else if req.ty.contains_abstract() {
+        return AnalysisResult::TypeError(TypeError::OverlyGeneral(DeepeningRequest::Type));
+    }
+
     let stmt = convert::convert_request(req);
     let r = Reduction::from_stmt(conf, stmt);
     match r.to_type() {
@@ -191,27 +207,183 @@ fn analyze_with_formality<'a>(
     }
 }
 
+/// Holds the partial state of a comparison between two rulesets. We want to explore all patterns
+/// and types up to a given depth. The idea is to iteratively deepen predicates so as to avoid
+/// duplicate work. Given a partially-abstract predicate, we make progress with both rulesets until
+/// they both require deepening. We then deepen, up to the set limit. If at any point one of the
+/// rulesets errors, we stop deepening.
+#[derive(Debug)]
+struct ComparisonState<'a> {
+    remaining_pat_depth: usize,
+    remaining_ty_depth: usize,
+    /// Tracks the starting request that corresponds to the current state.
+    req: TypingRequest<'a>,
+    /// Tracks where we got to starting from `req` and stepping with the left ruleset until we
+    /// can't.
+    left_state: ControlFlow<AnalysisResult<'a>, TypingPredicate<'a>>,
+    /// Same with the right ruleset.
+    right_state: ControlFlow<AnalysisResult<'a>, TypingPredicate<'a>>,
+}
+
+impl<'a> ComparisonState<'a> {
+    fn deepen_pat(self, a: &'a Arenas<'a>) -> Vec<Self> {
+        match self.remaining_pat_depth.checked_sub(1) {
+            None => Vec::new(),
+            Some(remaining) => DEPTH1_PATS
+                .iter()
+                // Discard abstract ones at the last stage.
+                .filter(|pat| !(remaining == 0 && pat.contains_abstract()))
+                .map(|&pat| ComparisonState {
+                    remaining_pat_depth: remaining,
+                    remaining_ty_depth: self.remaining_ty_depth,
+                    req: self.req.subst_pat(a, pat),
+                    left_state: self.left_state.map_continue(|pred| pred.subst_pat(a, pat)),
+                    right_state: self.right_state.map_continue(|pred| pred.subst_pat(a, pat)),
+                })
+                .collect(),
+        }
+    }
+
+    fn deepen_ty(self, a: &'a Arenas<'a>) -> Vec<Self> {
+        match self.remaining_ty_depth.checked_sub(1) {
+            None => Vec::new(),
+            Some(remaining) => DEPTH1_TYS
+                .iter()
+                // Discard abstract ones at the last stage.
+                .filter(|ty| !(remaining == 0 && ty.contains_abstract()))
+                .map(|&ty| ComparisonState {
+                    remaining_pat_depth: self.remaining_pat_depth,
+                    remaining_ty_depth: remaining,
+                    req: self.req.subst_ty(a, ty),
+                    left_state: self
+                        .left_state
+                        .map_continue(|pred| pred.subst_ty(a, ty))
+                        .map_break(|res| res.subst_ty(a, ty)),
+                    right_state: self
+                        .right_state
+                        .map_continue(|pred| pred.subst_ty(a, ty))
+                        .map_break(|res| res.subst_ty(a, ty)),
+                })
+                .collect(),
+        }
+    }
+
+    /// Step the `Continue` case until completion or deepening.
+    fn step_half(
+        a: &'a Arenas<'a>,
+        ruleset: RuleSet,
+        current_req: &TypingRequest<'a>,
+        state: &mut ControlFlow<AnalysisResult<'a>, TypingPredicate<'a>>,
+    ) -> Option<DeepeningRequest> {
+        use ControlFlow::*;
+        while let Continue(pred) = state {
+            *state = match ruleset {
+                RuleSet::BindingModeBased(conf) => {
+                    match analyze_with_formality(a, conf, current_req) {
+                        AnalysisResult::TypeError(TypeError::OverlyGeneral(deepening)) => {
+                            return Some(deepening)
+                        }
+                        res => Break(res),
+                    }
+                }
+                RuleSet::TypeBased(options) => {
+                    let ctx = TypingCtx { arenas: a, options };
+                    match pred.step(ctx) {
+                        Ok((_rule, next)) => {
+                            if next.is_empty() {
+                                let ty = *pred.expr.ty;
+                                match pred.expr.simplify(ctx).borrow_check() {
+                                    Err(BorrowCheckError::OverlyGeneral(deepening)) => {
+                                        return Some(deepening)
+                                    }
+                                    Err(err) => Break(BorrowError(ty, err)),
+                                    Ok(_) => Break(Success(ty)),
+                                }
+                            } else {
+                                assert_eq!(next.len(), 1); // we only deepen with arity-1 tuples
+                                Continue(next[0])
+                            }
+                        }
+                        Err(err) => {
+                            if let TypeError::OverlyGeneral(deepening) = err {
+                                // TODO: borrow check? must skip move errors
+                                // match pred.expr.simplify(ctx).borrow_check() {
+                                //     Err(err) => Break(BorrowError(*pred.expr.ty, err)),
+                                //     Ok(_) => return Some(deepening),
+                                // }
+                                return Some(deepening);
+                            } else {
+                                Break(AnalysisResult::TypeError(err))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// Step both states until completion or deepening.
+    fn step(
+        &mut self,
+        a: &'a Arenas<'a>,
+        left_ruleset: RuleSet,
+        right_ruleset: RuleSet,
+    ) -> Option<DeepeningRequest> {
+        // Step the left state until completion or deepening.
+        let left_deepening = Self::step_half(a, left_ruleset, &self.req, &mut self.left_state);
+        // Step the right state until completion or deepening.
+        let right_deepening = Self::step_half(a, right_ruleset, &self.req, &mut self.right_state);
+        left_deepening.or(right_deepening)
+    }
+}
+
 pub fn compare_rulesets<'a>(
     a: &'a Arenas<'a>,
-    test_cases: &[TypingRequest<'a>],
+    pat_depth: usize,
+    ty_depth: usize,
     left_ruleset: RuleSet,
     expected_order: Ordering,
     right_ruleset: RuleSet,
-) -> anyhow::Result<Vec<(TypingRequest<'a>, AnalysisResult<'a>, AnalysisResult<'a>)>> {
+) -> Vec<(TypingRequest<'a>, AnalysisResult<'a>, AnalysisResult<'a>)> {
     use Ordering::*;
-    let mut out = Vec::new();
-    for test_case in test_cases {
-        let left_res = left_ruleset.analyze(a, *test_case);
-        let right_res = right_ruleset.analyze(a, *test_case);
-        match (left_res.cmp(&right_res), expected_order) {
-            (Some(Equal), _) => continue,
-            (Some(Less), Less) => continue,
-            (Some(Greater), Greater) => continue,
-            _ => {}
+    // Start with an abstract pattern and type, and a concrete expression.
+    let req = TypingRequest::ABSTRACT;
+    let start_state = ControlFlow::Continue(TypingPredicate::new(req));
+
+    let mut states = vec![ComparisonState {
+        remaining_pat_depth: pat_depth + 1,
+        remaining_ty_depth: ty_depth + 1,
+        req,
+        left_state: start_state,
+        right_state: start_state,
+    }];
+    let mut complete = vec![];
+    while !states.is_empty() {
+        for mut state in mem::take(&mut states) {
+            // Deepen each state until either completion or deepening is required.
+            match state.step(a, left_ruleset, right_ruleset) {
+                None => {
+                    // No deepening required, hence this is a concrete predicate or both errored.
+                    let left_res = state.left_state.break_value().unwrap();
+                    let right_res = state.right_state.break_value().unwrap();
+                    match (left_res.cmp(&right_res), expected_order) {
+                        (Some(Equal), _) => continue,
+                        (Some(Less), Less) => continue,
+                        (Some(Greater), Greater) => continue,
+                        _ => {}
+                    }
+                    complete.push((state.req, left_res, right_res))
+                }
+                Some(DeepeningRequest::Pattern) => states.extend(state.deepen_pat(a)),
+                Some(DeepeningRequest::Type) => states.extend(state.deepen_ty(a)),
+                Some(_) => unreachable!("the expression should be concrete"),
+            }
         }
-        out.push((*test_case, left_res, right_res));
     }
-    Ok(out)
+
+    complete.sort_by_key(|(req, _, _)| (req.depth(), *req));
+    complete
 }
 
 #[test]
@@ -404,15 +576,15 @@ fn compare() -> anyhow::Result<()> {
         ),
     ];
 
-    let test_cases = TypingRequest::generate(a, 3, 4);
     for &(name, left_ruleset, settings, right_ruleset) in compare {
         let differences = compare_rulesets(
             a,
-            &test_cases,
+            3,
+            4,
             left_ruleset,
             settings.expected_order,
             right_ruleset,
-        )?;
+        );
 
         if differences.is_empty() {
             assert_eq!(settings.kind, ForReal, "`{name}`: comparison did hold");

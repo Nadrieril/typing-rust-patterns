@@ -106,20 +106,6 @@ impl<'a> Type<'a> {
     }
 }
 
-impl<'a> TypingRequest<'a> {
-    pub fn depth(&self) -> usize {
-        std::cmp::max(self.pat.depth(), self.ty.depth())
-    }
-}
-
-#[derive(Debug)]
-pub enum BorrowCheckError {
-    CantCopyRefMut,
-    CantCopyNestedRefMut,
-    MutBorrowBehindSharedBorrow,
-    OverlyGeneral(DeepeningRequest),
-}
-
 impl<'a> Expression<'a> {
     pub fn visit(&self, f: &mut impl FnMut(&Self)) {
         f(self);
@@ -132,6 +118,72 @@ impl<'a> Expression<'a> {
         }
     }
 
+    /// Replace the abstract types (if any) with the given type.
+    pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
+        match self.kind {
+            ExprKind::Scrutinee | ExprKind::ABSTRACT => Expression {
+                ty: self.ty.subst(a, replace).alloc(a),
+                kind: self.kind,
+            },
+            ExprKind::Abstract { .. } => {
+                panic!("Can't substitute the type of a partially-abstract expression")
+            }
+            ExprKind::Ref(mtbl, e) => e.subst_ty(a, replace).borrow(a, mtbl),
+            ExprKind::Deref(e) => e.subst_ty(a, replace).deref(a),
+            ExprKind::Field(e, n) => e.subst_ty(a, replace).field(a, n),
+        }
+    }
+}
+
+impl<'a> TypingRequest<'a> {
+    pub fn depth(&self) -> usize {
+        std::cmp::max(self.pat.depth(), self.ty.depth())
+    }
+
+    /// Replace the abstract patterns (if any) with the given type.
+    pub fn subst_pat(&self, a: &'a Arenas<'a>, replace: Pattern<'a>) -> Self {
+        Self {
+            pat: self.pat.subst(a, replace).alloc(a),
+            ty: self.ty,
+        }
+    }
+
+    /// Replace the abstract types (if any) with the given type.
+    pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
+        Self {
+            pat: self.pat,
+            ty: self.ty.subst(a, replace).alloc(a),
+        }
+    }
+}
+
+impl<'a> TypingPredicate<'a> {
+    /// Replace the abstract patterns (if any) with the given type.
+    pub fn subst_pat(&self, a: &'a Arenas<'a>, replace: Pattern<'a>) -> Self {
+        Self {
+            pat: self.pat.subst(a, replace).alloc(a),
+            expr: self.expr,
+        }
+    }
+
+    /// Replace the abstract types (if any) with the given type.
+    pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
+        Self {
+            pat: self.pat,
+            expr: self.expr.subst_ty(a, replace),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum BorrowCheckError {
+    CantCopyRefMut,
+    CantCopyNestedRefMut,
+    MutBorrowBehindSharedBorrow,
+    OverlyGeneral(DeepeningRequest),
+}
+
+impl<'a> Expression<'a> {
     /// An expression is either a place or a reference to a place. This corresponds to the "default
     /// binding mode" of RFC2005 aka "match ergonomics".
     pub fn binding_mode(&self) -> Result<BindingMode, TypeError> {
