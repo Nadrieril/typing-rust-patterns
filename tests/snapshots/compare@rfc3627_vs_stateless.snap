@@ -32,3 +32,6 @@ Difference on `[&mut ref x]: &mut [&mut T]`:
 Difference on `[&mut ref mut x]: &mut [&mut T]`:
    left returned: TypeError("RefOnRef")
   right returned: Success(&mut &mut T)
+Difference on `[&mut x]: &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")

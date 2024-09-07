@@ -2,6 +2,78 @@
 source: src/compare.rs
 info: minimal_breaking_transition_to_waffle
 ---
+Difference on `[&mut x]: &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[&mut x]]: [&mut [&mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[&mut x]]: &mut [[&mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[&mut &mut x]: &mut [&mut &mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[&mut x]: &mut &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `&mut [&mut x]: &mut &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[[&mut x]]]: [[&mut [&mut T]]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[[&mut x]]]: [&mut [[&mut T]]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[[&mut x]]]: &mut [[[&mut T]]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[&mut &mut x]]: [&mut [&mut &mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[&mut &mut x]]: &mut [[&mut &mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[&mut x]]: [&mut &mut [&mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[&mut x]]: &mut [&mut [&mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[[&mut x]]: &mut &mut [[&mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
 Difference on `[&[x]]: &mut [&&[T]]`:
    left returned: Success(&T)
   right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut [&mut x]]: [&mut &mut [&mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[&mut [&mut x]]: &mut [&mut [&mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[&mut &mut &mut x]: &mut [&mut &mut &mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[&mut &mut x]: &mut &mut [&mut &mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `[&mut x]: &mut &mut &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `&mut [[&mut x]]: &mut [&mut [&mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `&mut [[&mut x]]: &mut &mut [[&mut T]]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `&mut [&mut &mut x]: &mut &mut [&mut &mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `&mut [&mut x]: &mut &mut &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")
+Difference on `&mut &mut [&mut x]: &mut &mut &mut [&mut T]`:
+   left returned: Success(&mut T)
+  right returned: BorrowError(&mut T, "CantCopyRefMut")

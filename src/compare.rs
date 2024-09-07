@@ -130,6 +130,14 @@ impl std::fmt::Display for AnalysisResult<'_> {
 }
 
 impl RuleSet {
+    pub fn is_type_based(&self) -> bool {
+        matches!(self, Self::TypeBased(..))
+    }
+
+    pub fn is_binding_mode_based(&self) -> bool {
+        matches!(self, Self::BindingModeBased(..))
+    }
+
     pub fn analyze<'a>(&self, a: &'a Arenas<'a>, req: &TypingRequest<'a>) -> AnalysisResult<'a> {
         match *self {
             RuleSet::TypeBased(options) => analyze_with_this_crate(a, options, req),
@@ -285,11 +293,6 @@ impl<'a> ComparisonState<'a> {
                         }
                         Err(err) => {
                             if let TypeError::OverlyGeneral(deepening) = err {
-                                // TODO: borrow check? must skip move errors
-                                // match pred.expr.simplify(ctx).borrow_check() {
-                                //     Err(err) => Break(BorrowError(*pred.expr.ty, err)),
-                                //     Ok(_) => return Some(deepening),
-                                // }
                                 return Some(deepening);
                             } else {
                                 Break(AnalysisResult::TypeError(err))
@@ -360,17 +363,21 @@ pub fn compare_rulesets<'a>(
                     let right_res = right_res.break_value().unwrap();
                     // Skip if the results match.
                     match (left_res, right_res) {
-                        // These borrow errors only come from this solver, whose borrow checker is more
-                        // accurate. Hence if both agree on types we ignore the borrowck error.
-                        // TODO: only allow this for the bm-based solver.
-                        (Success(lty), Success(rty))
-                        | (BorrowError(lty, _), Success(rty))
-                        | (Success(lty), BorrowError(rty, _))
-                            if lty == rty =>
+                        (Success(lty), Success(rty)) if lty == rty => continue,
+                        (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => {
+                            continue
+                        }
+                        // These borrow errors only come from this solver, whose borrow checker is
+                        // more accurate than the other. Hence if both agree on types we ignore the
+                        // borrowck error.
+                        (BorrowError(lty, _), Success(rty))
+                            if right_ruleset.is_binding_mode_based() && lty == rty =>
                         {
                             continue
                         }
-                        (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => {
+                        (Success(lty), BorrowError(rty, _))
+                            if left_ruleset.is_binding_mode_based() && lty == rty =>
+                        {
                             continue
                         }
                         _ => {}
