@@ -258,6 +258,15 @@ fn main() -> anyhow::Result<()> {
             match parse_set_cmd(cmd, &mut state) {
                 // Display what changed.
                 Ok(_) => {
+                    if matches!(state.predicate_style, PredicateStyle::SequentBindingMode) {
+                        // The `SequentBindingMode` style cannot work without `always_inspect_bm`.
+                        if !matches!(old_style, PredicateStyle::SequentBindingMode) {
+                            state.options.always_inspect_bm = true;
+                        } else if old_options.always_inspect_bm && !state.options.always_inspect_bm
+                        {
+                            state.predicate_style = PredicateStyle::BindingMode;
+                        }
+                    }
                     if old_options != state.options {
                         match state.display_joint_rules(old_options, state.options) {
                             Ok(s) => {
