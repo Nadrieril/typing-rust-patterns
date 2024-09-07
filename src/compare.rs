@@ -525,9 +525,12 @@ fn compare() -> anyhow::Result<()> {
         ),
         (
             "ergo2024_breaking_transition_to_stateless_with_rule3",
-            TypeBased(RuleOptions::ERGO2024_BREAKING_ONLY),
+            TypeBased(RuleOptions {
+                ..RuleOptions::ERGO2024_BREAKING_ONLY
+            }),
             Somewhat.expect(Equal),
             TypeBased(RuleOptions {
+                allow_ref_pat_on_ref_mut: false,
                 downgrade_mut_inside_shared: true,
                 ..RuleOptions::STATELESS
             }),
