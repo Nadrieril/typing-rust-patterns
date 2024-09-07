@@ -184,7 +184,7 @@ pub enum DowngradeMutToRef {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FallbackToOuter(pub bool);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum TypeError {
     TypeMismatch,
     MutabilityMismatch,

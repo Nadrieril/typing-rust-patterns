@@ -11,6 +11,94 @@ pub enum RuleSet {
 
 pub type ParseError = String;
 
+mod convert {
+    use crate::Mutability::*;
+    use match_ergonomics_formality::*;
+
+    fn convert_pattern(pat: &crate::Pattern<'_>) -> Pattern {
+        let span = Span::nop();
+        match pat {
+            crate::Pattern::Abstract(_) => {
+                panic!("cannot convert abstract pattern to match_ergonomics_formality")
+            }
+            crate::Pattern::Tuple(pats) => {
+                assert_eq!(
+                    pats.len(),
+                    1,
+                    "only length-1 tuples are supported by match_ergonomics_formality"
+                );
+                let pat = convert_pattern(&pats[0]);
+                Pattern::Slice(SlicePat::new(pat, span, span))
+            }
+            crate::Pattern::Ref(mtbl, pat) => {
+                let pat = convert_pattern(pat);
+                match mtbl {
+                    Shared => Pattern::Ref(RefPat::new(pat, span, span)),
+                    Mutable => Pattern::RefMut(RefMutPat::new(pat, span, span)),
+                }
+            }
+            crate::Pattern::Binding(mtbl, bm, name) => Pattern::Binding(BindingPat {
+                ident: Ident::new(name.to_string(), span),
+                mode: match bm {
+                    crate::BindingMode::ByMove => BindingMode::Move,
+                    crate::BindingMode::ByRef(Shared) => BindingMode::Ref,
+                    crate::BindingMode::ByRef(Mutable) => BindingMode::RefMut,
+                },
+                is_mut: matches!(mtbl, Mutable),
+                span,
+            }),
+        }
+    }
+
+    fn convert_type(ty: &crate::Type<'_>) -> Expr {
+        let span = Span::nop();
+        match ty {
+            crate::Type::Abstract(_) => {
+                panic!("cannot convert abstract type to match_ergonomics_formality")
+            }
+            crate::Type::Tuple(tys) => {
+                assert_eq!(
+                    tys.len(),
+                    1,
+                    "only length-1 tuples are supported by match_ergonomics_formality"
+                );
+                let ty = convert_type(&tys[0]);
+                Expr::Slice(SliceExpr::new(ty, span, span))
+            }
+            crate::Type::Ref(mtbl, ty) => {
+                let ty = convert_type(ty);
+                match mtbl {
+                    Shared => Expr::Ref(RefExpr::new(ty, span, span)),
+                    Mutable => Expr::RefMut(RefMutExpr::new(ty, span, span)),
+                }
+            }
+            crate::Type::NonRef(name) => Expr::Type(TypeExpr {
+                name: Ident::new(name.to_string(), span),
+                span,
+            }),
+        }
+    }
+
+    pub(super) fn unconvert_type<'a>(a: &'a crate::Arenas<'a>, ty: &Expr) -> crate::Type<'a> {
+        match ty {
+            Expr::Type(ty) => crate::Type::NonRef(a.str_arena.alloc_str(&ty.name.name)),
+            Expr::RefMut(ty) => crate::Type::Ref(Mutable, unconvert_type(a, &ty.expr).alloc(a)),
+            Expr::Ref(ty) => crate::Type::Ref(Shared, unconvert_type(a, &ty.expr).alloc(a)),
+            Expr::Slice(ty) => {
+                crate::Type::Tuple(std::slice::from_ref(unconvert_type(a, &ty.expr).alloc(a)))
+            }
+            Expr::Paren(ty) => unconvert_type(a, &ty.expr),
+        }
+    }
+
+    pub(super) fn convert_request(req: crate::TypingRequest<'_>) -> LetStmt {
+        let span = Span::nop();
+        let pat = convert_pattern(req.pat);
+        let ty = convert_type(req.ty);
+        LetStmt::new(pat, ty, span, span)
+    }
+}
+
 use AnalysisResult::{BorrowError, Success};
 #[derive(Debug)]
 pub enum AnalysisResult<'a> {
@@ -53,11 +141,7 @@ impl std::fmt::Display for AnalysisResult<'_> {
 }
 
 impl RuleSet {
-    pub fn analyze<'a>(
-        &self,
-        a: &'a Arenas<'a>,
-        req: TypingRequest<'a>,
-    ) -> anyhow::Result<AnalysisResult<'a>> {
+    pub fn analyze<'a>(&self, a: &'a Arenas<'a>, req: TypingRequest<'a>) -> AnalysisResult<'a> {
         match *self {
             RuleSet::TypeBased(options) => analyze_with_this_crate(a, options, req),
             RuleSet::BindingModeBased(conf) => analyze_with_formality(a, conf, req),
@@ -69,7 +153,7 @@ fn analyze_with_this_crate<'a>(
     a: &'a Arenas<'a>,
     options: RuleOptions,
     req: TypingRequest<'a>,
-) -> anyhow::Result<AnalysisResult<'a>> {
+) -> AnalysisResult<'a> {
     let ctx = TypingCtx { arenas: a, options };
     let mut solver = TypingSolver::new(req);
     let e = loop {
@@ -78,7 +162,7 @@ fn analyze_with_this_crate<'a>(
             Err(e) => break e,
         }
     };
-    Ok(match e {
+    match e {
         CantStep::Done => {
             assert_eq!(solver.done_predicates.len(), 1);
             let pred = solver.done_predicates[0];
@@ -90,26 +174,21 @@ fn analyze_with_this_crate<'a>(
             }
         }
         CantStep::NoApplicableRule(_, err) => AnalysisResult::TypeError(err),
-    })
+    }
 }
 
 fn analyze_with_formality<'a>(
     a: &'a Arenas<'a>,
     conf: Conf,
     req: TypingRequest<'a>,
-) -> anyhow::Result<AnalysisResult<'a>> {
+) -> AnalysisResult<'a> {
     use match_ergonomics_formality::*;
-    let line = format!("let {} = {};", req.pat, req.ty);
-    let stmt = LetStmt::from_str(&line).map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    let stmt = convert::convert_request(req);
     let r = Reduction::from_stmt(conf, stmt);
-    Ok(match r.to_type() {
-        Ok((_ident, ty)) => {
-            let ty: String = ty.to_string();
-            let ty: Type = Type::parse(a, &ty)?;
-            Success(ty)
-        }
+    match r.to_type() {
+        Ok((_ident, ty)) => Success(convert::unconvert_type(a, &ty)),
         Err(e) => AnalysisResult::TypeError(TypeError::External(e)),
-    })
+    }
 }
 
 pub fn compare_rulesets<'a>(
@@ -119,17 +198,11 @@ pub fn compare_rulesets<'a>(
     expected_order: Ordering,
     right_ruleset: RuleSet,
 ) -> anyhow::Result<Vec<(TypingRequest<'a>, AnalysisResult<'a>, AnalysisResult<'a>)>> {
-    use anyhow::Context;
     use Ordering::*;
     let mut out = Vec::new();
     for test_case in test_cases {
-        let test_case_str = test_case.to_string();
-        let left_res = left_ruleset
-            .analyze(a, *test_case)
-            .context(test_case_str.clone())?;
-        let right_res = right_ruleset
-            .analyze(a, *test_case)
-            .context(test_case_str)?;
+        let left_res = left_ruleset.analyze(a, *test_case);
+        let right_res = right_ruleset.analyze(a, *test_case);
         match (left_res.cmp(&right_res), expected_order) {
             (Some(Equal), _) => continue,
             (Some(Less), Less) => continue,
