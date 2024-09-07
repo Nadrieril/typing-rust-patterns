@@ -99,7 +99,7 @@ where
         )
         .followed_by(multispace0)
         .map(|pats| {
-            let pats = ctx.pat_arena.alloc_extend(pats);
+            let pats = ctx.bump.alloc_slice_fill_iter(pats);
             Pattern::Tuple(pats)
         })
 }
@@ -125,7 +125,7 @@ where
         .and(ident)
         .followed_by(multispace0)
         .map(|((mtbl, mode), name)| {
-            let name = ctx.str_arena.alloc_str(name);
+            let name = ctx.bump.alloc_str(name);
             Pattern::Binding(mtbl, mode, name)
         })
 }
@@ -172,7 +172,7 @@ where
         )
         .followed_by(multispace0)
         .map(|pats| {
-            let pats = ctx.type_arena.alloc_extend(pats);
+            let pats = ctx.bump.alloc_slice_fill_iter(pats);
             Type::Tuple(pats)
         })
 }
@@ -194,7 +194,7 @@ where
 {
     let ident = take_while(|c: char| c.is_alphanumeric() || c == '_');
     ident.followed_by(multispace0).map(|name| {
-        let name = ctx.str_arena.alloc_str(name);
+        let name = ctx.bump.alloc_str(name);
         Type::NonRef(name)
     })
 }

@@ -30,7 +30,7 @@ impl<'a> Pattern<'a> {
         match *self {
             Pattern::Tuple(pats) => {
                 let pats = pats.iter().map(|pat| pat.subst(a, replace)).collect_vec();
-                Pattern::Tuple(a.pat_arena.alloc_extend(pats))
+                Pattern::Tuple(a.bump.alloc_slice_fill_iter(pats))
             }
             Pattern::Ref(mtbl, pat) => Pattern::Ref(mtbl, pat.subst(a, replace).alloc(a)),
             Pattern::Binding(..) => *self,
@@ -96,7 +96,7 @@ impl<'a> Type<'a> {
         match *self {
             Type::Tuple(tys) => {
                 let tys = tys.iter().map(|ty| ty.subst(a, replace)).collect_vec();
-                Type::Tuple(a.type_arena.alloc_extend(tys))
+                Type::Tuple(a.bump.alloc_slice_fill_iter(tys))
             }
             Type::Ref(mtbl, ty) => Type::Ref(mtbl, ty.subst(a, replace).alloc(a)),
             Type::NonRef(_) => *self,

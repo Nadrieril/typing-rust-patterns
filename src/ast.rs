@@ -2,6 +2,8 @@
 //!
 //! Note: we arena-allocate everything to make pattern-matching easy.
 
+use std::marker::PhantomData;
+
 use crate::*;
 use BindingMode::*;
 use Mutability::*;
@@ -154,25 +156,24 @@ impl TypingPredicate<'_> {
 
 #[derive(Default)]
 pub struct Arenas<'a> {
-    pub str_arena: typed_arena::Arena<u8>,
-    pub pat_arena: typed_arena::Arena<Pattern<'a>>,
-    pub type_arena: typed_arena::Arena<Type<'a>>,
-    pub expr_arena: typed_arena::Arena<Expression<'a>>,
+    pub bump: bumpalo::Bump,
+    // To avoid having to remove the lifetime param everywhere.
+    phantom: PhantomData<&'a ()>,
 }
 
 impl<'a> Pattern<'a> {
     pub fn alloc(self, arenas: &'a Arenas<'a>) -> &'a Self {
-        arenas.pat_arena.alloc(self)
+        arenas.bump.alloc(self)
     }
 }
 impl<'a> Type<'a> {
     pub fn alloc(self, arenas: &'a Arenas<'a>) -> &'a Self {
-        arenas.type_arena.alloc(self)
+        arenas.bump.alloc(self)
     }
 }
 impl<'a> Expression<'a> {
     pub fn alloc(self, arenas: &'a Arenas<'a>) -> &'a Self {
-        arenas.expr_arena.alloc(self)
+        arenas.bump.alloc(self)
     }
 }
 

@@ -81,7 +81,7 @@ mod convert {
 
     pub(super) fn unconvert_type<'a>(a: &'a crate::Arenas<'a>, ty: &Expr) -> crate::Type<'a> {
         match ty {
-            Expr::Type(ty) => crate::Type::NonRef(a.str_arena.alloc_str(&ty.name.name)),
+            Expr::Type(ty) => crate::Type::NonRef(a.bump.alloc_str(&ty.name.name)),
             Expr::RefMut(ty) => crate::Type::Ref(Mutable, unconvert_type(a, &ty.expr).alloc(a)),
             Expr::Ref(ty) => crate::Type::Ref(Shared, unconvert_type(a, &ty.expr).alloc(a)),
             Expr::Slice(ty) => {

@@ -31,8 +31,8 @@ impl<'a> Pattern<'a> {
                     };
                     let subpats = subnames
                         .iter()
-                        .map(|name| Pattern::Abstract(a.str_arena.alloc_str(name)));
-                    Pattern::Tuple(a.pat_arena.alloc_extend(subpats))
+                        .map(|name| Pattern::Abstract(a.bump.alloc_str(name)));
+                    Pattern::Tuple(a.bump.alloc_slice_fill_iter(subpats))
                 };
                 [tuple]
                     .into_iter()
@@ -58,7 +58,7 @@ impl<'a> Pattern<'a> {
                 pats.iter()
                     .map(|p| p.deepen(a, many))
                     .multi_cartesian_product()
-                    .map(|pats| Pattern::Tuple(a.pat_arena.alloc_extend(pats)))
+                    .map(|pats| Pattern::Tuple(a.bump.alloc_slice_fill_iter(pats)))
                     .collect()
             }
             Pattern::Ref(mtbl, p) => p
@@ -95,8 +95,8 @@ impl<'a> Type<'a> {
                     let subnames: &[&str] = &[&(name.to_string() + "0"), &(name.to_string() + "1")];
                     let subtypes = subnames
                         .iter()
-                        .map(|name| Type::Abstract(a.str_arena.alloc_str(&name)));
-                    vec![Type::Tuple(a.type_arena.alloc_extend(subtypes))]
+                        .map(|name| Type::Abstract(a.bump.alloc_str(&name)));
+                    vec![Type::Tuple(a.bump.alloc_slice_fill_iter(subtypes))]
                 } else {
                     // In `!many` mode, this is considered a leaf.
                     vec![]
@@ -106,7 +106,7 @@ impl<'a> Type<'a> {
                 .iter()
                 .map(|p| p.deepen(a, many))
                 .multi_cartesian_product()
-                .map(|tys| Type::Tuple(a.type_arena.alloc_extend(tys)))
+                .map(|tys| Type::Tuple(a.bump.alloc_slice_fill_iter(tys)))
                 .collect(),
             Type::Ref(mtbl, p) => p
                 .deepen(a, many)
