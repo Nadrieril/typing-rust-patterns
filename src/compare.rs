@@ -108,27 +108,6 @@ pub enum AnalysisResult<'a> {
 }
 
 impl<'a> AnalysisResult<'a> {
-    pub fn cmp(&self, other: &Self) -> Option<Ordering> {
-        use AnalysisResult::*;
-        use Ordering::*;
-        match (self, other) {
-            // These borrow errors only come from this solver, whose borrow checker is more
-            // accurate. Hence if both agree on types we ignore the borrowck error.
-            // TODO: only allow this for the bm-based solver.
-            (Success(lty), Success(rty))
-            | (BorrowError(lty, _), Success(rty))
-            | (Success(lty), BorrowError(rty, _))
-                if lty == rty =>
-            {
-                Some(Equal)
-            }
-            (Success(_), Success(_)) => None,
-            (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => Some(Equal),
-            (TypeError(_) | BorrowError(..), Success(_)) => Some(Less),
-            (Success(_), TypeError(_) | BorrowError(..)) => Some(Greater),
-        }
-    }
-
     /// Replace the abstract types (if any) with the given type.
     pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
         match *self {
@@ -346,7 +325,10 @@ pub fn compare_rulesets<'a>(
     expected_order: Ordering,
     right_ruleset: RuleSet,
 ) -> Vec<(TypingRequest<'a>, AnalysisResult<'a>, AnalysisResult<'a>)> {
+    use AnalysisResult::*;
+    use ControlFlow::*;
     use Ordering::*;
+
     // Start with an abstract pattern and type, and a concrete expression.
     let req = TypingRequest::ABSTRACT;
     let start_state = ControlFlow::Continue(TypingPredicate::new(req));
@@ -362,15 +344,35 @@ pub fn compare_rulesets<'a>(
     while !states.is_empty() {
         for mut state in mem::take(&mut states) {
             // Deepen each state until either completion or deepening is required.
-            match state.step(a, left_ruleset, right_ruleset) {
+            let opt_deepen = state.step(a, left_ruleset, right_ruleset);
+            let left_res = state.left_state;
+            let right_res = state.right_state;
+            // No need to continue if one side already errored as expected.
+            match expected_order {
+                Less if matches!(left_res, Break(TypeError(_) | BorrowError(..))) => continue,
+                Greater if matches!(right_res, Break(TypeError(_) | BorrowError(..))) => continue,
+                _ => {}
+            }
+            match opt_deepen {
                 None => {
                     // No deepening required, hence this is a concrete predicate or both errored.
-                    let left_res = state.left_state.break_value().unwrap();
-                    let right_res = state.right_state.break_value().unwrap();
-                    match (left_res.cmp(&right_res), expected_order) {
-                        (Some(Equal), _) => continue,
-                        (Some(Less), Less) => continue,
-                        (Some(Greater), Greater) => continue,
+                    let left_res = left_res.break_value().unwrap();
+                    let right_res = right_res.break_value().unwrap();
+                    // Skip if the results match.
+                    match (left_res, right_res) {
+                        // These borrow errors only come from this solver, whose borrow checker is more
+                        // accurate. Hence if both agree on types we ignore the borrowck error.
+                        // TODO: only allow this for the bm-based solver.
+                        (Success(lty), Success(rty))
+                        | (BorrowError(lty, _), Success(rty))
+                        | (Success(lty), BorrowError(rty, _))
+                            if lty == rty =>
+                        {
+                            continue
+                        }
+                        (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => {
+                            continue
+                        }
                         _ => {}
                     }
                     complete.push((state.req, left_res, right_res))
