@@ -125,8 +125,13 @@ where
         .and(ident)
         .followed_by(multispace0)
         .map(|((mtbl, mode), name)| {
+            // Cheat: allow parsing an abstract pattern for debugging purposes.
             let name = ctx.bump.alloc_str(name);
-            Pattern::Binding(mtbl, mode, name)
+            if name.starts_with("ap") {
+                Pattern::Abstract(name)
+            } else {
+                Pattern::Binding(mtbl, mode, name)
+            }
         })
 }
 
@@ -195,7 +200,12 @@ where
     let ident = take_while(|c: char| c.is_alphanumeric() || c == '_');
     ident.followed_by(multispace0).map(|name| {
         let name = ctx.bump.alloc_str(name);
-        Type::OtherNonRef(name)
+        // Cheat: allow parsing an abstract type for debugging purposes.
+        if name.starts_with("AT") {
+            Type::Abstract(name)
+        } else {
+            Type::OtherNonRef(name)
+        }
     })
 }
 

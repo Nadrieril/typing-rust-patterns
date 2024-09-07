@@ -22,6 +22,8 @@ fn trace_cli() -> anyhow::Result<()> {
         "set ergo2024\nset predicate_style BindingMode\nrules",
         "save\nset structural\nswap\ncompare",
         "set predicate_style Stateless",
+        "set stable_rust\n[&x]: &[AT]",
+        "&ap: &T",
     ];
     for &test_case in test_cases {
         let success = Command::cargo_bin("typing-rust-patterns")?
