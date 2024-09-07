@@ -49,14 +49,22 @@ impl<'a> Type<'a> {
         }
     }
 
-    /// Whether the type implements `Copy` (we assume type variables are `Copy`).
-    pub fn is_copy(&self) -> bool {
-        match self {
-            Type::Tuple(tys) => tys.iter().all(|ty| ty.is_copy()),
+    /// Whether the type implements `Copy`.
+    pub fn is_copy(&self) -> Result<bool, DeepeningRequest> {
+        Ok(match *self {
+            Type::Tuple(tys) => {
+                for ty in tys {
+                    if !ty.is_copy()? {
+                        return Ok(false);
+                    }
+                }
+                true
+            }
             Type::Ref(Shared, _) => true,
             Type::Ref(Mutable, _) => false,
-            Type::NonRef(_) | Type::Abstract(_) => true,
-        }
+            Type::NonRef(_) => true,
+            Type::Abstract(_) => return Err(DeepeningRequest::Type),
+        })
     }
 
     pub fn visit(&self, f: &mut impl FnMut(&Self)) {
@@ -108,6 +116,7 @@ pub enum BorrowCheckError {
     CantCopyRefMut,
     CantCopyNestedRefMut,
     MutBorrowBehindSharedBorrow,
+    OverlyGeneral(DeepeningRequest),
 }
 
 impl<'a> Expression<'a> {
@@ -170,14 +179,14 @@ impl<'a> Expression<'a> {
             ExprKind::Scrutinee => Ok(()),
             ExprKind::Abstract { .. } => Ok(()),
             ExprKind::Ref(mtbl, e) => {
-                if mtbl == Mutable && e.scrutinee_access_mode() == ByRef(Shared) {
+                if mtbl == Mutable && e.scrutinee_access_mode()? == ByRef(Shared) {
                     Err(BorrowCheckError::MutBorrowBehindSharedBorrow)
                 } else {
                     e.borrow_check_inner(false)
                 }
             }
             ExprKind::Deref(e) | ExprKind::Field(e, _) => {
-                if top_level && !self.ty.is_copy() && self.scrutinee_access_mode() != ByMove {
+                if top_level && self.scrutinee_access_mode()? != ByMove && !self.ty.is_copy()? {
                     // Distinguish these two cases because the nested case is not handled by
                     // `match-ergo-formality`.
                     if let Type::Ref(Mutable, ..) = self.ty {
@@ -195,31 +204,30 @@ impl<'a> Expression<'a> {
     /// Computes what access we have to the scrutinee. By default we have move access, and if we go
     /// under references we get by-reference binding mode of the least permissive reference
     /// encountered.
-    pub fn scrutinee_access_mode(&self) -> BindingMode {
-        match self.kind {
+    pub fn scrutinee_access_mode(&self) -> Result<BindingMode, DeepeningRequest> {
+        Ok(match self.kind {
             ExprKind::Scrutinee => ByMove,
-            ExprKind::Ref(mtbl, e) => min(ByRef(mtbl), e.scrutinee_access_mode()),
+            ExprKind::Ref(mtbl, e) => min(ByRef(mtbl), e.scrutinee_access_mode()?),
             ExprKind::Deref(e) => {
                 let bm = if let Type::Ref(mtbl, _) = *e.ty {
                     ByRef(mtbl)
                 } else {
                     ByMove
                 };
-                min(bm, e.scrutinee_access_mode())
+                min(bm, e.scrutinee_access_mode()?)
             }
-            ExprKind::Field(e, _) => e.scrutinee_access_mode(),
+            ExprKind::Field(e, _) => e.scrutinee_access_mode()?,
             ExprKind::Abstract {
-                scrutinee_mutability: Some(Shared),
+                scrutinee_mutability: Some(mtbl),
                 ..
-            } => ByRef(Shared),
-            // We can't know, and strictly speaking we shouldn't assume, but we choose to lie here.
-            ExprKind::Abstract { .. } => ByMove,
-        }
+            } => ByRef(mtbl),
+            ExprKind::Abstract { .. } => return Err(DeepeningRequest::ScrutineeMutability),
+        })
     }
 
     /// Restricted version of `scrutinee_access_mode`, usable for deepening. Only distinguishes
     /// `ByRef(Shared)` from the other two (which is sufficient to implement the rules we need).
-    pub fn scrutinee_mutability(&self) -> Result<Mutability, TypeError> {
+    pub fn scrutinee_mutability(&self) -> Result<Mutability, DeepeningRequest> {
         Ok(match self.kind {
             ExprKind::Scrutinee => Mutable,
             ExprKind::Ref(mtbl, e) => min(mtbl, e.scrutinee_mutability()?),
@@ -235,12 +243,7 @@ impl<'a> Expression<'a> {
                 scrutinee_mutability: Some(mtbl),
                 ..
             } => mtbl,
-            // We can't know, and strictly speaking we shouldn't assume, but we choose to lie here.
-            ExprKind::Abstract { .. } => {
-                return Err(TypeError::OverlyGeneral(
-                    DeepeningRequest::ScrutineeMutability,
-                ))
-            }
+            ExprKind::Abstract { .. } => return Err(DeepeningRequest::ScrutineeMutability),
         })
     }
 
@@ -272,9 +275,13 @@ impl<'a> Expression<'a> {
             ExprKind::Deref(e) => {
                 let e = e.simplify_inner(ctx, false);
                 match e.kind {
-                    ExprKind::Ref(Shared, inner) if top_level && self.ty.is_copy() => *inner,
+                    ExprKind::Ref(Shared, inner) if top_level && self.ty.is_copy() == Ok(true) => {
+                        *inner
+                    }
                     ExprKind::Ref(Mutable, inner) if ctx.options.simplify_deref_mut => *inner,
-                    ExprKind::Ref(mtbl, inner) if inner.scrutinee_access_mode() == ByRef(mtbl) => {
+                    ExprKind::Ref(mtbl, inner)
+                        if inner.scrutinee_access_mode() == Ok(ByRef(mtbl)) =>
+                    {
                         *inner
                     }
                     _ => Expression {

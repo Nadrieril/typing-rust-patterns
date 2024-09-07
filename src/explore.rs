@@ -243,6 +243,18 @@ impl<'a> TypingPredicate<'a> {
     }
 }
 
+impl From<DeepeningRequest> for TypeError {
+    fn from(value: DeepeningRequest) -> Self {
+        TypeError::OverlyGeneral(value)
+    }
+}
+
+impl From<DeepeningRequest> for BorrowCheckError {
+    fn from(value: DeepeningRequest) -> Self {
+        BorrowCheckError::OverlyGeneral(value)
+    }
+}
+
 //--- Generation ---
 
 /// Patterns of depth 0 and 1. This is the same as `Pattern::ABSTRACT.deepen(_, false)`.

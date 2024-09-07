@@ -249,9 +249,9 @@ impl<'a> TypingPredicate<'a> {
                     .enumerate()
                     .map(|(i, pat)| {
                         let expr = self.expr.deref(a).field(a, i).borrow(a, mtbl);
-                        Ok(Self { pat, expr })
+                        Self { pat, expr }
                     })
-                    .try_collect()?;
+                    .collect();
                 Ok((Rule::ConstructorRef(downgrade), preds))
             }
             (P::Tuple(_), T::Ref(_, T::Tuple(_))) => Err(TypeError::TypeMismatch),
