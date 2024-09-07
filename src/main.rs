@@ -90,7 +90,6 @@ impl CliState {
         left: RuleOptions,
         right: RuleOptions,
     ) -> Result<String, IncompatibleStyle> {
-        use DiffState::*;
         let style = self.predicate_style;
         let arenas = &Arenas::default();
         let joint_rules = compute_joint_rules(arenas, left, right);
@@ -106,15 +105,7 @@ impl CliState {
                 .map(|r| r.display(style))
                 .transpose()?
                 .unwrap_or_default();
-            for x in left.lines().zip_longest(right.lines()) {
-                let (l, r) = x.or(" ", " ");
-                let same = l == r;
-                let l_state = if same { Both } else { Old };
-                let r_state = if same { Both } else { New };
-                let l = l_state.color_line(l);
-                let r = r_state.color_line(r);
-                let _ = writeln!(&mut out, " {l:80} | {r}");
-            }
+            out += &DiffState::side_by_side(&left, &right);
             let _ = writeln!(&mut out);
         }
         Ok(out)
@@ -295,10 +286,9 @@ impl CliState {
                 }
             }
         } else {
-            // TODO: run in parallel if compare mode
             self.history.push(request.to_string());
             let a = &Arenas::default();
-            match TypingRequest::parse(a, request) {
+            let request = match TypingRequest::parse(a, request) {
                 Err(err) => {
                     println!(
                         "Couldn't parse typing request ({err}).\n\n\
@@ -311,12 +301,22 @@ impl CliState {
                         - variables `T`, `U`, etc\n\
                         - references `&T`\n\
                         - tuples `[T]`, `[T, U]`"
-                    )
+                    );
+                    return Ok(ControlFlow::Continue(()));
                 }
-                Ok(request) => {
-                    let trace = trace_solver(request, self.options, self.predicate_style);
-                    println!("{trace}")
-                }
+                Ok(request) => request,
+            };
+
+            if let Some(saved) = self.saved {
+                println!("Comparing against the saved ruleset. Use `unsave` to forget the saved ruleset.");
+                println!("The current ruleset is on the left, and the saved one on the right.");
+                let left = trace_solver(request, self.options, self.predicate_style);
+                let right = trace_solver(request, saved, self.predicate_style);
+                let traces = DiffState::side_by_side(&left, &right);
+                println!("{traces}")
+            } else {
+                let trace = trace_solver(request, self.options, self.predicate_style);
+                println!("{trace}")
             }
         }
         Ok(ControlFlow::Continue(()))
@@ -454,25 +454,6 @@ enum DiffState {
 }
 
 impl DiffState {
-    // fn display<'a>(&self, text: &'a str) -> impl Display + 'a {
-    //     use colored::Colorize;
-    //     let (marker, color) = match self {
-    //         Self::New => ("+", Some(Color::Green)),
-    //         Self::Old => ("-", Some(Color::Red)),
-    //         Self::Both => (" ", None),
-    //     };
-    //     text.lines()
-    //         .map(move |line| {
-    //             let line = format!("{marker}{line}");
-    //             if let Some(color) = color {
-    //                 line.color(color)
-    //             } else {
-    //                 <&str as Colorize>::clear(&line)
-    //             }
-    //         })
-    //         .format("\n")
-    // }
-
     fn color_line<'a>(&self, line: &'a str) -> impl Display + 'a {
         use colored::Colorize;
         let color = match self {
@@ -485,6 +466,21 @@ impl DiffState {
         } else {
             <&str as Colorize>::clear(line)
         }
+    }
+
+    fn side_by_side(left: &str, right: &str) -> String {
+        use DiffState::*;
+        let mut out = String::new();
+        for x in left.lines().zip_longest(right.lines()) {
+            let (l, r) = x.or(" ", " ");
+            let same = l == r;
+            let l_state = if same { Both } else { Old };
+            let r_state = if same { Both } else { New };
+            let l = l_state.color_line(l);
+            let r = r_state.color_line(r);
+            let _ = writeln!(&mut out, " {l:80} | {r}");
+        }
+        out
     }
 }
 
