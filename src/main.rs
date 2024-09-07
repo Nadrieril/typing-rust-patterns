@@ -1,4 +1,5 @@
 use std::fmt::Write;
+use std::ops::ControlFlow;
 use std::{fmt::Display, io::IsTerminal};
 
 use anyhow::bail;
@@ -138,26 +139,8 @@ impl CliState {
         }
         Ok(out)
     }
-}
 
-fn main() -> anyhow::Result<()> {
-    let mut state = CliState {
-        history: Vec::new(),
-        options: RuleOptions::DEFAULT,
-        predicate_style: PredicateStyle::Sequent,
-        saved: None,
-    };
-
-    let is_interactive = std::io::stdin().is_terminal();
-    if is_interactive {
-        println!("Welcome to the interactive pattern typer!");
-        println!("Write `pattern: type` on the prompt line and I will attempt to type it.");
-        println!("Example: `&[ref x]: &[T]`");
-        println!("Type `help` for a list of available commands.");
-        println!("");
-    }
-
-    while let Some(request) = state.prompt(is_interactive)? {
+    fn step(&mut self, request: &str) -> anyhow::Result<ControlFlow<()>> {
         let request = request.trim();
         if request == "?" || request == "help" {
             println!(
@@ -175,21 +158,21 @@ fn main() -> anyhow::Result<()> {
                     .format("\n"),
             )
         } else if request == "q" || request == "quit" {
-            break;
+            return Ok(ControlFlow::Break(()));
         } else if request == "options" {
-            if let Some(saved) = state.saved {
+            if let Some(saved) = self.saved {
                 println!("Comparing against the saved ruleset. Use `unsave` to forget the saved ruleset.");
                 println!("The current ruleset is on the left, and the saved one on the right.");
-                display_options_diff(state.options, saved);
+                display_options_diff(self.options, saved);
             } else {
-                let options = serde_yaml::to_string(&state.options)?;
+                let options = serde_yaml::to_string(&self.options)?;
                 print!("{options}");
-                let style = serde_yaml::to_string(&state.predicate_style)?;
+                let style = serde_yaml::to_string(&self.predicate_style)?;
                 print!("predicate_style: {}", style);
             }
         } else if request == "rules" {
-            if let Some(saved) = state.saved {
-                if saved == state.options {
+            if let Some(saved) = self.saved {
+                if saved == self.options {
                     println!(indoc!(
                         "
                         This ruleset is the same as the one that was previously saved. Change some
@@ -201,38 +184,38 @@ fn main() -> anyhow::Result<()> {
                     println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
                     println!("The current ruleset is on the left, and the saved one on the right.");
                     println!();
-                    let s = state.display_joint_rules(state.options, saved).unwrap();
+                    let s = self.display_joint_rules(self.options, saved).unwrap();
                     print!("{s}");
                 }
             } else {
-                let s = display_rules(state.predicate_style, state.options).unwrap();
+                let s = display_rules(self.predicate_style, self.options).unwrap();
                 print!("{s}");
             }
         } else if request == "save" {
             println!("Current ruleset was saved");
-            state.saved = Some(state.options);
+            self.saved = Some(self.options);
         } else if request == "unsave" {
             println!("Saved ruleset was forgotten");
-            state.saved = None;
+            self.saved = None;
         } else if request == "swap" {
-            if let Some(saved) = &mut state.saved {
+            if let Some(saved) = &mut self.saved {
                 println!("Current and saved rulesets were swapped");
-                std::mem::swap(saved, &mut state.options);
+                std::mem::swap(saved, &mut self.options);
                 let saved = *saved;
                 println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
                 println!(
                     "The old current ruleset is on the left, and the new current one on the right."
                 );
                 println!();
-                let s = state.display_joint_rules(saved, state.options).unwrap();
+                let s = self.display_joint_rules(saved, self.options).unwrap();
                 println!("{s}");
-                display_options_diff(saved, state.options);
+                display_options_diff(saved, self.options);
             } else {
                 println!("Can't swap saved and current ruleset because there is no saved ruleset. Use `save` to save one.");
             }
         } else if request == "compare" {
-            if let Some(saved) = state.saved {
-                if saved == state.options {
+            if let Some(saved) = self.saved {
+                if saved == self.options {
                     println!(indoc!(
                         "
                         This ruleset is the same as the one that was previously saved. Change some
@@ -248,7 +231,7 @@ fn main() -> anyhow::Result<()> {
                         4,
                         RuleSet::TypeBased(saved),
                         std::cmp::Ordering::Equal,
-                        RuleSet::TypeBased(state.options),
+                        RuleSet::TypeBased(self.options),
                     );
 
                     if differences.is_empty() {
@@ -269,54 +252,53 @@ fn main() -> anyhow::Result<()> {
                 println!("Can't compare rulesets because there is no saved ruleset. Use `save` to save one.");
             }
         } else if let Some(cmd) = request.strip_prefix("set") {
-            state.history.push(request.to_string());
-            let old_style = state.predicate_style;
-            let old_options = state.options;
-            match parse_set_cmd(cmd, &mut state) {
+            self.history.push(request.to_string());
+            let old_style = self.predicate_style;
+            let old_options = self.options;
+            match parse_set_cmd(cmd, self) {
                 // Display what changed.
                 Ok(_) => {
-                    if matches!(state.predicate_style, PredicateStyle::SequentBindingMode) {
+                    if matches!(self.predicate_style, PredicateStyle::SequentBindingMode) {
                         // The `SequentBindingMode` style cannot work without `always_inspect_bm`.
                         if !matches!(old_style, PredicateStyle::SequentBindingMode) {
-                            state.options.always_inspect_bm = true;
-                        } else if old_options.always_inspect_bm && !state.options.always_inspect_bm
-                        {
-                            state.predicate_style = PredicateStyle::BindingMode;
+                            self.options.always_inspect_bm = true;
+                        } else if old_options.always_inspect_bm && !self.options.always_inspect_bm {
+                            self.predicate_style = PredicateStyle::BindingMode;
                         }
                     }
-                    if old_options != state.options {
+                    if old_options != self.options {
                         println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
                         println!("The old ruleset is on the left, and the new one on the right.");
                         println!();
-                        match state.display_joint_rules(old_options, state.options) {
+                        match self.display_joint_rules(old_options, self.options) {
                             Ok(s) => {
                                 println!("{s}");
-                                display_options_diff(old_options, state.options);
+                                display_options_diff(old_options, self.options);
                             }
                             Err(IncompatibleStyle) => {
-                                state.options = old_options;
+                                self.options = old_options;
                                 print!(
                                     "Error: the new ruleset cannot be displayed with style {}. ",
-                                    state.predicate_style
+                                    self.predicate_style
                                 );
                                 println!("Change the style and try again.");
                             }
                         }
                     } else {
-                        if display_rules(state.predicate_style, state.options).is_err() {
+                        if display_rules(self.predicate_style, self.options).is_err() {
                             println!(
                                 "Error: the current ruleset cannot be displayed with style {}.",
-                                state.predicate_style
+                                self.predicate_style
                             );
-                            state.predicate_style = old_style;
-                        } else if state.saved.is_some_and(|saved| {
-                            display_rules(state.predicate_style, saved).is_err()
+                            self.predicate_style = old_style;
+                        } else if self.saved.is_some_and(|saved| {
+                            display_rules(self.predicate_style, saved).is_err()
                         }) {
                             println!(
                                 "Error: the saved ruleset cannot be displayed with style {}.",
-                                state.predicate_style
+                                self.predicate_style
                             );
-                            state.predicate_style = old_style;
+                            self.predicate_style = old_style;
                         }
                     }
                 }
@@ -334,8 +316,8 @@ fn main() -> anyhow::Result<()> {
             }
         } else {
             // TODO: run in parallel if compare mode
-            state.history.push(request.to_string());
-            match trace_solver(&request, state.options, state.predicate_style) {
+            self.history.push(request.to_string());
+            match trace_solver(&request, self.options, self.predicate_style) {
                 Ok(trace) => println!("{trace}"),
                 Err(err) => {
                     println!(
@@ -352,6 +334,32 @@ fn main() -> anyhow::Result<()> {
                     )
                 }
             }
+        }
+        Ok(ControlFlow::Continue(()))
+    }
+}
+
+fn main() -> anyhow::Result<()> {
+    let mut state = CliState {
+        history: Vec::new(),
+        options: RuleOptions::DEFAULT,
+        predicate_style: PredicateStyle::Sequent,
+        saved: None,
+    };
+
+    let is_interactive = std::io::stdin().is_terminal();
+    if is_interactive {
+        println!("Welcome to the interactive pattern typer!");
+        println!("Write `pattern: type` on the prompt line and I will attempt to type it.");
+        println!("Example: `&[ref x]: &[T]`");
+        println!("Type `help` for a list of available commands.");
+        println!("");
+    }
+
+    while let Some(request) = state.prompt(is_interactive)? {
+        match state.step(&request)? {
+            ControlFlow::Continue(()) => continue,
+            ControlFlow::Break(()) => break,
         }
     }
     Ok(())
