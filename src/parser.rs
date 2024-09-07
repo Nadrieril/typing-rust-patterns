@@ -195,7 +195,7 @@ where
     let ident = take_while(|c: char| c.is_alphanumeric() || c == '_');
     ident.followed_by(multispace0).map(|name| {
         let name = ctx.bump.alloc_str(name);
-        Type::NonRef(name)
+        Type::OtherNonRef(name)
     })
 }
 

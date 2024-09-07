@@ -135,7 +135,7 @@ impl<'a> Type<'a> {
     /// Collect the names of types known to not be references.
     fn collect_side_constraints(&self, cstrs: &mut SideConstraints<'a>) {
         self.visit(&mut |ty| match ty {
-            Type::NonRef(var) => {
+            Type::AbstractNonRef(var) => {
                 cstrs.non_ref_types.insert(var);
             }
             _ => {}

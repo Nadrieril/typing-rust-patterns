@@ -77,31 +77,33 @@ impl<'a> Type<'a> {
     pub fn deepen(&'a self, a: &'a Arenas<'a>, many: bool) -> Vec<Self> {
         match *self {
             Type::Abstract(name) => {
-                let mut out = vec![
-                    Type::NonRef(name),
-                    Type::Ref(Shared, self),
-                    Type::Ref(Mutable, self),
-                ];
-                if !many {
-                    // In `!many` mode, `NonRef` and `Tuple` are considered disjoint.
+                let mut out = vec![Type::Ref(Shared, self), Type::Ref(Mutable, self)];
+                if many {
+                    // In `many` mode, we go in two steps: first learn whether the type is a
+                    // reference, then expand into a tuple.
+                    out.insert(0, Type::AbstractNonRef(name));
+                } else {
+                    // In `!many` mode, we directly expand an abstract type into a tuple or a leaf
+                    // type.
+                    out.insert(0, Type::OtherNonRef(name));
                     out.push(Type::Tuple(std::slice::from_ref(self)));
                 }
                 out
             }
-            Type::NonRef(name) => {
+            Type::AbstractNonRef(name) => {
                 if many {
-                    // We assume no rules depend on the length. We use length 2 for demo
-                    // purposes.
+                    // We assume no rules depend on the length. We use length 2 for demo purposes.
+                    // We don't need `OtherNonRef` for the rules.
                     let subnames: &[&str] = &[&(name.to_string() + "0"), &(name.to_string() + "1")];
                     let subtypes = subnames
                         .iter()
                         .map(|name| Type::Abstract(a.bump.alloc_str(&name)));
                     vec![Type::Tuple(a.bump.alloc_slice_fill_iter(subtypes))]
                 } else {
-                    // In `!many` mode, this is considered a leaf.
-                    vec![]
+                    panic!("unexpected `AbstractNonRef`")
                 }
             }
+            Type::OtherNonRef(_) => vec![],
             Type::Tuple(tys) => tys
                 .iter()
                 .map(|p| p.deepen(a, many))
@@ -165,7 +167,7 @@ impl<'a> Expression<'a> {
                         vec.push(self.borrow(a, Shared));
                         vec.push(self.borrow(a, Mutable));
                     }
-                    Type::Tuple(..) | Type::NonRef(..) => {}
+                    Type::Tuple(..) | Type::OtherNonRef(..) | Type::AbstractNonRef(..) => {}
                 }
                 vec
             }
@@ -295,7 +297,7 @@ impl<'a> Pattern<'a> {
 
 /// Types of depth 0 and 1. This is the same as `Type::ABSTRACT.deepen(_, false)`.
 pub static DEPTH1_TYS: &[Type<'_>] = &[
-    Type::NonRef("T"),
+    Type::OtherNonRef("T"),
     Type::Ref(Shared, &Type::ABSTRACT),
     Type::Ref(Mutable, &Type::ABSTRACT),
     Type::Tuple(&[Type::ABSTRACT]),

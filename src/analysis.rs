@@ -42,8 +42,7 @@ impl<'a> Pattern<'a> {
 impl<'a> Type<'a> {
     pub fn depth(&self) -> usize {
         match self {
-            Type::Abstract(_) => 0,
-            Type::NonRef(_) => 0,
+            Type::Abstract(_) | Type::AbstractNonRef(_) | Type::OtherNonRef(_) => 0,
             Type::Tuple(tys) => tys.iter().map(|ty| ty.depth() + 1).max().unwrap_or(0),
             Type::Ref(_, ty) => 1 + ty.depth(),
         }
@@ -62,8 +61,8 @@ impl<'a> Type<'a> {
             }
             Type::Ref(Shared, _) => true,
             Type::Ref(Mutable, _) => false,
-            Type::NonRef(_) => true,
-            Type::Abstract(_) => return Err(DeepeningRequest::Type),
+            Type::OtherNonRef(_) => true,
+            Type::AbstractNonRef(_) | Type::Abstract(_) => return Err(DeepeningRequest::Type),
         })
     }
 
@@ -71,7 +70,8 @@ impl<'a> Type<'a> {
         f(self);
         match *self {
             Type::Abstract(_) => {}
-            Type::NonRef(_) => {}
+            Type::AbstractNonRef(_) => {}
+            Type::OtherNonRef(_) => {}
             Type::Tuple(tys) => {
                 for ty in tys {
                     ty.visit(f);
@@ -86,8 +86,8 @@ impl<'a> Type<'a> {
         match *self {
             Type::Tuple(tys) => tys.iter().any(|ty| ty.contains_abstract()),
             Type::Ref(_, ty) => ty.contains_abstract(),
-            Type::NonRef(..) => false,
-            Type::Abstract(_) => true,
+            Type::OtherNonRef(..) => false,
+            Type::AbstractNonRef(..) | Type::Abstract(_) => true,
         }
     }
 
@@ -99,7 +99,8 @@ impl<'a> Type<'a> {
                 Type::Tuple(a.bump.alloc_slice_fill_iter(tys))
             }
             Type::Ref(mtbl, ty) => Type::Ref(mtbl, ty.subst(a, replace).alloc(a)),
-            Type::NonRef(_) => *self,
+            Type::OtherNonRef(_) => *self,
+            Type::AbstractNonRef(_) => panic!("trying to substitute into `AbstractNonRef`"),
             Type::Abstract(_) => replace,
         }
     }
@@ -144,7 +145,7 @@ impl<'a> Expression<'a> {
             ExprKind::Abstract {
                 not_a_ref: false, ..
             } => match self.ty {
-                Type::NonRef(..) | Type::Tuple(..) => ByMove,
+                Type::OtherNonRef(_) | Type::AbstractNonRef(..) | Type::Tuple(..) => ByMove,
                 Type::Abstract(_) | Type::Ref(..) => {
                     return Err(TypeError::OverlyGeneral(DeepeningRequest::BindingMode))
                 }

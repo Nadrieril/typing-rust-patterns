@@ -53,7 +53,7 @@ mod convert {
     fn convert_type(ty: &crate::Type<'_>) -> Expr {
         let span = Span::nop();
         match ty {
-            crate::Type::Abstract(_) => {
+            crate::Type::Abstract(_) | crate::Type::AbstractNonRef(_) => {
                 panic!("cannot convert abstract type to match_ergonomics_formality")
             }
             crate::Type::Tuple(tys) => {
@@ -72,7 +72,7 @@ mod convert {
                     Mutable => Expr::RefMut(RefMutExpr::new(ty, span, span)),
                 }
             }
-            crate::Type::NonRef(name) => Expr::Type(TypeExpr {
+            crate::Type::OtherNonRef(name) => Expr::Type(TypeExpr {
                 name: Ident::new(name.to_string(), span),
                 span,
             }),
@@ -81,7 +81,7 @@ mod convert {
 
     pub(super) fn unconvert_type<'a>(a: &'a crate::Arenas<'a>, ty: &Expr) -> crate::Type<'a> {
         match ty {
-            Expr::Type(ty) => crate::Type::NonRef(a.bump.alloc_str(&ty.name.name)),
+            Expr::Type(ty) => crate::Type::OtherNonRef(a.bump.alloc_str(&ty.name.name)),
             Expr::RefMut(ty) => crate::Type::Ref(Mutable, unconvert_type(a, &ty.expr).alloc(a)),
             Expr::Ref(ty) => crate::Type::Ref(Shared, unconvert_type(a, &ty.expr).alloc(a)),
             Expr::Slice(ty) => {

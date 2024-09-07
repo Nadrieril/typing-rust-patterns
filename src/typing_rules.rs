@@ -276,10 +276,14 @@ impl<'a> TypingPredicate<'a> {
                 ))
             }
             (P::Tuple(_), T::Ref(_, T::Ref(..))) => Err(TypeError::TypeMismatch),
-            (P::Tuple(_), T::Ref(_, T::Abstract(_) | T::NonRef(..))) => {
+            (P::Tuple(_), T::Ref(_, T::OtherNonRef(_))) => Err(TypeError::TypeMismatch),
+            (P::Tuple(_), T::Ref(_, T::Abstract(_) | T::AbstractNonRef(..))) => {
                 Err(TypeError::OverlyGeneral(D::Type))
             }
-            (P::Tuple(_), T::Abstract(_) | T::NonRef(..)) => Err(TypeError::OverlyGeneral(D::Type)),
+            (P::Tuple(_), T::OtherNonRef(_)) => Err(TypeError::TypeMismatch),
+            (P::Tuple(_), T::Abstract(_) | T::AbstractNonRef(..)) => {
+                Err(TypeError::OverlyGeneral(D::Type))
+            }
 
             // Dereference rules
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
@@ -358,14 +362,16 @@ impl<'a> TypingPredicate<'a> {
                                 }
                             }
                         }
-                        T::Tuple(_) | T::NonRef(..) if ctx.options.eat_inherited_ref_alone => {
+                        T::Tuple(_) | T::OtherNonRef(_) | T::AbstractNonRef(..)
+                            if ctx.options.eat_inherited_ref_alone =>
+                        {
                             if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
                                 underlying_place
                             } else {
                                 self.expr.deref(a)
                             }
                         }
-                        T::Tuple(_) | T::NonRef(..) => {
+                        T::Tuple(_) | T::OtherNonRef(_) | T::AbstractNonRef(..) => {
                             return Err(TypeError::InheritedRefIsAlone);
                         }
                         T::Abstract(_) => {
@@ -407,7 +413,9 @@ impl<'a> TypingPredicate<'a> {
                 let pred = Self { pat: p_inner, expr };
                 Ok((rule, vec![pred]))
             }
-            (P::Ref(..), T::Tuple(..) | T::NonRef(..)) => Err(TypeError::TypeMismatch),
+            (P::Ref(..), T::Tuple(..) | T::OtherNonRef(_) | T::AbstractNonRef(..)) => {
+                Err(TypeError::TypeMismatch)
+            }
             (P::Ref(..), T::Abstract(..)) => Err(TypeError::OverlyGeneral(D::Type)),
 
             // Binding rules

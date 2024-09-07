@@ -50,8 +50,11 @@ pub enum Type<'a> {
     /// An abstract type, meant as a placeholder for some unknown type. Used only when exploring
     /// possible rules.
     Abstract(&'a str),
-    /// A variable of some non-reference type. This is what `T` parses to.
-    NonRef(&'a str),
+    /// An abstract type known not to be a reference.
+    AbstractNonRef(&'a str),
+    /// A variable of some non-tuple non-reference type. This is what `T` parses to. This type is
+    /// assumed to be `Copy`.
+    OtherNonRef(&'a str),
     /// Our only type is the tuple, represented as `[T, U]`, with its constructor `[p, q]`.
     Tuple(&'a [Self]),
     /// Reference type.

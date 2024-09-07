@@ -127,8 +127,9 @@ impl Display for Type<'_> {
         match self {
             Self::Tuple(tys) => write!(f, "[{}]", tys.iter().format(", ")),
             Self::Ref(mutable, ty) => write!(f, "&{mutable}{ty}"),
-            Self::NonRef(name) => write!(f, "{name}"),
-            Self::Abstract(name) => write!(f, "{name}"),
+            Self::OtherNonRef(name) | Self::AbstractNonRef(name) | Self::Abstract(name) => {
+                write!(f, "{name}")
+            }
         }
     }
 }
