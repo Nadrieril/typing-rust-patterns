@@ -1,6 +1,6 @@
 ---
 source: tests/trace_cli.rs
-info: "save\nset structural\nswap\ncompare"
+info: "save\nset structural\nswap\nrules"
 ---
 Current ruleset was saved
 allow_ref_pat_on_ref_mut: true -> false

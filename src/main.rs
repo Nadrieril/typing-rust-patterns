@@ -178,10 +178,17 @@ fn main() -> anyhow::Result<()> {
             let style = serde_yaml::to_string(&state.predicate_style)?;
             print!("predicate_style: {}", style);
         } else if request == "rules" {
-            print!(
-                "{}",
-                display_rules(state.predicate_style, state.options).unwrap()
-            );
+            if let Some(saved) = state.saved {
+                if saved == state.options {
+                    println!("Comparing against the saved ruleset. Use `unsave` to forget the saved ruleset.")
+                } else {
+                    let s = state.display_joint_rules(saved, state.options).unwrap();
+                    print!("{s}");
+                }
+            } else {
+                let s = display_rules(state.predicate_style, state.options).unwrap();
+                print!("{s}");
+            }
         } else if request == "save" {
             println!("Current ruleset was saved");
             state.saved = Some(state.options);
@@ -210,10 +217,30 @@ fn main() -> anyhow::Result<()> {
                         "
                     ))
                 } else {
-                    // TODO
                     // TODO: show sets of options at the top
-                    let s = state.display_joint_rules(saved, state.options).unwrap();
-                    print!("{s}");
+                    let a = &Arenas::default();
+                    let differences = compare_rulesets(
+                        a,
+                        3,
+                        4,
+                        RuleSet::TypeBased(saved),
+                        std::cmp::Ordering::Equal,
+                        RuleSet::TypeBased(state.options),
+                    );
+
+                    if differences.is_empty() {
+                        println!(
+                            "The rulesets are identical on all patterns \
+                            of depth <= 3 and types of depth <= 4"
+                        );
+                    } else {
+                        for (test_case, left_res, right_res) in differences {
+                            let test_case_str = test_case.to_string();
+                            println!("Difference on `{test_case_str}`:");
+                            println!("    saved returned: {left_res}");
+                            println!("  current returned: {right_res}");
+                        }
+                    }
                 }
             } else {
                 println!("Can't compare rulesets because there is no saved ruleset. Use `save` to save one.");
