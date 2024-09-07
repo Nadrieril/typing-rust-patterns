@@ -177,10 +177,16 @@ fn main() -> anyhow::Result<()> {
         } else if request == "q" || request == "quit" {
             break;
         } else if request == "options" {
-            let options = serde_yaml::to_string(&state.options)?;
-            print!("{options}");
-            let style = serde_yaml::to_string(&state.predicate_style)?;
-            print!("predicate_style: {}", style);
+            if let Some(saved) = state.saved {
+                println!("Comparing against the saved ruleset. Use `unsave` to forget the saved ruleset.");
+                println!("The current ruleset is on the left, and the saved one on the right.");
+                display_options_diff(state.options, saved);
+            } else {
+                let options = serde_yaml::to_string(&state.options)?;
+                print!("{options}");
+                let style = serde_yaml::to_string(&state.predicate_style)?;
+                print!("predicate_style: {}", style);
+            }
         } else if request == "rules" {
             if let Some(saved) = state.saved {
                 if saved == state.options {
