@@ -4,7 +4,7 @@ info: "&x: &mut T"
 ---
 real, rw ⊢ &x: &mut T
 // Applying rule `DerefMutWithShared`
-real, ro ⊢ x: T
+_, ro ⊢ x: T
 // Applying rule `Binding`
 let x: T = *&*s
 

@@ -9,7 +9,7 @@ The two rulesets are described by the following sets of rules, with differences 
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
  --------------------------------------- "Constructor"                            | --------------------------------------- "Constructor"
- real, m ⊢ [p0, p1]: [T0, T1]                                                     | real, m ⊢ [p0, p1]: [T0, T1]
+ _, m ⊢ [p0, p1]: [T0, T1]                                                        | _, m ⊢ [p0, p1]: [T0, T1]
 
  inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
  ----------------------------------------- "ConstructorRef"                       | ----------------------------------------- "ConstructorRef"
@@ -78,7 +78,7 @@ The two rulesets are described by the following sets of rules, with differences 
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
  --------------------------------------- "Constructor"                            | --------------------------------------- "Constructor"
- real, m ⊢ [p0, p1]: [T0, T1]                                                     | real, m ⊢ [p0, p1]: [T0, T1]
+ _, m ⊢ [p0, p1]: [T0, T1]                                                        | _, m ⊢ [p0, p1]: [T0, T1]
 
  inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
  ----------------------------------------- "ConstructorRef"                       | ----------------------------------------- "ConstructorRef"

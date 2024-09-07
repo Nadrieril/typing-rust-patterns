@@ -33,6 +33,7 @@ impl<'a> TypingPredicate<'a> {
             PredicateStyle::Sequent => {
                 let bm = match self.expr.binding_mode().ok() {
                     Some(BindingMode::ByRef(_)) => "inh",
+                    _ if !matches!(self.expr.ty, Type::Ref(..) | Type::Abstract(..)) => "_",
                     Some(BindingMode::ByMove) => "real",
                     None => "r",
                 };

@@ -12,7 +12,7 @@ The two rulesets are described by the following sets of rules, with differences 
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
  --------------------------------------- "Constructor"                            | --------------------------------------- "Constructor"
- real, m ⊢ [p0, p1]: [T0, T1]                                                     | real, m ⊢ [p0, p1]: [T0, T1]
+ _, m ⊢ [p0, p1]: [T0, T1]                                                        | _, m ⊢ [p0, p1]: [T0, T1]
 
  inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
  ----------------------------------------- "ConstructorRef"                       | ----------------------------------------- "ConstructorRef"
@@ -50,7 +50,7 @@ The two rulesets are described by the following sets of rules, with differences 
  ------------------ "Deref"                                                       | ------------------ "Deref(EatOuter)"
  real, m ⊢ &p: &T                                                                 | real, m ⊢ &p: &T
 
- real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ _, ro ⊢ p: T                                                                     | _, ro ⊢ p: T
  --------------------------------------- "Deref"                                  | --------------------------------------- "Deref(EatOuter)"
  inh, m ⊢ &p: &T, T is not a reference                                            | inh, m ⊢ &p: &T, T is not a reference
 
@@ -66,7 +66,7 @@ The two rulesets are described by the following sets of rules, with differences 
  -------------------------- "Deref"                                               | -------------------------- "Deref(EatOuter)"
  real, m ⊢ &mut p: &mut T                                                         | real, m ⊢ &mut p: &mut T
 
- real, m ⊢ p: T                                                                   | real, m ⊢ p: T
+ _, m ⊢ p: T                                                                      | _, m ⊢ p: T
  ----------------------------------------------- "Deref"                          | ----------------------------------------------- "Deref(EatOuter)"
  inh, m ⊢ &mut p: &mut T, T is not a reference                                    | inh, m ⊢ &mut p: &mut T, T is not a reference
 
@@ -90,7 +90,7 @@ The two rulesets are described by the following sets of rules, with differences 
  ---------------------- "DerefMutWithShared"                                      | ---------------------- "DerefMutWithShared(EatOuter)"
  real, m ⊢ &p: &mut T                                                             | real, m ⊢ &p: &mut T
 
- real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ _, ro ⊢ p: T                                                                     | _, ro ⊢ p: T
  ------------------------------------------- "DerefMutWithShared"                 | ------------------------------------------- "DerefMutWithShared(EatOuter)"
  inh, m ⊢ &p: &mut T, T is not a reference                                        | inh, m ⊢ &p: &mut T, T is not a reference
 

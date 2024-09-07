@@ -17,7 +17,7 @@ info:
 ---
 real, m ⊢ p0: T0,  real, m ⊢ p1: T1
 --------------------------------------- "Constructor"
-real, m ⊢ [p0, p1]: [T0, T1]
+_, m ⊢ [p0, p1]: [T0, T1]
 
 inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
 ----------------------------------------- "ConstructorRef"
@@ -55,7 +55,7 @@ real, ro ⊢ p: T
 ------------------ "Deref(EatOuter)"
 real, m ⊢ &p: &T
 
-real, ro ⊢ p: T
+_, ro ⊢ p: T
 --------------------------------------- "Deref(EatOuter)"
 inh, m ⊢ &p: &T, T is not a reference
 
@@ -63,7 +63,7 @@ real, m ⊢ p: T
 -------------------------- "Deref(EatOuter)"
 real, m ⊢ &mut p: &mut T
 
-real, m ⊢ p: T
+_, m ⊢ p: T
 ----------------------------------------------- "Deref(EatOuter)"
 inh, m ⊢ &mut p: &mut T, T is not a reference
 
@@ -91,7 +91,7 @@ real, ro ⊢ p: T
 ---------------------- "DerefMutWithShared(EatOuter)"
 real, m ⊢ &p: &mut T
 
-real, ro ⊢ p: T
+_, ro ⊢ p: T
 ------------------------------------------- "DerefMutWithShared(EatOuter)"
 inh, m ⊢ &p: &mut T, T is not a reference
 
