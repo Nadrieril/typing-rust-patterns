@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>hello-wasm example</title>
+  </head>
+  <body>
+    <script type="module">
+      import init, { trace_solver_str } from "./pkg/typing_rust_patterns.js";
+      init().then(() => {
+        trace_solver_str("[&x]: &[&T]");
+      });
+    </script>
+  </body>
+</html>
+
