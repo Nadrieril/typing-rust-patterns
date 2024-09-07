@@ -3,6 +3,7 @@ source: tests/trace_cli.rs
 info: "set stable_rust\n[&x]: &[AT]"
 ---
 The two rulesets are described by the following sets of rules, with differences highlighted.
+The old ruleset is on the left, and the new one on the right.
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
  --------------------------------------- "Constructor"                            | --------------------------------------- "Constructor"

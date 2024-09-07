@@ -4,6 +4,7 @@ info: "save\nset downgrade_mut_inside_shared true\nswap\ncompare"
 ---
 Current ruleset was saved
 The two rulesets are described by the following sets of rules, with differences highlighted.
+The old ruleset is on the left, and the new one on the right.
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
  --------------------------------------- "Constructor"                            | --------------------------------------- "Constructor"
@@ -83,6 +84,7 @@ ref_binding_on_inherited: "Error"
 simplify_deref_mut: true
 Current and saved rulesets were swapped
 The two rulesets are described by the following sets of rules, with differences highlighted.
+The old current ruleset is on the left, and the new current one on the right.
 
  real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
  --------------------------------------- "Constructor"                            | --------------------------------------- "Constructor"

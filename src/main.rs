@@ -115,8 +115,6 @@ impl CliState {
         let joint_rules = compute_joint_rules(arenas, left, right);
 
         let mut out = String::new();
-        let _ = writeln!(&mut out, "The two rulesets are described by the following sets of rules, with differences highlighted.");
-        let _ = writeln!(&mut out);
         for joint_rule in joint_rules {
             let (left, right) = joint_rule.left_and_right();
             let left = left
@@ -186,9 +184,18 @@ fn main() -> anyhow::Result<()> {
         } else if request == "rules" {
             if let Some(saved) = state.saved {
                 if saved == state.options {
-                    println!("Comparing against the saved ruleset. Use `unsave` to forget the saved ruleset.")
+                    println!(indoc!(
+                        "
+                        This ruleset is the same as the one that was previously saved. Change some
+                        settings and run `rules` again.
+                        "
+                    ))
                 } else {
-                    let s = state.display_joint_rules(saved, state.options).unwrap();
+                    println!("Comparing against the saved ruleset. Use `unsave` to forget the saved ruleset.");
+                    println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
+                    println!("The current ruleset is on the left, and the saved one on the right.");
+                    println!();
+                    let s = state.display_joint_rules(state.options, saved).unwrap();
                     print!("{s}");
                 }
             } else {
@@ -206,6 +213,11 @@ fn main() -> anyhow::Result<()> {
                 println!("Current and saved rulesets were swapped");
                 std::mem::swap(saved, &mut state.options);
                 let saved = *saved;
+                println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
+                println!(
+                    "The old current ruleset is on the left, and the new current one on the right."
+                );
+                println!();
                 let s = state.display_joint_rules(saved, state.options).unwrap();
                 println!("{s}");
                 display_options_diff(saved, state.options);
@@ -267,6 +279,9 @@ fn main() -> anyhow::Result<()> {
                         }
                     }
                     if old_options != state.options {
+                        println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
+                        println!("The old ruleset is on the left, and the new one on the right.");
+                        println!();
                         match state.display_joint_rules(old_options, state.options) {
                             Ok(s) => {
                                 println!("{s}");
