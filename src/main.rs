@@ -136,10 +136,9 @@ impl CliState {
                 println!("The current ruleset is on the left, and the saved one on the right.");
                 display_options_diff(self.options, saved);
             } else {
-                let options = serde_yaml::to_string(&self.options)?;
-                print!("{options}");
                 let style = serde_yaml::to_string(&self.predicate_style)?;
                 print!("predicate_style: {}", style);
+                display_options_diff(self.options, self.options);
             }
         } else if request == "rules" {
             if let Some(saved) = self.saved {

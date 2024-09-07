@@ -28,6 +28,7 @@ fn trace_cli() -> anyhow::Result<()> {
         "set predicate_style SequentBindingMode",
         "save;set structural;options",
         "save;set downgrade_mut_inside_shared true;swap;&[x]: &&mut [T]",
+        // "save;set predicate_style SequentBindingMode;swap;unsave;options;rules", // hihi this crashes the cli
     ];
     for &test_case in test_cases {
         let success = Command::cargo_bin("typing-rust-patterns")?
