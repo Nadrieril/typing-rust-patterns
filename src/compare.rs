@@ -524,13 +524,18 @@ fn compare() -> anyhow::Result<()> {
             TypeBased(RuleOptions::ERGO2024),
         ),
         (
-            "ergo2024_breaking_transition_to_stateless_with_rule3",
+            "ergo2024_breaking_vs_stateless_with_rule3",
             TypeBased(RuleOptions {
+                ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+                mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
                 ..RuleOptions::ERGO2024_BREAKING_ONLY
             }),
             Somewhat.expect(Equal),
             TypeBased(RuleOptions {
+                ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+                mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
                 allow_ref_pat_on_ref_mut: false,
+                eat_inherited_ref_alone: false,
                 downgrade_mut_inside_shared: true,
                 ..RuleOptions::STATELESS
             }),
