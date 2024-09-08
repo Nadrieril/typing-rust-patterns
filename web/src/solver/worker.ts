@@ -1,13 +1,13 @@
 import init, { RuleOptions, trace_solver_str } from "../../typing_rust_patterns/typing_rust_patterns.js";
 
-export async function initInterpreter(): Promise<Interpreter> {
+export async function initSolver(): Promise<Solver> {
   console.time("init");
   await init({});
   console.timeEnd("init");
-  return new Interpreter();
+  return new Solver();
 }
 
-class Interpreter {
+class Solver {
   options: RuleOptions;
 
   constructor() {
@@ -34,16 +34,16 @@ class Interpreter {
 }
 
 (async () => {
-  // Build main Interpreter
-  const interpreter = await initInterpreter();
+  // Build main Solver
+  const solver = await initSolver();
   
   // When code is received run it
   addEventListener("message", async (event) => {
     const data = event.data;
     if (data.call == "set_key") {
-      interpreter.set_key(data.key, data.value);
+      solver.set_key(data.key, data.value);
     } else if (data.call == "run_solver") {
-      const result = await interpreter.run(data.code);
+      const result = await solver.run(data.code);
       postMessage({ result });
     }
   });

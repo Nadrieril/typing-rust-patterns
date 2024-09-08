@@ -69,7 +69,7 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 </style>
 
 <script>
-	import { Interpreter } from "../interpreter";
+	import { Solver } from "../solver";
 	import { setupEditor } from "../editor";
 	import { AnsiUp } from "ansi_up";
 	
@@ -83,38 +83,38 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 
 	setupEditor(input);
 
-	// Interpreter initialization
-	const interpreter = new Interpreter();
+	// Solver initialization
+	const solver = new Solver();
 
-	// When Interpreter has finished loading, add default code
-	interpreter.onLoaded(() => {
+	// When Solver has finished loading, add default code
+	solver.onLoaded(() => {
 		input.readOnly = false;
 		input.value = '[&x]: &[&T]';
-		runInterpreter()
+		runSolver()
 	});
 
-	function runInterpreter() {
-		if (interpreter.running) {
+	function runSolver() {
+		if (solver.running) {
 			return;
 		}
 		termElement.innerHTML = "Running...";
 		lastInput = input.value;
-		interpreter.run_solver(input.value || "")
+		solver.run_solver(input.value || "")
 	}
 
-	// When result is received from a running Interpreter write it to the terminal
+	// When result is received from a running Solver write it to the terminal
 	let lastInput = "";
-	interpreter.onResult(result => {
+	solver.onResult(result => {
 		termElement.innerHTML = ansiUp.ansi_to_html(result.replaceAll("\n", "\r"));
 		if (lastInput && lastInput !== input.value) {
-			// Re-run if the input changed while the interpreter was running.
+			// Re-run if the input changed while the solver was running.
 			input.dispatchEvent(new Event("input"));
 		}
 	});
 
-	input.addEventListener("input", runInterpreter);
+	input.addEventListener("input", runSolver);
 	inherited_ref_on_ref.addEventListener("change", () => {
-		interpreter.set_key("inherited_ref_on_ref", inherited_ref_on_ref.value);
-		runInterpreter()
+		solver.set_key("inherited_ref_on_ref", inherited_ref_on_ref.value);
+		runSolver()
 	});
 </script>

@@ -1,25 +1,25 @@
 /**
- * Wrapper of the interpreter.
+ * Wrapper of the solver.
  * 
  * Runs the code in a Web Worker to minimize slowdowns.
  * 
- * To interact with the Interpreter use the `run` and `onResult` methods.
+ * To interact with the Solver use the `run` and `onResult` methods.
  */
-export class Interpreter {
+export class Solver {
   private readonly worker: Worker
   private onresult: ((result: string) => void)[]
   private onloaded: (() => void)[];
   private running: bool;
   
   /**
-   * Creates a new Interpreter.
+   * Creates a new Solver.
    * 
-   * The constructor is asyncronous, check `onLoaded` for status on when it can be used.
+   * The constructor is asynchronous, check `onLoaded` for status on when it can be used.
    * 
    * @example
-   * const interpreter = new Interpreter();
-   * interpreter.onLoaded(() => {
-   *   interpreter.run('println!("Hello, World!");');
+   * const solver = new Solver();
+   * solver.onLoaded(() => {
+   *   solver.run('println!("Hello, World!");');
    * })
    */
   constructor() {
@@ -56,14 +56,14 @@ export class Interpreter {
   }
 
   /**
-   * @param onloaded Called when the Interpreter has finished loading.
+   * @param onloaded Called when the Solver has finished loading.
    */
   public onLoaded(onloaded: () => void) {
     this.onloaded.push(onloaded);
   }
 
   /**
-   * @param onresult Called when the Interpreter has finished executing code and has a result.
+   * @param onresult Called when the Solver has finished executing code and has a result.
    */
   public onResult(onresult: (result: string) => void) {
     this.onresult.push(onresult);
