@@ -1,14 +1,12 @@
 use crate::*;
-// use gloo_utils::format::JsValueSerdeExt;
+use gloo_utils::format::JsValueSerdeExt;
+use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
+#[derive(Serialize)]
 pub struct OptionsDoc {
-    #[wasm_bindgen(readonly)]
     pub name: &'static str,
-    #[wasm_bindgen(readonly, getter_with_clone)]
-    pub values: Vec<String>,
-    #[wasm_bindgen(readonly)]
+    pub values: &'static [&'static str],
     pub doc: &'static str,
 }
 
@@ -19,15 +17,12 @@ impl RuleOptions {
         RuleOptions::DEFAULT
     }
 
-    pub fn options_doc(&self) -> Vec<OptionsDoc> {
+    pub fn options_doc() -> Vec<JsValue> {
         Self::OPTIONS_DOC
             .iter()
             .copied()
-            .map(|(name, values, doc)| OptionsDoc {
-                name,
-                values: values.iter().copied().map(str::to_owned).collect(),
-                doc,
-            })
+            .map(|(name, values, doc)| OptionsDoc { name, values, doc })
+            .map(|options| JsValue::from_serde(&options).unwrap())
             .collect()
     }
 }
@@ -35,6 +30,8 @@ impl RuleOptions {
 #[wasm_bindgen]
 pub fn trace_solver_str(request: &str, options: &RuleOptions) -> String {
     let a = &Arenas::default();
-    let req = TypingRequest::parse(a, request).unwrap();
-    trace_solver(req, *options, PredicateStyle::Sequent)
+    match TypingRequest::parse(a, request) {
+        Ok(req) => trace_solver(req, *options, PredicateStyle::Sequent),
+        Err(e) => format!("parse error: {e}"),
+    }
 }

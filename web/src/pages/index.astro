@@ -21,16 +21,9 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 					Example: `&[ref x]: &[T]`
 				</p>
 			</div>
-			<div id="options">
-				<label for="inherited_ref_on_ref">Inherited ref on ref</label>
-				<select id="inherited_ref_on_ref">
-				  <option value="EatOuter">EatOuter</option>
-				  <option value="EatInner">EatInner</option>
-				  <option value="EatBoth">EatBoth</option>
-				</select>
-			</div>
-			<input type="text" id="input" spellcheck="false" />
-			<div id="terminal" />
+			<div id="options"/>
+			<input type="text" id="input" spellcheck="false"/>
+			<div id="terminal"/>
 			<footer>
 				<b><a href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</a></b>.
 				Frontend adapted from
@@ -77,7 +70,7 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	import { AnsiUp } from "ansi_up";
 	
 	const input = document.body.querySelector<HTMLTextAreaElement>("#input")!;
-	const inherited_ref_on_ref = document.body.querySelector<HTMLInputElement>("#inherited_ref_on_ref")!;
+	const options_container = document.getElementById("options")!;
 	const termElement = document.getElementById("terminal")!;
 
 	const ansiUp = new AnsiUp();
@@ -88,6 +81,46 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 
 	// Solver initialization
 	const solver = new Solver();
+
+	solver.onLoaded((options) => {
+		// Setup the options.
+		for (const option of options) {
+			const label = document.createElement("label");
+			label.setAttribute("for", option.name);
+			label.innerHTML = option.name;
+			options_container.appendChild(label);
+
+			if (option.values.length == 2 && option.values[0] == "true" && option.values[1] == "false") {
+				const box = document.createElement("input");
+				box.setAttribute("type", "checkbox");
+				box.id = option.name;
+				box.addEventListener("change", () => {
+					solver.set_key(option.name, box.checked ? "true" : "false");
+					runSolver()
+				});
+				options_container.appendChild(box);
+			} else {
+				const select = document.createElement("select");
+				select.id = option.name;
+				for (const value of option.values) {
+					const opt = document.createElement("option");
+					opt.setAttribute("value", value);
+					opt.innerHTML = value;
+					select.appendChild(opt);
+				}
+				select.addEventListener("change", () => {
+					solver.set_key(option.name, select.value);
+					runSolver()
+				});
+				options_container.appendChild(select);
+			}
+
+			options_container.appendChild(document.createElement("br"));
+		}
+
+		// Run the solver the first time.
+		runSolver()
+	});
 
 	// When result is received from a running Solver write it to the terminal
 	let lastInput = "";
@@ -108,12 +141,6 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 		solver.run_solver(input.value || "")
 	}
 
-	// Run the solver as soon as it is available.
-	solver.onLoaded(runSolver);
-
+	// Re-run the solver whenever the input changes.
 	input.addEventListener("input", runSolver);
-	inherited_ref_on_ref.addEventListener("change", () => {
-		solver.set_key("inherited_ref_on_ref", inherited_ref_on_ref.value);
-		runSolver()
-	});
 </script>

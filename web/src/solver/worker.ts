@@ -32,5 +32,5 @@ import init, { RuleOptions, trace_solver_str } from "../../typing_rust_patterns/
     });
 
     // Send a message when finished loading
-    postMessage({ event: "loaded" })
+    postMessage({ event: "loaded", options: RuleOptions.options_doc() })
 })()

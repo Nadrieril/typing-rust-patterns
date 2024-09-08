@@ -8,7 +8,7 @@
 export class Solver {
     private readonly worker: Worker
     private onresult: ((result: string) => void)[]
-    private onloaded: (() => void)[];
+    private onloaded: ((any) => void)[];
     private running: bool;
 
     /**
@@ -32,7 +32,7 @@ export class Solver {
             switch (data.event) {
                 case "loaded":
                     for (const ev of this.onloaded) {
-                        ev()
+                        ev(data.options)
                     }
                     break;
                 case "result":
@@ -61,7 +61,7 @@ export class Solver {
     /**
      * @param onloaded Called when the Solver has finished loading.
      */
-    public onLoaded(onloaded: () => void) {
+    public onLoaded(onloaded: (any) => void) {
         this.onloaded.push(onloaded);
     }
 

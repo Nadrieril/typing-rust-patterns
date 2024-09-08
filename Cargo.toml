@@ -9,6 +9,7 @@ crate-type = ["rlib", "cdylib"]
 [dependencies]
 anyhow = "1.0.86"
 bumpalo = "3.16.0"
+colored = "2.1.0"
 indoc = "2.0.5"
 itertools = "0.13.0"
 match-ergonomics-formality = { path = "./match-ergonomics-formality" }
@@ -20,11 +21,11 @@ serde_yaml = "0.9.34"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 assert_cmd = "2.0.16"
-colored = "2.1.0"
 # Custom fork with https://github.com/mikaelmello/inquire/pull/229 rebased
 inquire = { git = "https://github.com/Nadrieril/inquire", branch = "history" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-utils = { version = "0.1", features = ["serde"] }
 wasm-bindgen = "0.2"
 wasm-rs-dbg = "0.1.2"
 web-sys = { version = "0.3.70", features = ["console"] }
