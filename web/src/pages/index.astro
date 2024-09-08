@@ -1,0 +1,130 @@
+---
+
+const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href={ base + "/favicon.svg" } />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Rust Browser Interpreter</title>
+	</head>
+	<body>
+		<div id="grid">
+			<div>
+				<h1><span>Ru</span>st <span>Br</span>owser <span>I</span>nterpreter</h1>
+				<b><a href="https://github.com/lyonsyonii/rubri" target="_blank">See on Github</a></b>
+			</div>
+			<div id="live-edit-wrapper">
+				<input id="live-edit" type="checkbox" checked />
+				<label for="live-edit">Live Edit</label>
+				<input id="print-last" type="checkbox" checked />
+				<label for="print-last">Print last expression</label>
+			</div>
+			<textarea id="input" spellcheck="false" />
+			<button>RUN</button>
+			<div id="terminal" />
+		</div>
+	</body>
+</html>
+
+<style>
+	body {
+		height: 100vh;
+		font-family: 'Courier New', Courier, monospace;
+		margin: 0;
+		padding: 0;
+	}
+	#grid {
+		height: calc(100% - 1rem);
+		margin-left: 1rem;
+		margin-right: 1rem;
+		display: grid;
+		grid-template-rows: min-content min-content 1fr 5rem 1fr;
+		gap: .5rem;
+	}
+	button {
+		font-family: inherit;
+		font-weight: 700;
+		font-size: x-large;
+	}
+	textarea#input {
+		font-size: x-large;
+		resize: none;
+	}
+	#terminal {
+		white-space: pre-wrap;
+	}
+	#live-edit, #live-edit-wrapper {
+		user-select: none;
+	}
+	span {
+		text-decoration: underline;
+	}
+</style>
+
+<script>
+	import { Interpreter } from "../interpreter";
+	import { setupEditor } from "../editor";
+	import { AnsiUp } from "ansi_up";
+	
+	const input = document.body.querySelector<HTMLTextAreaElement>("textarea#input")!;
+	const runButton = document.body.querySelector<HTMLButtonElement>("button")!;
+	const liveEdit = document.body.querySelector<HTMLInputElement>("#live-edit")!;
+	const printLast = document.body.querySelector<HTMLInputElement>("#print-last")!;
+	const termElement = document.getElementById("terminal")!;
+
+	const ansiUp = new AnsiUp();
+	input.value = "Downloading (Can take a while):";
+	input.placeholder = "Write your code...";
+	input.readOnly = true;
+
+	// Interpreter initialization
+	let lastInput = "";
+	const interpreter = new Interpreter();
+
+	// Add libraries downloaded to list
+	interpreter.onAssetDownloaded(lib => input.value += `\n${lib}`);
+
+	// When Interpreter has finished loading, add default code
+	interpreter.onLoaded(() => {
+		input.readOnly = false;
+		input.value = 'println!("Hello from WASM!");';
+		runButton.click();
+		// interpreter.run(input.value);
+	});
+
+	// When Interpreter is running disable the "Run" button
+	interpreter.onRun(() => {
+		runButton.disabled = true;
+		termElement.innerHTML = "Running...";
+	});
+
+	// When result is received from a running Interpreter write it to the terminal
+	interpreter.onResult(result => {
+		termElement.innerHTML = ansiUp.ansi_to_html(result.replaceAll("\n", "\r"));
+		runButton.disabled = false;
+		if (lastInput && lastInput !== input.value) {
+			input.dispatchEvent(new Event("input"));
+		}
+	});
+	
+	setupEditor(input, runButton);
+
+	// Run the Interpreter when on "Live Edit" or the "Run" button is clicked
+	input.addEventListener("input", async () => {
+		if (!liveEdit.checked || runButton.disabled) {
+			return;
+		}
+		lastInput = input.value;
+		interpreter.run(input.value || "", printLast.checked);
+	});
+	runButton.addEventListener("click", async () => {
+		if (runButton.disabled) {
+			return;
+		}
+		interpreter.run(input.value || "", printLast.checked)
+	});
+</script>
