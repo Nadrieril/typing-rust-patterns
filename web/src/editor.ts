@@ -1,4 +1,4 @@
-export function setupEditor(input: HTMLTextAreaElement, runButton: HTMLButtonElement) {
+export function setupEditor(input: HTMLTextAreaElement) {
 	input.addEventListener("keydown", (e) => {
 		switch (e.key) {
 			case "Tab": {
@@ -22,7 +22,7 @@ export function setupEditor(input: HTMLTextAreaElement, runButton: HTMLButtonEle
 					start -= 1;
 				}
 				start >= 0 && input.setRangeText("", start, end, "end");
-        input.dispatchEvent(new Event("input"))
+				input.dispatchEvent(new Event("input"))
 				break;
 			}
 		
@@ -30,7 +30,7 @@ export function setupEditor(input: HTMLTextAreaElement, runButton: HTMLButtonEle
 				e.preventDefault();
 				e.stopPropagation();
 				if (e.ctrlKey) {
-					runButton.click();
+					// runButton.click();
 				} else {
 					// TODO: Add indentation based on previous line
 					input.setRangeText("\n" + " ".repeat(0), input.selectionStart, input.selectionEnd, "end");

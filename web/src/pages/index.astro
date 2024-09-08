@@ -30,7 +30,6 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 				</select>
 			</div>
 			<textarea id="input" spellcheck="false" />
-			<button>RUN</button>
 			<div id="terminal" />
 		</div>
 	</body>
@@ -77,7 +76,6 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	import { AnsiUp } from "ansi_up";
 	
 	const input = document.body.querySelector<HTMLTextAreaElement>("textarea#input")!;
-	const runButton = document.body.querySelector<HTMLButtonElement>("button")!;
 	const printLast = document.body.querySelector<HTMLInputElement>("#print-last")!;
 	const inherited_ref_on_ref = document.body.querySelector<HTMLInputElement>("#inherited_ref_on_ref")!;
 	const termElement = document.getElementById("terminal")!;
@@ -87,37 +85,37 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	input.placeholder = "Write your code...";
 	input.readOnly = true;
 
-	// Interpreter initialization
 	let lastInput = "";
+	let running = false;
+	// Interpreter initialization
 	const interpreter = new Interpreter();
 
 	// When Interpreter has finished loading, add default code
 	interpreter.onLoaded(() => {
 		input.readOnly = false;
 		input.value = '[&x]: &[&T]';
-		runButton.click();
-		// interpreter.run(input.value);
+		runInterpreter()
 	});
 
 	// When Interpreter is running disable the "Run" button
 	interpreter.onRun(() => {
-		runButton.disabled = true;
+		running = true;
 		termElement.innerHTML = "Running...";
 	});
 
 	// When result is received from a running Interpreter write it to the terminal
 	interpreter.onResult(result => {
 		termElement.innerHTML = ansiUp.ansi_to_html(result.replaceAll("\n", "\r"));
-		runButton.disabled = false;
+		running = false;
 		if (lastInput && lastInput !== input.value) {
 			input.dispatchEvent(new Event("input"));
 		}
 	});
 	
-	setupEditor(input, runButton);
+	setupEditor(input);
 
 	function runInterpreter() {
-		if (runButton.disabled) {
+		if (running) {
 			return;
 		}
 		lastInput = input.value;
@@ -125,6 +123,5 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	}
 
 	input.addEventListener("input", runInterpreter);
-	runButton.addEventListener("click", runInterpreter);
 	inherited_ref_on_ref.addEventListener("change", runInterpreter);
 </script>
