@@ -3,6 +3,11 @@
 #![feature(let_chains)]
 #![feature(try_blocks)]
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use std::dbg;
+#[cfg(target_arch = "wasm32")]
+pub use wasm_rs_dbg::dbg;
+
 mod analysis;
 mod ast;
 mod compare;

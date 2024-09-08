@@ -733,6 +733,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "wasm-bindgen",
+ "wasm-rs-dbg",
  "web-sys",
 ]
 
@@ -841,6 +842,15 @@ name = "wasm-bindgen-shared"
 version = "0.2.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c62a0a307cb4a311d3a07867860911ca130c3494e8c2719593806c08bc5d0484"
+
+[[package]]
+name = "wasm-rs-dbg"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61e5fe4ac478ca5cf1db842029f41a5881da39e70320deb0006912f226ea63f4"
+dependencies = [
+ "web-sys",
+]
 
 [[package]]
 name = "web-sys"

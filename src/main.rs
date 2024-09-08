@@ -67,7 +67,7 @@ impl CliState {
                     .find(|(k, _, _)| *k == key)
                     .is_some()
                 {
-                    self.options.set_key(key, val)?;
+                    self.options.set_key(key, val);
                 } else if key == "predicate_style" {
                     self.predicate_style = serde_yaml::from_str(val)?;
                 } else {

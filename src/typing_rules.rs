@@ -9,6 +9,7 @@ use Mutability::*;
 /// What to do to a `ref x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
 pub enum RefBindingOnInheritedBehavior {
     /// Stable rust behavior: skip the borrow in the expression and re-borrow the inner.
     ResetBindingMode,
@@ -21,6 +22,7 @@ pub enum RefBindingOnInheritedBehavior {
 /// What to do to a `mut x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
 pub enum MutBindingOnInheritedBehavior {
     /// Stable rust behavior: reset the binding mode.
     ResetBindingMode,
@@ -33,6 +35,7 @@ pub enum MutBindingOnInheritedBehavior {
 /// What to do when a reference pattern encounters a double-reference type where the outer one is
 /// inherited.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
 pub enum InheritedRefOnRefBehavior {
     /// Eat only the outer one.
     EatOuter,
@@ -44,6 +47,7 @@ pub enum InheritedRefOnRefBehavior {
 
 /// Choice of typing rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
 pub struct RuleOptions {
     /// Whether `[p]` can match on `&[T]`. The heart of match ergonomics.
     pub match_constructor_through_ref: bool,
@@ -135,7 +139,17 @@ impl RuleOptions {
         ),
     ];
 
-    pub fn set_key(&mut self, key: &str, val: &str) -> anyhow::Result<()> {
+    pub fn to_map(&self) -> serde_json::Map<String, serde_json::Value> {
+        let serde_json::Value::Object(map) = serde_json::to_value(self).unwrap() else {
+            panic!()
+        };
+        map
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
+impl RuleOptions {
+    pub fn set_key(&mut self, key: &str, val: &str) {
         // Hack to set a key without knowing its type: print as a yaml object, replacing the key we
         // care about with the string value we got. Yaml parsing will parse the value correctly.
         let text = self
@@ -150,15 +164,7 @@ impl RuleOptions {
                 format!("{k}: {v}")
             })
             .join("\n");
-        *self = serde_yaml::from_str(&text)?;
-        Ok(())
-    }
-
-    pub fn to_map(&self) -> serde_json::Map<String, serde_json::Value> {
-        let serde_json::Value::Object(map) = serde_json::to_value(self).unwrap() else {
-            panic!()
-        };
-        map
+        *self = serde_yaml::from_str(&text).unwrap();
     }
 }
 

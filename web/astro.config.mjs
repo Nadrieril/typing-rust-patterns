@@ -8,6 +8,6 @@ export default defineConfig({
   base: "/tyrup",
   integrations: [compress(), compressor({
     brotli: false,
-    fileExtensions: [".css", ".js", ".html", ".xml", ".cjs", ".mjs", ".svg", ".txt"]
+    fileExtensions: [".css", ".js", ".html", ".xml", ".cjs", ".mjs", ".svg", ".txt", ".wasm"]
   })]
 });
