@@ -20,8 +20,6 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 				<a href="https://github.com/lyonsyonii/rubri" target="_blank">rubri</a>.
 			</div>
 			<div id="live-edit-wrapper">
-				<label for="live-edit">Live Edit</label>
-				<input id="live-edit" type="checkbox" checked />
 				<label for="print-last">Print last expression</label>
 				<input id="print-last" type="checkbox" checked />
 				<label for="inherited_ref_on_ref">Inherited ref on ref</label>
@@ -80,7 +78,6 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	
 	const input = document.body.querySelector<HTMLTextAreaElement>("textarea#input")!;
 	const runButton = document.body.querySelector<HTMLButtonElement>("button")!;
-	const liveEdit = document.body.querySelector<HTMLInputElement>("#live-edit")!;
 	const printLast = document.body.querySelector<HTMLInputElement>("#print-last")!;
 	const inherited_ref_on_ref = document.body.querySelector<HTMLInputElement>("#inherited_ref_on_ref")!;
 	const termElement = document.getElementById("terminal")!;
@@ -93,9 +90,6 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	// Interpreter initialization
 	let lastInput = "";
 	const interpreter = new Interpreter();
-
-	// Add libraries downloaded to list
-	interpreter.onAssetDownloaded(lib => input.value += `\n${lib}`);
 
 	// When Interpreter has finished loading, add default code
 	interpreter.onLoaded(() => {
@@ -130,13 +124,7 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 		interpreter.run(input.value || "", printLast.checked, inherited_ref_on_ref.value)
 	}
 
-	// Run the Interpreter when on "Live Edit" or the "Run" button is clicked
-	input.addEventListener("input", async () => {
-		if (!liveEdit.checked) {
-			return;
-		}
-		runInterpreter()
-	});
+	input.addEventListener("input", runInterpreter);
 	runButton.addEventListener("click", runInterpreter);
 	inherited_ref_on_ref.addEventListener("change", runInterpreter);
 </script>
