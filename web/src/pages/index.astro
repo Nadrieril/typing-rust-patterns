@@ -81,29 +81,13 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	const termElement = document.getElementById("terminal")!;
 
 	const ansiUp = new AnsiUp();
-	input.value = "Loading...";
-	input.readOnly = true;
+	input.value = '[&x]: &mut [&T]';
+	termElement.innerHTML = "Loading...";
 
 	setupEditor(input);
 
 	// Solver initialization
 	const solver = new Solver();
-
-	// When Solver has finished loading, add default code
-	solver.onLoaded(() => {
-		input.readOnly = false;
-		input.value = '[&x]: &mut [&T]';
-		runSolver()
-	});
-
-	function runSolver() {
-		if (solver.running) {
-			return;
-		}
-		termElement.innerHTML = "Running...";
-		lastInput = input.value;
-		solver.run_solver(input.value || "")
-	}
 
 	// When result is received from a running Solver write it to the terminal
 	let lastInput = "";
@@ -114,6 +98,18 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 			input.dispatchEvent(new Event("input"));
 		}
 	});
+
+	// Typecheck the input
+	function runSolver() {
+		if (solver.running) {
+			return;
+		}
+		lastInput = input.value;
+		solver.run_solver(input.value || "")
+	}
+
+	// Run the solver as soon as it is available.
+	solver.onLoaded(runSolver);
 
 	input.addEventListener("input", runSolver);
 	inherited_ref_on_ref.addEventListener("change", () => {
