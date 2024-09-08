@@ -1,5 +1,5 @@
 /**
- * Wrapper of the Miri interpreter.
+ * Wrapper of the interpreter.
  * 
  * Runs the code in a Web Worker to minimize slowdowns.
  * 
@@ -7,9 +7,9 @@
  */
 export class Interpreter {
   private readonly worker: Worker
-  private onrun: (() => void)[];
   private onresult: ((result: string) => void)[]
   private onloaded: (() => void)[];
+  private running: bool;
   
   /**
    * Creates a new Interpreter.
@@ -24,12 +24,13 @@ export class Interpreter {
    */
   constructor() {
     this.worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
-    this.onrun = [];
     this.onresult = [];
     this.onloaded = [];
+    this.running = false;
 
     this.worker.onmessage = ({ data }: { data: { loaded?: boolean, result?: string } } ) => {
       if (data.result !== undefined) {
+        this.running = false;
         for (const ev of this.onresult) {
           ev(data.result)
         }
@@ -37,44 +38,34 @@ export class Interpreter {
         for (const ev of this.onloaded) {
           ev()
         }
-      } else {
-        console.log(`Received message`, data)
       }
     };
   }
-  
-  /**
-   * Execute a snippet of code with Miri.
-   * 
-   * The code is automatically wrapped with a `main` function.
-   * 
-   * @param code Code that will be interpreted.
-   */
-  public run(code: string, printLast: boolean = false, inherited_ref_on_ref: string) {
-    for (const ev of this.onrun) {
-      ev()
-    }
-    this.worker.postMessage({code, printLast, inherited_ref_on_ref});
+
+  public is_running() {
+      return this.running;
   }
-  
-  /**
-   * @param onrun Called when the Interpreter executes some code.
-   */
-  public onRun(onrun: () => void) {
-    this.onrun.push(onrun);
+
+  public run_solver(code: string) {
+    this.running = true;
+    this.worker.postMessage({call: "run_solver", code});
   }
-  
-  /**
-   * @param onresult Called when the Interpreter has finished executing code and has a result.
-   */
-  public onResult(onresult: (result: string) => void) {
-    this.onresult.push(onresult);
+
+  public set_key(key: string, value: string) {
+    this.worker.postMessage({call: "set_key", key, value});
   }
-  
+
   /**
    * @param onloaded Called when the Interpreter has finished loading.
    */
   public onLoaded(onloaded: () => void) {
     this.onloaded.push(onloaded);
+  }
+
+  /**
+   * @param onresult Called when the Interpreter has finished executing code and has a result.
+   */
+  public onResult(onresult: (result: string) => void) {
+    this.onresult.push(onresult);
   }
 }

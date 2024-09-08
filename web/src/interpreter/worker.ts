@@ -8,15 +8,16 @@ export async function initInterpreter(): Promise<Interpreter> {
 }
 
 class Interpreter {
-  constructor() {}
+  options: RuleOptions;
 
-  async run(code: string, printLast: boolean = false, inherited_ref_on_ref: string): Promise<string> {
+  constructor() {
+    this.options = new RuleOptions();
+  }
+
+  async run(code: string): Promise<string> {
     console.time("solver execution");
     try {
-      let options = new RuleOptions();
-      options.set_key("inherited_ref_on_ref", inherited_ref_on_ref);
-      const out = trace_solver_str(code, options);
-      return out
+      return trace_solver_str(code, this.options)
 
     } catch (e: any) {
       return e.message;
@@ -24,6 +25,11 @@ class Interpreter {
     } finally {
       console.timeEnd("solver execution");
     };
+  }
+
+  set_key(key: string, value: string) {
+    console.log("Setting key", key, ":", value);
+    this.options.set_key(key, value);
   }
 }
 
@@ -33,15 +39,15 @@ class Interpreter {
   
   // When code is received run it
   addEventListener("message", async (event) => {
-    const {
-      code, 
-      printLast,
-      inherited_ref_on_ref,
-    } = event.data;
-    const result = await interpreter.run(code, printLast, inherited_ref_on_ref);
-    postMessage({ result });
+    const data = event.data;
+    if (data.call == "set_key") {
+      interpreter.set_key(data.key, data.value);
+    } else if (data.call == "run_solver") {
+      const result = await interpreter.run(data.code);
+      postMessage({ result });
+    }
   });
-  
+
   // Send a message when finished loading
   postMessage({ loaded: true })
 })()

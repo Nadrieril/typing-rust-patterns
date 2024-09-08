@@ -33,8 +33,8 @@ impl RuleOptions {
 }
 
 #[wasm_bindgen]
-pub fn trace_solver_str(request: &str, options: RuleOptions) -> String {
+pub fn trace_solver_str(request: &str, options: &RuleOptions) -> String {
     let a = &Arenas::default();
     let req = TypingRequest::parse(a, request).unwrap();
-    trace_solver(req, options, PredicateStyle::Sequent)
+    trace_solver(req, *options, PredicateStyle::Sequent)
 }
