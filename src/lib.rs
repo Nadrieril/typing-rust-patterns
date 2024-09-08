@@ -10,6 +10,7 @@ pub use wasm_rs_dbg::dbg;
 
 mod analysis;
 mod ast;
+mod cli;
 mod compare;
 mod compute_rules;
 mod explore;
@@ -23,6 +24,7 @@ mod wasm;
 
 pub use analysis::*;
 pub use ast::*;
+pub use cli::*;
 pub use compare::*;
 pub use compute_rules::*;
 pub use explore::*;
