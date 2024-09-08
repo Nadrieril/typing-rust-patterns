@@ -14,8 +14,10 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	<body>
 		<div id="grid">
 			<div>
-				<h1><span>Ru</span>st <span>Br</span>owser <span>I</span>nterpreter</h1>
-				<b><a href="https://github.com/lyonsyonii/rubri" target="_blank">See on Github</a></b>
+				<h1><span>Ty</span>ping <span>Ru</span>st <span>P</span>atterns</h1>
+				<b><a href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</a></b>.
+				Code shamelessly borrowed from
+				<a href="https://github.com/lyonsyonii/rubri" target="_blank">rubri</a>.
 			</div>
 			<div id="live-edit-wrapper">
 				<input id="live-edit" type="checkbox" checked />
@@ -91,7 +93,7 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	// When Interpreter has finished loading, add default code
 	interpreter.onLoaded(() => {
 		input.readOnly = false;
-		input.value = 'println!("Hello from WASM!");';
+		input.value = '[&x]: &[&T]';
 		runButton.click();
 		// interpreter.run(input.value);
 	});
