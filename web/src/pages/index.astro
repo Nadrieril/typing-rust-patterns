@@ -15,9 +15,11 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 		<div id="grid">
 			<div>
 				<h1><span>T</span>yping <span>Ru</span>st <span>P</span>atterns</h1>
-				<b><a href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</a></b>.
-				Frontend adapted from
-				<a href="https://github.com/lyonsyonii/rubri" target="_blank">rubri</a>.
+				<p>
+					Welcome to the interactive pattern typer!<br/>
+					Write `pattern: type` in the input box to see it get typechecked.<br/>
+					Example: `&[ref x]: &[T]`
+				</p>
 			</div>
 			<div id="options">
 				<label for="inherited_ref_on_ref">Inherited ref on ref</label>
@@ -29,39 +31,40 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 			</div>
 			<input type="text" id="input" spellcheck="false" />
 			<div id="terminal" />
+			<footer>
+				<b><a href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</a></b>.
+				Frontend adapted from
+				<a href="https://github.com/lyonsyonii/rubri" target="_blank">rubri</a>.
+			</footer>
 		</div>
 	</body>
 </html>
 
 <style>
 	body {
-		/* height: 100vh; */
+		height: 100vh;
 		font-family: 'Courier New', Courier, monospace;
 		margin: 0;
 		padding: 0;
 	}
 	#grid {
-		/* height: calc(100% - 1rem); */
+		height: calc(100% - 1rem);
 		margin-left: 1rem;
 		margin-right: 1rem;
 		display: grid;
-		grid-template-rows: min-content min-content 1fr 5rem 1fr;
+		grid-template-rows: min-content min-content min-content 1fr 1rem;
 		gap: .5rem;
 	}
-	button {
-		font-family: inherit;
-		font-weight: 700;
-		font-size: large;
-	}
-	textarea#input {
-		font-size: x-large;
+	#input {
+		font-family: 'Courier New', Courier, monospace;
+		font-size: medium;
 		resize: none;
 	}
 	#terminal {
 		white-space: pre-wrap;
 	}
-	#live-edit, #live-edit-wrapper {
-		user-select: none;
+	footer {
+		margin-top: auto;
 	}
 	span {
 		text-decoration: underline;
@@ -89,7 +92,7 @@ const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
 	// When Solver has finished loading, add default code
 	solver.onLoaded(() => {
 		input.readOnly = false;
-		input.value = '[&x]: &[&T]';
+		input.value = '[&x]: &mut [&T]';
 		runSolver()
 	});
 
