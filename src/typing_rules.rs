@@ -147,7 +147,6 @@ impl RuleOptions {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
 impl RuleOptions {
     pub fn set_key(&mut self, key: &str, val: &str) {
         // Hack to set a key without knowing its type: print as a yaml object, replacing the key we

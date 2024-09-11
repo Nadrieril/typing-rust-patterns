@@ -25,6 +25,23 @@ impl RuleOptions {
             .map(|options| JsValue::from_serde(&options).unwrap())
             .collect()
     }
+
+    pub fn get_key(&self, key: &str) -> String {
+        serde_yaml::to_string(&self.to_map()[key])
+            .unwrap()
+            .trim()
+            .to_string()
+    }
+
+    pub fn with_key(&self, key: &str, val: &str) -> Self {
+        let mut out = *self;
+        out.set_key(key, val);
+        out
+    }
+
+    pub fn to_js(&self) -> JsValue {
+        JsValue::from_serde(&self).unwrap()
+    }
 }
 
 #[wasm_bindgen]
