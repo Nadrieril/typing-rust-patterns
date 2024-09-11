@@ -1,0 +1,65 @@
+---
+
+import Solver from '../components/Solver.jsx';
+const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL;
+
+---
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href={ base + "/favicon.svg" } />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        <title>Typing Rust Patterns</title>
+    </head>
+    <body>
+        <div id="grid">
+            <div>
+                <h1><span>T</span>yping <span>Ru</span>st <span>P</span>atterns</h1>
+                <p id="foo">
+                    Welcome to the interactive pattern typer!<br/>
+                    Write `pattern: type` in the input box to see it get typechecked.<br/>
+                    Example: `&[ref x]: &[T]`
+                </p>
+            </div>
+            <Solver client:only="react"/>
+            <footer>
+                <b><a href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</a></b>.
+                Frontend adapted from
+                <a href="https://github.com/lyonsyonii/rubri" target="_blank">rubri</a>.
+            </footer>
+        </div>
+    </body>
+</html>
+
+<style>
+    body {
+        height: 100vh;
+        font-family: 'Courier New', Courier, monospace;
+        margin: 0;
+        padding: 0;
+    }
+    #grid {
+        height: calc(100% - 1rem);
+        margin-left: 1rem;
+        margin-right: 1rem;
+        display: grid;
+        grid-template-rows: min-content min-content min-content 1fr 1rem;
+        gap: .5rem;
+    }
+    #input {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: medium;
+        resize: none;
+    }
+    #terminal {
+        white-space: pre-wrap;
+    }
+    footer {
+        margin-top: auto;
+    }
+    span {
+        text-decoration: underline;
+    }
+</style>

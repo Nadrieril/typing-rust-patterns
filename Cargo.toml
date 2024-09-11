@@ -3,14 +3,14 @@ name = "typing-rust-patterns"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["rlib", "cdylib"]
+
 [dependencies]
 anyhow = "1.0.86"
-assert_cmd = "2.0.16"
 bumpalo = "3.16.0"
 colored = "2.1.0"
 indoc = "2.0.5"
-# Custom fork with https://github.com/mikaelmello/inquire/pull/229 rebased
-inquire = { git = "https://github.com/Nadrieril/inquire", branch = "history" }
 itertools = "0.13.0"
 match-ergonomics-formality = { path = "./match-ergonomics-formality" }
 nom = "7.1.3"
@@ -19,9 +19,24 @@ serde_json = "1.0.125"
 serde = { version = "1.0.208", features = ["derive"] }
 serde_yaml = "0.9.34"
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+assert_cmd = "2.0.16"
+# Custom fork with https://github.com/mikaelmello/inquire/pull/229 rebased
+inquire = { git = "https://github.com/Nadrieril/inquire", branch = "history" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-utils = { version = "0.1", features = ["serde"] }
+wasm-bindgen = "0.2"
+wasm-rs-dbg = "0.1.2"
+web-sys = { version = "0.3.70", features = ["console"] }
+
 [dev-dependencies]
 insta = { version = "1.39.0", features = ["serde"] }
 
 [profile.dev.package]
 insta.opt-level = 3
 similar.opt-level = 3
+
+[profile.release]
+lto = true
+opt-level = "z"
