@@ -57,7 +57,6 @@ impl RuleOptions {
     pub const STRUCTURAL: Self = RuleOptions {
         match_constructor_through_ref: false,
         allow_ref_pat_on_ref_mut: false,
-        simplify_deref_mut: false,
         ..Self::STATELESS
     };
 

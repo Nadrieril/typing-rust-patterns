@@ -88,7 +88,7 @@ inherited_ref_on_ref: "EatOuter"
 match_constructor_through_ref: true -> false
 mut_binding_on_inherited: "Keep"
 ref_binding_on_inherited: "Error" -> "AllocTemporary"
-simplify_deref_mut: true -> false
+simplify_deref_mut: true
 The current options can be fully described as the following set of rules.
 The typing predicate looks like `r, m ⊢ p: T`, where
 - `r` is `inh` or `real` and indicates whether the outermost reference type (if any) is inherited or not;
