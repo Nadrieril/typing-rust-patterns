@@ -307,7 +307,7 @@ impl CliState {
                         - tuples `[p]`, `[p, q]`\n\
                         Available types are:\n\
                         - variables `T`, `U`, etc\n\
-                        - references `&T`\n\
+                        - references `&T`, `&mut T`\n\
                         - tuples `[T]`, `[T, U]`"
                     );
                     return Ok(ControlFlow::Continue(()));
