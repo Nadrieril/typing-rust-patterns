@@ -46,9 +46,9 @@ const prettyOptions = {
         true: "❌",
     },
     downgrade_mut_inside_shared: {
-        question: <>&...&mut T</>,
-        true: <>&...&T</>,
-        false: <>&...&mut T</>,
+        question: <>p: &...&mut T</>,
+        true: <>p: &...&T</>,
+        false: <>p: &...&mut T</>,
     },
     allow_ref_pat_on_ref_mut: {
         question: <>&p: &mut T</>,
@@ -91,11 +91,12 @@ export default function Solver() {
         const current_val = options.get_key(option.name);
         const prettyOption = prettyOptions[option.name] || null;
         const question = prettyOption ? prettyOption.question : option.name;
-        const label = <label key={option.name} htmlFor={option.name} title={option.name}>{question}</label>;
+        const label = <label key={option.name} htmlFor={option.name} title={option.doc}>{question}</label>;
         const buttons = option.values.map((v) => {
             const name = prettyOption ? prettyOption[v] : v;
             return <Button variant="light"
                 key={v}
+                title={v}
                 active={current_val == v}
                 onClick={() => setKey(option.name, v)}
             >
@@ -104,7 +105,7 @@ export default function Solver() {
         });
         return <tr key={option.name}>
             <td style={{width: "fit-content"}}>{label}</td>
-            <td style={{textAlign: "center"}}><ButtonGroup>{buttons}</ButtonGroup></td>
+            <td style={{textAlign: "left"}}><ButtonGroup>{buttons}</ButtonGroup></td>
         </tr>
     });
 

@@ -83,12 +83,12 @@ impl RuleOptions {
     pub const OPTIONS_DOC: &[(&str, &[&str], &str)] = &[
         (
             "match_constructor_through_ref",
-            &["true", "false"],
+            &["false", "true"],
             "whether `[p]` can match on `&[T]`; the heart of match ergonomics.",
         ),
         (
             "eat_inherited_ref_alone",
-            &["true", "false"],
+            &["false", "true"],
             "whether `&p`/`&mut p` is allowed on an inherited reference if the underlying type isn't also a reference type",
         ),
         (
@@ -99,28 +99,8 @@ impl RuleOptions {
         ),
         (
             "fallback_to_outer",
-            &["true", "false"],
+            &["false", "true"],
             "whether to try again in `EatOuter` mode when a `EatBoth` or `EatInner` case has a mutability mismatch",
-        ),
-        (
-            "allow_ref_pat_on_ref_mut",
-            &["true", "false"],
-            "whether to allow `&p: &mut T`",
-        ),
-        (
-            "simplify_deref_mut",
-            &["true", "false"],
-            "whether to simplify `*&mut expr`, which removes some borrow errors",
-        ),
-        (
-            "always_inspect_bm",
-            &["true", "false"],
-            "whether to always branch on the binding mode when computing rules. this is required for the `SequentBindingMode` style",
-        ),
-        (
-            "downgrade_mut_inside_shared",
-            &["true", "false"],
-            "RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref",
         ),
         (
             "dont_eat_mut_inside_shared",
@@ -128,14 +108,34 @@ impl RuleOptions {
             "in `EatInner` or `EatBoth`, disallow eating an inner `&mut T` with `&mut p` from under a `&`",
         ),
         (
+            "allow_ref_pat_on_ref_mut",
+            &["false", "true"],
+            "whether to allow `&p: &mut T`",
+        ),
+        (
+            "downgrade_mut_inside_shared",
+            &["false", "true"],
+            "RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref",
+        ),
+        (
             "ref_binding_on_inherited",
-            &["ResetBindingMode", "AllocTemporary", "Error"],
+            &["Error", "ResetBindingMode", "AllocTemporary"],
             "how to handle a `ref x` binding on an inherited reference",
         ),
         (
             "mut_binding_on_inherited",
-            &["ResetBindingMode", "Keep", "Error"],
+            &["Error", "ResetBindingMode", "Keep"],
             "how to handle a `mut x` binding on an inherited reference",
+        ),
+        (
+            "simplify_deref_mut",
+            &["false", "true"],
+            "whether to simplify `*&mut expr`, which removes some borrow errors",
+        ),
+        (
+            "always_inspect_bm",
+            &["false", "true"],
+            "whether to always branch on the binding mode when computing rules. this is required for the `SequentBindingMode` style",
         ),
     ];
 
