@@ -5,7 +5,10 @@ import ButtonGroup from 'react-bootstrap/ButtonGroup';
 
 await init({});
 
-const optionsDoc = RuleOptions.options_doc();
+const optionsDoc =
+    RuleOptions
+        .options_doc()
+        .filter((opt) => opt.name != "simplify_deref_mut" && opt.name != "always_inspect_bm");
 
 function InhRef() {
     return <span
@@ -63,18 +66,6 @@ const prettyOptions = {
         ResetBindingMode: <>mut x: T</>,
         Keep: <>mut x: &T</>,
         Error: "❌",
-    },
-    // TODO: hide that one? pass it as separate option to solver?
-    always_inspect_bm: {
-        question: "always inspect bm",
-        true: "✅",
-        false: "❌",
-    },
-    // TODO: hide that one?
-    simplify_deref_mut: {
-        question: "simplify_deref_mut",
-        true: "✅",
-        false: "❌",
     },
 }
 
