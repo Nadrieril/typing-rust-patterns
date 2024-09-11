@@ -1,8 +1,6 @@
 import init, { RuleOptions, trace_solver_str } from "../../typing_rust_patterns/typing_rust_patterns.js";
 import { useState, useMemo, Fragment } from 'react';
-import { AnsiUp } from "ansi_up";
 
-const ansiUp = new AnsiUp();
 await init({});
 
 export default function Solver() {
@@ -14,7 +12,7 @@ export default function Solver() {
 
     const runSolver = (input) => {
         const result = trace_solver_str(input, options);
-        const __html = ansiUp.ansi_to_html(result).replaceAll("\n", "<br/>");
+        const __html = result.replaceAll("\n", "<br/>");
         return {__html}
     };
 

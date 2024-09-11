@@ -380,6 +380,8 @@ impl<'a> TypingRule<'a> {
 #[test]
 /// Compute the rulesets for each known bundle.
 fn bundle_rules() -> anyhow::Result<()> {
+    colored::control::set_override(false);
+
     #[derive(Serialize)]
     struct TestCase {
         bundle_name: &'static str,

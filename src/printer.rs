@@ -3,6 +3,24 @@ use std::fmt::{Debug, Display, Write};
 
 use crate::*;
 
+use colored::Colorize;
+#[cfg(target_arch = "wasm32")]
+mod colored {
+    pub trait Colorize {
+        fn dimmed(&self) -> String;
+    }
+    impl Colorize for &str {
+        fn dimmed(&self) -> String {
+            format!("<span style=\"color:gray\">{self}</span>")
+        }
+    }
+    impl Colorize for String {
+        fn dimmed(&self) -> String {
+            self.as_str().dimmed()
+        }
+    }
+}
+
 impl BindingMode {
     pub fn name(self) -> &'static str {
         match self {
@@ -31,8 +49,16 @@ impl<'a> TypingPredicate<'a> {
         match style {
             PredicateStyle::Stateless => format!("{}: {}", self.pat, self.expr.ty),
             PredicateStyle::Sequent => {
+                let mut ty = self.expr.ty.to_string();
                 let bm = match self.expr.binding_mode().ok() {
-                    Some(BindingMode::ByRef(_)) => "inh",
+                    Some(BindingMode::ByRef(_)) => {
+                        if let Some(rest) = ty.strip_prefix("&mut") {
+                            ty = format!("{}{rest}", "&mut".dimmed());
+                        } else if let Some(rest) = ty.strip_prefix("&") {
+                            ty = format!("{}{rest}", "&".dimmed());
+                        }
+                        &"inh".dimmed().to_string()
+                    }
                     _ if !matches!(self.expr.ty, Type::Ref(..) | Type::Abstract(..)) => "_",
                     Some(BindingMode::ByMove) => "real",
                     None => "r",
@@ -42,7 +68,7 @@ impl<'a> TypingPredicate<'a> {
                     Some(Mutability::Mutable) => "rw",
                     Some(Mutability::Shared) => "ro",
                 };
-                format!("{bm}, {scrut_access} ⊢ {}: {}", self.pat, self.expr.ty)
+                format!("{bm}, {scrut_access} ⊢ {}: {ty}", self.pat)
             }
             PredicateStyle::SequentBindingMode => {
                 let bm = self.expr.binding_mode().ok();
