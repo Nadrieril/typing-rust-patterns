@@ -30,7 +30,7 @@ jobs:
         run: make wasm
 
       - name: Build site
-        uses: withastro/action@v1
+        uses: withastro/action@v3
         with:
           path: "web"
           package-manager: pnpm@latest
@@ -44,4 +44,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
