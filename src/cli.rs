@@ -38,18 +38,18 @@ impl CliState {
         ("quit", "quit"),
     ];
 
-    pub const CLI_OPTIONS: &[(&str, &[&str], &str)] = &[(
-        "predicate_style",
-        &[
+    pub const CLI_OPTIONS: &[OptionsDoc] = &[OptionsDoc {
+        name: "predicate_style",
+        values: &[
             "Expression",
             "Sequent",
             "BindingMode",
             "SequentBindingMode",
             "Stateless",
         ],
-        "the style of the typing predicate; not all rulesets can be expressed in all styles, \
+        doc: "the style of the typing predicate; not all rulesets can be expressed in all styles, \
         only `Expression` is compatible with all rulesets",
-    )];
+    }];
 
     pub fn new() -> Self {
         Self {
@@ -60,8 +60,7 @@ impl CliState {
         }
     }
 
-    pub fn settings() -> impl Iterator<Item = (&'static str, &'static [&'static str], &'static str)>
-    {
+    pub fn settings() -> impl Iterator<Item = OptionsDoc> {
         RuleOptions::OPTIONS_DOC
             .into_iter()
             .chain(Self::CLI_OPTIONS)
@@ -69,11 +68,11 @@ impl CliState {
     }
 
     pub fn set_key(&mut self, key: &str, val: &str) -> anyhow::Result<()> {
-        if let Some((_key, values, _doc)) = Self::settings().find(|(k, _, _)| *k == key) {
-            if values.contains(&val) {
+        if let Some(opt) = Self::settings().find(|opt| opt.name == key) {
+            if opt.values.contains(&val) {
                 if RuleOptions::OPTIONS_DOC
                     .iter()
-                    .find(|(k, _, _)| *k == key)
+                    .find(|opt| opt.name == key)
                     .is_some()
                 {
                     self.options.set_key(key, val);
@@ -86,7 +85,7 @@ impl CliState {
             } else {
                 bail!(
                     "unknown value `{val}` for option `{key}`; options are: {}",
-                    values.iter().format(", ")
+                    opt.values.iter().format(", ")
                 )
             }
         } else {
@@ -282,14 +281,21 @@ impl CliState {
                     }
                 }
                 Err(err) => {
+                    let options = CliState::settings()
+                        .map(|OptionsDoc { name, values, doc }| {
+                            format!("- {name}: {}\n    {doc}\n", values.iter().format(" | "))
+                        })
+                        .format("");
+                    let bundles = RuleOptions::KNOWN_OPTION_BUNDLES
+                        .iter()
+                        .map(|b| format!("- {}: {}", b.name, b.doc))
+                        .format("\n");
                     println!(
                         "Error: {err}\n\n\
                         Options are:\n\
-                        {}\n\
+                        {options}\n\
                         There also exist some predefined option-bundles. Activate one with `set <bundle>`\n\
-                        {}",
-                        CliState::settings().map(|(name, values, descr)| format!("- {name}: {}\n    {descr}\n", values.iter().format(" | "))).format(""),
-                        RuleOptions::KNOWN_OPTION_BUNDLES.iter().map(|(name, _, descr)| format!("- {name}: {descr}")).format("\n")
+                        {bundles}",
                     )
                 }
             }

@@ -69,7 +69,7 @@ impl inquire::Autocomplete for Autocomplete {
 
         if let Some(opt) = input.strip_prefix("set") {
             let opt = opt.trim();
-            for (name, values, _) in CliState::settings() {
+            for OptionsDoc { name, values, .. } in CliState::settings() {
                 if let Some(val) = opt.strip_prefix(name) {
                     let val = val.trim();
                     for possible_value in values {
@@ -81,9 +81,9 @@ impl inquire::Autocomplete for Autocomplete {
                     ret.push(format!("set {name}"));
                 }
             }
-            for &(bundle, _, _) in RuleOptions::KNOWN_OPTION_BUNDLES {
-                if bundle.starts_with(opt) {
-                    ret.push(format!("set {bundle}"))
+            for b in RuleOptions::KNOWN_OPTION_BUNDLES {
+                if b.name.starts_with(opt) {
+                    ret.push(format!("set {}", b.name))
                 }
             }
         }

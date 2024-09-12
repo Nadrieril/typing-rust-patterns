@@ -1,4 +1,5 @@
 use crate::*;
+use serde::Serialize;
 
 impl RuleOptions {
     /// Reproduces stable rust behavior.
@@ -91,59 +92,73 @@ impl RuleOptions {
         allow_ref_pat_on_ref_mut: false,
         ..Self::STATELESS
     };
+}
 
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct BundleDoc {
+    pub name: &'static str,
+    pub options: RuleOptions,
+    pub doc: &'static str,
+}
+
+impl RuleOptions {
     /// The known bundles, with a short explanation.
-    pub const KNOWN_OPTION_BUNDLES: &[(&str, Self, &str)] = &[
-        (
-            "default",
-            Self::DEFAULT,
-            "a reasonable proposal; like `stateless` but forbids `ref` bindings that create temporaries",
-        ),
-        (
-            "stateless",
-            Self::STATELESS,
-            "a proposal that tracks no hidden state; purely type-based",
-        ),
-        (
-            "stable_rust",
-            Self::STABLE_RUST,
-            "emulates the behavior of current stable rust",
-        ),
-        ("ergo2024", Self::ERGO2024, "the accepted RFC3627 behavior"),
-        (
-            "rfc3627_2021",
-            Self::RFC3627_2021,
-            "the accepted RFC3627 behavior under edition 2021",
-        ),
-        (
-            "ergo2024_breaking_only",
-            Self::ERGO2024_BREAKING_ONLY,
-            "the breaking changes for edition 2024 planned in RFC3627",
-        ),
-        (
-            "structural",
-            Self::STRUCTURAL,
-            "purely structural matching, with no match ergonomics",
-        ),
-        (
-            "waffle",
-            Self::WAFFLE,
-            "a proposal by @WaffleLapkin (excluding the proposed rule3 extension)",
-        ),
+    pub const KNOWN_OPTION_BUNDLES: &[BundleDoc] = &[
+        BundleDoc {
+            name: "default",
+            options: Self::DEFAULT,
+            doc: "a reasonable proposal; like `stateless` but \
+                forbids `ref` bindings that create temporaries",
+        },
+        BundleDoc {
+            name: "stateless",
+            options: Self::STATELESS,
+            doc: "a proposal that tracks no hidden state; purely type-based",
+        },
+        BundleDoc {
+            name: "stable_rust",
+            options: Self::STABLE_RUST,
+            doc: "emulates the behavior of current stable rust",
+        },
+        BundleDoc {
+            name: "ergo2024",
+            options: Self::ERGO2024,
+            doc: "the accepted RFC3627 behavior",
+        },
+        BundleDoc {
+            name: "rfc3627_2021",
+            options: Self::RFC3627_2021,
+            doc: "the accepted RFC3627 behavior under edition 2021",
+        },
+        BundleDoc {
+            name: "ergo2024_breaking_only",
+            options: Self::ERGO2024_BREAKING_ONLY,
+            doc: "the breaking changes for edition 2024 planned in RFC3627",
+        },
+        BundleDoc {
+            name: "structural",
+            options: Self::STRUCTURAL,
+            doc: "purely structural matching, with no match ergonomics",
+        },
+        BundleDoc {
+            name: "waffle",
+            options: Self::WAFFLE,
+            doc: "a proposal by @WaffleLapkin (excluding the proposed rule3 extension)",
+        },
         // ("rpjohnst", Self::RPJOHNST, "(TODO) a proposal by @rpjohnst"),
     ];
 
     pub fn get_bundle_name(self) -> Option<&'static str> {
         Self::KNOWN_OPTION_BUNDLES
             .iter()
-            .find(|(_, bundle, _)| *bundle == self)
-            .map(|(name, _, _)| *name)
+            .find(|b| b.options == self)
+            .map(|b| b.name)
     }
 
     pub fn from_bundle_name(name: &str) -> Option<Self> {
         Self::KNOWN_OPTION_BUNDLES
             .iter()
-            .find(|(n, _, _)| *n == name)
-            .map(|(_, bundle, _)| *bundle)
+            .find(|b| b.name == name)
+            .map(|b| b.options)
     }
 }

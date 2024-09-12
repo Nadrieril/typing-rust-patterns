@@ -401,7 +401,7 @@ fn bundle_rules() -> anyhow::Result<()> {
             PredicateStyle::BindingMode,
             PredicateStyle::Stateless,
         ])
-        .map(|((name, options, _), style)| (name, options, style));
+        .map(|(b, style)| (b.name, b.options, style));
 
     for (name, options, style) in bundles {
         let mut ctx = TypingCtx { arenas, options };

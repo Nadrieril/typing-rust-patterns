@@ -1,14 +1,6 @@
 use crate::*;
 use gloo_utils::format::JsValueSerdeExt;
-use serde::Serialize;
 use wasm_bindgen::prelude::*;
-
-#[derive(Serialize)]
-pub struct OptionsDoc {
-    pub name: &'static str,
-    pub values: &'static [&'static str],
-    pub doc: &'static str,
-}
 
 #[wasm_bindgen]
 impl RuleOptions {
@@ -21,7 +13,6 @@ impl RuleOptions {
         Self::OPTIONS_DOC
             .iter()
             .copied()
-            .map(|(name, values, doc)| OptionsDoc { name, values, doc })
             .map(|options| JsValue::from_serde(&options).unwrap())
             .collect()
     }
