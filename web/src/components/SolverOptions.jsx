@@ -2,6 +2,7 @@ import init, { RuleOptions } from "../../typing_rust_patterns/typing_rust_patter
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import Dropdown from 'react-bootstrap/Dropdown';
+import InputGroup from 'react-bootstrap/InputGroup';
 import Table from 'react-bootstrap/Table';
 
 await init({});
@@ -107,13 +108,15 @@ export default function SolverOptions({ options, setOptions }) {
 
     return (
         <div>
-        <Dropdown>
-            <label htmlFor="presets">Preset: </label>
-            <Dropdown.Toggle variant="outline-dark" id="presets">
-                {active_bundle || "---"}
-            </Dropdown.Toggle>
-            <Dropdown.Menu>{bundles}</Dropdown.Menu>
-        </Dropdown>
+        <InputGroup>
+            <InputGroup.Text>Preset</InputGroup.Text>
+            <Dropdown>
+                <Dropdown.Toggle variant="light">
+                    {active_bundle || "---"}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>{bundles}</Dropdown.Menu>
+            </Dropdown>
+        </InputGroup>
         <Table bordered hover striped><tbody>{option_elems}</tbody></Table>
         </div>
     );
