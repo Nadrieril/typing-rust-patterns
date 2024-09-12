@@ -55,17 +55,32 @@ impl RuleOptions {
     pub fn get_bundle_name_js(&self) -> Option<String> {
         self.get_bundle_name().map(String::from)
     }
+}
 
-    pub fn display_rules_js(&self) -> String {
-        display_rules(PredicateStyle::Sequent, *self).unwrap()
+#[wasm_bindgen]
+// `wasm_bindgen` doesn't support methods on enums: https://github.com/rustwasm/wasm-bindgen/issues/1715
+pub fn style_from_name(name: &str) -> PredicateStyle {
+    serde_yaml::from_str(name).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn trace_solver_js(request: &str, options: &RuleOptions, style: PredicateStyle) -> String {
+    let a = &Arenas::default();
+    let options = RuleOptions {
+        always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
+        ..*options
+    };
+    match TypingRequest::parse(a, request) {
+        Ok(req) => trace_solver(req, options, style),
+        Err(e) => format!("parse error: {e}"),
     }
 }
 
 #[wasm_bindgen]
-pub fn trace_solver_str(request: &str, options: &RuleOptions) -> String {
-    let a = &Arenas::default();
-    match TypingRequest::parse(a, request) {
-        Ok(req) => trace_solver(req, *options, PredicateStyle::Sequent),
-        Err(e) => format!("parse error: {e}"),
-    }
+pub fn display_rules_js(options: &RuleOptions, style: PredicateStyle) -> String {
+    let options = RuleOptions {
+        always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
+        ..*options
+    };
+    display_rules(style, options).unwrap()
 }

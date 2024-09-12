@@ -257,6 +257,7 @@ impl<'a> Expression<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
 pub enum PredicateStyle {
     /// Draws the expression as-is.
     Expression,
