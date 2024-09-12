@@ -5,7 +5,6 @@ import SolverOptions from './SolverOptions.jsx';
 await init({});
 
 // TODO: tab the options container to support bm-based Solver
-// TODO: add presets somehow
 // TODO: add second column for comparison
 // TODO: `rules` tab, including for bm-based
 // TODO: encode current view in URL for sharing
@@ -22,13 +21,17 @@ export default function Solver() {
     return (
         <>
         <SolverOptions options={options} setOptions={setOptions}/>
-        <input
-            type="text"
-            id="input"
-            spellCheck="false"
-            value={inputPattern}
-            onChange={(e) => setInputPattern(e.target.value)}
-        />
+        <div style={{display: "flex"}}>
+            <label htmlFor="input">Query:</label>
+            <input
+                type="text"
+                id="input"
+                spellCheck="false"
+                style={{flexGrow: 1}}
+                value={inputPattern}
+                onChange={(e) => setInputPattern(e.target.value)}
+            />
+        </div>
         <div id="terminal" dangerouslySetInnerHTML={runSolver(inputPattern)}/>
         </>
     );

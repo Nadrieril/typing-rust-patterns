@@ -97,7 +97,7 @@ export default function SolverOptions({ options, setOptions }) {
     const bundles = bundlesDoc.map(bundle => {
         return <Dropdown.Item
             key={bundle.name}
-            title={bundle.name}
+            title={bundle.doc}
             active={active_bundle == bundle.name}
             onClick={() => setOptions(bundle.options)}
         >
@@ -112,7 +112,6 @@ export default function SolverOptions({ options, setOptions }) {
             <Dropdown.Toggle variant="outline-dark" id="presets">
                 {active_bundle || "---"}
             </Dropdown.Toggle>
-
             <Dropdown.Menu>{bundles}</Dropdown.Menu>
         </Dropdown>
         <Table bordered hover><tbody>{option_elems}</tbody></Table>
