@@ -8,15 +8,22 @@ use colored::Colorize;
 mod colored {
     pub trait Colorize {
         fn dimmed(&self) -> String;
+        fn underline(&self) -> String;
     }
     impl Colorize for &str {
         fn dimmed(&self) -> String {
-            format!("<span style=\"color:gray\">{self}</span>")
+            format!("<span style=\"color: gray\">{self}</span>")
+        }
+        fn underline(&self) -> String {
+            format!("<span style=\"text-decoration: underline\">{self}</span>")
         }
     }
     impl Colorize for String {
         fn dimmed(&self) -> String {
             self.as_str().dimmed()
+        }
+        fn underline(&self) -> String {
+            self.as_str().underline()
         }
     }
 }
@@ -53,9 +60,9 @@ impl<'a> TypingPredicate<'a> {
                 let bm = match self.expr.binding_mode().ok() {
                     Some(BindingMode::ByRef(_)) => {
                         if let Some(rest) = ty.strip_prefix("&mut") {
-                            ty = format!("{}{rest}", "&mut".dimmed());
+                            ty = format!("{}{rest}", "&mut".dimmed().underline());
                         } else if let Some(rest) = ty.strip_prefix("&") {
-                            ty = format!("{}{rest}", "&".dimmed());
+                            ty = format!("{}{rest}", "&".dimmed().underline());
                         }
                         &"inh".dimmed().to_string()
                     }

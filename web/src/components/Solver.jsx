@@ -11,12 +11,7 @@ const optionsDoc =
         .filter((opt) => opt.name != "simplify_deref_mut" && opt.name != "always_inspect_bm");
 
 function InhRef() {
-    return <span
-        style={{color: "gray", textDecoration: "underline"}}
-        title="inherited reference"
-    >
-        &
-    </span>
+    return <span className="inherited-ref" title="inherited reference">&</span>
 }
 const prettyOptions = {
     match_constructor_through_ref: {
