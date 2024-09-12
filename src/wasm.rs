@@ -55,6 +55,10 @@ impl RuleOptions {
     pub fn get_bundle_name_js(&self) -> Option<String> {
         self.get_bundle_name().map(String::from)
     }
+
+    pub fn display_rules_js(&self) -> String {
+        display_rules(PredicateStyle::Sequent, *self).unwrap()
+    }
 }
 
 #[wasm_bindgen]

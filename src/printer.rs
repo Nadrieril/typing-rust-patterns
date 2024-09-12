@@ -15,7 +15,7 @@ mod colored {
             format!("<span style=\"color: gray\">{self}</span>")
         }
         fn underline(&self) -> String {
-            format!("<span style=\"text-decoration: underline\">{self}</span>")
+            format!("<span style=\"text-decoration: underline\" title=\"inherited reference\">{self}</span>")
         }
     }
     impl Colorize for String {

@@ -372,7 +372,10 @@ fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
     }
 }
 
-fn display_rules(style: PredicateStyle, options: RuleOptions) -> Result<String, IncompatibleStyle> {
+pub fn display_rules(
+    style: PredicateStyle,
+    options: RuleOptions,
+) -> Result<String, IncompatibleStyle> {
     let arenas = &Arenas::default();
     let mut out = String::new();
     let _ = writeln!(

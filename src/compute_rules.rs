@@ -367,7 +367,28 @@ impl<'a> TypingRule<'a> {
             preconditions_str = preconditions_str.replace("*q", "reset(q)");
         }
 
+        #[cfg(not(target_arch = "wasm32"))]
+        // Compute string length skipping ansi escape codes.
         let display_len = ansi_width::ansi_width;
+        #[cfg(target_arch = "wasm32")]
+        // Compute string length skipping html tags.
+        let display_len = |s: &str| {
+            let mut in_tag = false;
+            s.chars()
+                .filter(|&c| {
+                    if c == '<' {
+                        in_tag = true;
+                        false
+                    } else if c == '>' {
+                        in_tag = false;
+                        false
+                    } else {
+                        !in_tag
+                    }
+                })
+                .count()
+        };
+
         let len = max(
             display_len(&preconditions_str),
             display_len(&postconditions_str),
