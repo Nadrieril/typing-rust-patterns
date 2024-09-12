@@ -367,7 +367,11 @@ impl<'a> TypingRule<'a> {
             preconditions_str = preconditions_str.replace("*q", "reset(q)");
         }
 
-        let len = max(preconditions_str.len(), postconditions_str.len());
+        let display_len = ansi_width::ansi_width;
+        let len = max(
+            display_len(&preconditions_str),
+            display_len(&postconditions_str),
+        );
         let bar = "-".repeat(len);
         let mut out = String::new();
         let _ = write!(&mut out, "{preconditions_str}\n");
