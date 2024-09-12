@@ -1,5 +1,4 @@
 use crate::*;
-use serde::Serialize;
 
 impl RuleOptions {
     /// Reproduces stable rust behavior.
@@ -94,7 +93,7 @@ impl RuleOptions {
     };
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy)]
 pub struct BundleDoc {
     pub name: &'static str,
     pub options: RuleOptions,

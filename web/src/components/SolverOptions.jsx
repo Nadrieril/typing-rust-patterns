@@ -1,6 +1,8 @@
 import init, { RuleOptions } from "../../typing_rust_patterns/typing_rust_patterns.js";
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import Dropdown from 'react-bootstrap/Dropdown';
+import Table from 'react-bootstrap/Table';
 
 await init({});
 
@@ -8,6 +10,8 @@ const optionsDoc =
     RuleOptions
         .options_doc()
         .filter((opt) => opt.name != "simplify_deref_mut" && opt.name != "always_inspect_bm");
+
+const bundlesDoc = RuleOptions.bundles_doc();
 
 function InhRef() {
     return <span className="inherited-ref" title="inherited reference">&</span>
@@ -89,7 +93,29 @@ export default function SolverOptions({ options, setOptions }) {
         </tr>
     });
 
+    const active_bundle = options.get_bundle_name_js();
+    const bundles = bundlesDoc.map(bundle => {
+        return <Dropdown.Item
+            key={bundle.name}
+            title={bundle.name}
+            active={active_bundle == bundle.name}
+            onClick={() => setOptions(bundle.options)}
+        >
+            {bundle.name}
+        </Dropdown.Item>
+    });
+
     return (
-        <table><tbody>{option_elems}</tbody></table>
+        <div>
+        <Dropdown>
+            <label htmlFor="presets">Preset: </label>
+            <Dropdown.Toggle variant="outline-dark" id="presets">
+                {active_bundle || "---"}
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu>{bundles}</Dropdown.Menu>
+        </Dropdown>
+        <Table bordered hover><tbody>{option_elems}</tbody></Table>
+        </div>
     );
 }

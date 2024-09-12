@@ -2,6 +2,14 @@ use crate::*;
 use gloo_utils::format::JsValueSerdeExt;
 use wasm_bindgen::prelude::*;
 
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Debug, Clone)]
+pub struct BundleDocJs {
+    pub name: String,
+    pub options: RuleOptions,
+    pub doc: String,
+}
+
 #[wasm_bindgen]
 impl RuleOptions {
     #[wasm_bindgen(constructor)]
@@ -12,8 +20,18 @@ impl RuleOptions {
     pub fn options_doc() -> Vec<JsValue> {
         Self::OPTIONS_DOC
             .iter()
-            .copied()
-            .map(|options| JsValue::from_serde(&options).unwrap())
+            .map(|options| JsValue::from_serde(options).unwrap())
+            .collect()
+    }
+
+    pub fn bundles_doc() -> Vec<BundleDocJs> {
+        Self::KNOWN_OPTION_BUNDLES
+            .iter()
+            .map(|bundle| BundleDocJs {
+                name: bundle.name.to_string(),
+                options: bundle.options,
+                doc: bundle.doc.to_string(),
+            })
             .collect()
     }
 
@@ -32,6 +50,10 @@ impl RuleOptions {
 
     pub fn to_js(&self) -> JsValue {
         JsValue::from_serde(&self).unwrap()
+    }
+
+    pub fn get_bundle_name_js(&self) -> Option<String> {
+        self.get_bundle_name().map(String::from)
     }
 }
 
