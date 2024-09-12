@@ -2,14 +2,22 @@ import init, { RuleOptions, trace_solver_str } from "../../typing_rust_patterns/
 import SolverOptions from './SolverOptions.jsx';
 
 import { useState, useMemo } from 'react';
-import Tabs from 'react-bootstrap/Tabs';
+import Button from 'react-bootstrap/Button';
+import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import Col from 'react-bootstrap/Col';
+import Container from 'react-bootstrap/Container';
+import Form from 'react-bootstrap/Form';
+import InputGroup from 'react-bootstrap/InputGroup';
+import Row from 'react-bootstrap/Row';
 import Tab from 'react-bootstrap/Tab';
+import Tabs from 'react-bootstrap/Tabs';
+import Nav from 'react-bootstrap/Nav';
+import Navbar from 'react-bootstrap/Navbar';
 
 await init({});
 
 // TODO: tab the options container to support bm-based Solver
 // TODO: add second column for comparison
-// TODO: `rules` tab, including for bm-based
 // TODO: encode current view in URL for sharing
 export default function Solver() {
     const [options, setOptions] = useState(new RuleOptions());
@@ -17,45 +25,62 @@ export default function Solver() {
     const [mode, setMode] = useState('typechecker');
 
     const solverSteps = useMemo(() => {
-        const result = trace_solver_str(inputPattern, options);
-        const __html = result.replaceAll("\n", "<br/>");
+        const __html = trace_solver_str(inputPattern, options);
         return {__html}
     }, [inputPattern, options]);
 
     const rulesDisplay = useMemo(() => {
-        const result = options.display_rules_js();
-        const __html = result.replaceAll("\n", "<br/>");
+        const __html = options.display_rules_js();
         return {__html}
     }, [options]);
 
     return (
         <>
-        <SolverOptions options={options} setOptions={setOptions}/>
-        <Tabs
-            activeKey={mode}
-            onSelect={(k) => setMode(k)}
-            transition={false}
-            className="mb-3"
-            fill
-        >
-            <Tab eventKey="typechecker" title="Typechecker">
-                <div style={{display: "flex"}}>
-                    <label htmlFor="input">Query:</label>
-                    <input
-                        type="text"
-                        id="input"
-                        spellCheck="false"
-                        style={{flexGrow: 1}}
-                        value={inputPattern}
-                        onChange={(e) => setInputPattern(e.target.value)}
-                    />
-                </div>
-                <div dangerouslySetInnerHTML={solverSteps}/>
-            </Tab>
-            <Tab eventKey="rules" title="Rules">
-                <div dangerouslySetInnerHTML={rulesDisplay}/>
-            </Tab>
-        </Tabs>
+        <Container fluid>
+            <Navbar expand="lg" className="bg-body-tertiary">
+                <Container fluid>
+                    <Navbar.Brand id="title"><span>T</span>yping <span>Ru</span>st <span>P</span>atterns</Navbar.Brand>
+                    <Navbar.Toggle/>
+                    <Navbar.Collapse>
+                        <Nav className="me-auto">
+                            <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
+                        </Nav>
+                    </Navbar.Collapse>
+                </Container>
+            </Navbar>
+            <Row>
+                <p id="foo">
+                    Welcome to the interactive pattern typer!<br/>
+                    Write <span className="monospace">`pattern: type`</span> in the input box to see it get typechecked.<br/>
+                    Example: <span className="monospace">`&[ref x]: &[T]`</span>
+                </p>
+            </Row>
+            <Row><SolverOptions options={options} setOptions={setOptions}/></Row>
+            <Row>
+            <Tabs
+                activeKey={mode}
+                onSelect={(k) => setMode(k)}
+                transition={false}
+                className="mb-3"
+                fill
+            >
+                <Tab eventKey="typechecker" title="Typechecker">
+                    <InputGroup className="mb-3">
+                        <InputGroup.Text>Query</InputGroup.Text>
+                        <Form.Control
+                            placeholder="[&x]: &mut [&T]"
+                            value={inputPattern}
+                            onChange={(e) => setInputPattern(e.target.value)}
+                        />
+                    </InputGroup>
+                    <div className="monospace" dangerouslySetInnerHTML={solverSteps}/>
+                </Tab>
+                <Tab eventKey="rules" title="Rules">
+                    <div className="monospace" dangerouslySetInnerHTML={rulesDisplay}/>
+                </Tab>
+            </Tabs>
+            </Row>
+        </Container>
         </>
     );
 }

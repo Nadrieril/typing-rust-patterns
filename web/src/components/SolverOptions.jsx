@@ -114,7 +114,7 @@ export default function SolverOptions({ options, setOptions }) {
             </Dropdown.Toggle>
             <Dropdown.Menu>{bundles}</Dropdown.Menu>
         </Dropdown>
-        <Table bordered hover><tbody>{option_elems}</tbody></Table>
+        <Table bordered hover striped><tbody>{option_elems}</tbody></Table>
         </div>
     );
 }
