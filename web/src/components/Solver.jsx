@@ -1,4 +1,10 @@
-import init, { RuleOptions, style_from_name, trace_solver_js, display_rules_js } from "../../typing_rust_patterns/typing_rust_patterns.js";
+import init, {
+    RuleOptions,
+    style_from_name,
+    trace_solver_js,
+    display_rules_js,
+    display_joint_rules_js,
+} from "../../typing_rust_patterns/typing_rust_patterns.js";
 import SolverOptions from './SolverOptions.jsx';
 
 import { useState, useMemo } from 'react';
@@ -25,24 +31,51 @@ const availableStyles = [
     { name: 'SequentBindingMode', display: <>ref, _ ⊢ p: T</> },
 ];
 
-// TODO: tab the options container to support bm-based Solver
-// TODO: add second column for comparison
-// TODO: encode current view in URL for sharing
-export default function Solver() {
-    const [style, setStyle] = useState('Sequent');
-    const [options, setOptions] = useState(new RuleOptions());
-    const [inputPattern, setInputPattern] = useState("[&x]: &mut [&T]");
-    const [mode, setMode] = useState('typechecker');
-
+export function SolverSteps({inputQuery, options, style}) {
     const solverSteps = useMemo(() => {
-        const __html = trace_solver_js(inputPattern, options, style_from_name(style));
+        const __html = trace_solver_js(inputQuery, options, style_from_name(style));
         return {__html}
-    }, [inputPattern, options, style]);
+    }, [inputQuery, options, style]);
 
+    return <div className="monospace" dangerouslySetInnerHTML={solverSteps}/>
+}
+
+export function RulesDisplay({options, style}) {
     const rulesDisplay = useMemo(() => {
         const __html = display_rules_js(options, style_from_name(style));
         return {__html}
     }, [options, style]);
+
+    return <div className="monospace" dangerouslySetInnerHTML={rulesDisplay}/>
+}
+
+export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
+    const jointDisplay = useMemo(() => {
+        return display_joint_rules_js(optionsLeft, optionsRight, style_from_name(style));
+    }, [optionsLeft, optionsRight, style]);
+
+    const rows = jointDisplay.map((joint, index) => {
+        return <Row key={index}>
+            <Col><div className="monospace" dangerouslySetInnerHTML={{__html: joint.left}}/><br/></Col>
+            <Col><div className="monospace" dangerouslySetInnerHTML={{__html: joint.right}}/><br/></Col>
+        </Row>
+    });
+    return <Container fluid>
+        {rows}
+    </Container>
+}
+
+// TODO: tab the options container to support bm-based Solver
+// TODO: encode current view in URL for sharing
+// TODO: make hover info more visible
+// TODO: add offcanvas with predicate and rules explanations
+export default function Solver() {
+    const [compare, setCompare] = useState(false);
+    const [style, setStyle] = useState('Sequent');
+    const [optionsLeft, setOptionsLeft] = useState(new RuleOptions());
+    const [optionsRight, setOptionsRight] = useState(new RuleOptions());
+    const [inputQuery, setInputPattern] = useState("[&x]: &mut [&T]");
+    const [mode, setMode] = useState('typechecker');
 
     const currentStyle = style;
     const styles = availableStyles.map(style => {
@@ -67,6 +100,7 @@ export default function Solver() {
                             <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
                         </Nav>
                         <Nav className="ms-auto">
+                            <Button variant="light" active={compare} onClick={() => setCompare(!compare)}>Compare</Button>
                             <ButtonGroup title="predicate style">{styles}</ButtonGroup>
                         </Nav>
                     </Navbar.Collapse>
@@ -79,7 +113,10 @@ export default function Solver() {
                     Example: <span className="monospace">`&[ref x]: &[T]`</span>
                 </p>
             </Row>
-            <Row><SolverOptions options={options} setOptions={setOptions}/></Row>
+            <Row>
+            <Col><SolverOptions options={optionsLeft} setOptions={setOptionsLeft}/></Col>
+            {compare ? <Col><SolverOptions options={optionsRight} setOptions={setOptionsRight}/></Col> : null}
+            </Row>
             <Row>
             <Tabs
                 activeKey={mode}
@@ -93,14 +130,22 @@ export default function Solver() {
                         <InputGroup.Text>Query</InputGroup.Text>
                         <Form.Control
                             placeholder="[&x]: &mut [&T]"
-                            value={inputPattern}
+                            value={inputQuery}
                             onChange={(e) => setInputPattern(e.target.value)}
                         />
                     </InputGroup>
-                    <div className="monospace" dangerouslySetInnerHTML={solverSteps}/>
+                    <Container fluid>
+                    <Row>
+                    <Col><SolverSteps {...{inputQuery, options: optionsLeft, style}}/></Col>
+                    {compare ? <Col><SolverSteps {...{inputQuery, options: optionsRight, style}}/></Col> : null}
+                    </Row>
+                    </Container>
                 </Tab>
                 <Tab eventKey="rules" title="Rules">
-                    <div className="monospace" dangerouslySetInnerHTML={rulesDisplay}/>
+                    {compare
+                        ? <JointRulesDisplay {...{optionsLeft, optionsRight, style}}/>
+                        : <RulesDisplay {...{options: optionsLeft, style}}/>
+                    }
                 </Tab>
             </Tabs>
             </Row>

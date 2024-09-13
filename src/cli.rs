@@ -166,8 +166,14 @@ impl CliState {
                     print!("{s}");
                 }
             } else {
-                let s = display_rules(self.predicate_style, self.options).unwrap();
-                print!("{s}");
+                println!(
+                    "The current options can be fully described as the following set of rules."
+                );
+                println!("{}", explain_predicate(self.predicate_style));
+                print!(
+                    "{}",
+                    display_rules(self.predicate_style, self.options).unwrap()
+                );
             }
         } else if request == "save" {
             println!("Current ruleset was saved");
@@ -372,16 +378,8 @@ fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
     }
 }
 
-pub fn display_rules(
-    style: PredicateStyle,
-    options: RuleOptions,
-) -> Result<String, IncompatibleStyle> {
-    let arenas = &Arenas::default();
+pub fn explain_predicate(style: PredicateStyle) -> String {
     let mut out = String::new();
-    let _ = writeln!(
-        &mut out,
-        "The current options can be fully described as the following set of rules."
-    );
     let _ = writeln!(
         &mut out,
         "The typing predicate looks like `{}`, where",
@@ -409,10 +407,17 @@ pub fn display_rules(
     }
     let _ = writeln!(&mut out, "- `p` is a pattern;");
     let _ = writeln!(&mut out, "- `T` is a type.");
-    let _ = writeln!(&mut out);
+    out
+}
 
+pub fn display_rules(
+    style: PredicateStyle,
+    options: RuleOptions,
+) -> Result<String, IncompatibleStyle> {
+    let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
     let typing_rules = compute_rules(ctx);
+    let mut out = String::new();
     for rule in typing_rules {
         let _ = writeln!(&mut out, "{}\n", rule.display(style)?);
     }

@@ -1,5 +1,6 @@
 use crate::*;
 use gloo_utils::format::JsValueSerdeExt;
+use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -83,4 +84,39 @@ pub fn display_rules_js(options: &RuleOptions, style: PredicateStyle) -> String 
         ..*options
     };
     display_rules(style, options).unwrap()
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct JointDisplayOutput {
+    pub left: String,
+    pub right: String,
+}
+
+#[wasm_bindgen]
+pub fn display_joint_rules_js(
+    left: &RuleOptions,
+    right: &RuleOptions,
+    style: PredicateStyle,
+) -> Vec<JsValue> {
+    let always_inspect_bm = matches!(style, PredicateStyle::SequentBindingMode);
+    let left = RuleOptions {
+        always_inspect_bm,
+        ..*left
+    };
+    let right = RuleOptions {
+        always_inspect_bm,
+        ..*right
+    };
+
+    let arenas = &Arenas::default();
+    compute_joint_rules(arenas, left, right)
+        .into_iter()
+        .map(|joint_rule| {
+            let (left, right) = joint_rule.left_and_right();
+            let left = left.map(|r| r.display(style).unwrap()).unwrap_or_default();
+            let right = right.map(|r| r.display(style).unwrap()).unwrap_or_default();
+            JointDisplayOutput { left, right }
+        })
+        .map(|out| JsValue::from_serde(&out).unwrap())
+        .collect()
 }
