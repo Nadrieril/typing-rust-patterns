@@ -4,15 +4,15 @@ info:
   bundle_name: structural
   options:
     match_constructor_through_ref: false
-    eat_inherited_ref_alone: true
+    eat_inherited_ref_alone: false
     inherited_ref_on_ref: EatOuter
     fallback_to_outer: false
     allow_ref_pat_on_ref_mut: false
     simplify_deref_mut: true
     downgrade_mut_inside_shared: false
-    dont_eat_mut_inside_shared: false
-    ref_binding_on_inherited: AllocTemporary
-    mut_binding_on_inherited: Keep
+    dont_eat_mut_inside_shared: true
+    ref_binding_on_inherited: Error
+    mut_binding_on_inherited: Error
     always_inspect_bm: false
 ---
 real, m ⊢ p0: T0,  real, m ⊢ p1: T1
@@ -28,17 +28,17 @@ real, m ⊢ p: T
 r, m ⊢ &mut p: &mut T
 
 inh, m ⊢ x: &T
---------------- "BindingBorrow"
-r, m ⊢ ref x: T
+------------------ "BindingBorrow"
+real, m ⊢ ref x: T
 
 inh, m ⊢ x: &mut T
-------------------- "BindingBorrow"
-r, m ⊢ ref mut x: T
+---------------------- "BindingBorrow"
+real, m ⊢ ref mut x: T
 
 
 ----------- "Binding"
 r, m ⊢ x: T
 
 
---------------- "Binding"
-r, m ⊢ mut x: T
+------------------ "Binding"
+real, m ⊢ mut x: T

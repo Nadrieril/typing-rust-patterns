@@ -56,7 +56,12 @@ impl RuleOptions {
     /// Purely structural matching, with no match ergonomics.
     pub const STRUCTURAL: Self = RuleOptions {
         match_constructor_through_ref: false,
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+        mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+        fallback_to_outer: false,
         allow_ref_pat_on_ref_mut: false,
+        eat_inherited_ref_alone: false,
+        dont_eat_mut_inside_shared: true,
         ..Self::STATELESS
     };
 

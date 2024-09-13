@@ -242,7 +242,7 @@ impl<'a> TypingPredicate<'a> {
         use Type as T;
         let a = ctx.arenas;
         let o = ctx.options;
-        if ctx.options.always_inspect_bm && !matches!(self.expr.ty, Type::Abstract(..)) {
+        if o.always_inspect_bm && !matches!(self.expr.ty, Type::Abstract(..)) {
             let _ = self.expr.binding_mode()?;
         }
 
@@ -264,7 +264,7 @@ impl<'a> TypingPredicate<'a> {
                 if pats.len() == tys.len() && o.match_constructor_through_ref =>
             {
                 let mut downgrade = DowngradeMutToRef::Normal;
-                if ctx.options.downgrade_mut_inside_shared && mtbl == Mutable {
+                if o.downgrade_mut_inside_shared && mtbl == Mutable {
                     mtbl = self.expr.scrutinee_mutability()?;
                     if mtbl == Shared {
                         downgrade = DowngradeMutToRef::ForceReadOnly;
@@ -286,7 +286,7 @@ impl<'a> TypingPredicate<'a> {
             {
                 let mut mtbl = min(outer_mtbl, inner_mtbl);
                 let mut downgrade = DowngradeMutToRef::Normal;
-                if ctx.options.downgrade_mut_inside_shared && mtbl == Mutable {
+                if o.downgrade_mut_inside_shared && mtbl == Mutable {
                     mtbl = self.expr.scrutinee_mutability()?;
                     if mtbl == Shared {
                         downgrade = DowngradeMutToRef::ForceReadOnly;
@@ -319,19 +319,20 @@ impl<'a> TypingPredicate<'a> {
 
                 // We only inspect the binding mode if there are options that need it.
                 let must_inspect_bm = matches!(
-                    ctx.options.inherited_ref_on_ref,
+                    o.inherited_ref_on_ref,
                     InheritedRefOnRefBehavior::EatInner | InheritedRefOnRefBehavior::EatBoth
-                ) || !ctx.options.eat_inherited_ref_alone;
+                ) || (!o.eat_inherited_ref_alone
+                    && o.match_constructor_through_ref);
                 // Construct the dereferenced expression.
                 let expr = if must_inspect_bm && let ByRef(bm_mtbl) = self.expr.binding_mode()? {
                     // The reference is inherited; options differ in their treatment of this case.
                     let underlying_place = self.expr.reset_binding_mode()?;
                     match underlying_place.ty {
                         T::Ref(inner_mtbl, _) => {
-                            rule_variant = ctx.options.inherited_ref_on_ref;
-                            match ctx.options.inherited_ref_on_ref {
+                            rule_variant = o.inherited_ref_on_ref;
+                            match o.inherited_ref_on_ref {
                                 InheritedRefOnRefBehavior::EatOuter => {
-                                    if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
+                                    if o.simplify_deref_mut && bm_mtbl == Mutable {
                                         underlying_place
                                     } else {
                                         self.expr.deref(a)
@@ -341,10 +342,9 @@ impl<'a> TypingPredicate<'a> {
                                     let can_eat_inner = match (p_mtbl, *inner_mtbl) {
                                         (Shared, Shared) => true,
                                         (Mutable, Mutable) => {
-                                            bm_mtbl == Mutable
-                                                || !ctx.options.dont_eat_mut_inside_shared
+                                            bm_mtbl == Mutable || !o.dont_eat_mut_inside_shared
                                         }
-                                        (Shared, Mutable) => ctx.options.allow_ref_pat_on_ref_mut,
+                                        (Shared, Mutable) => o.allow_ref_pat_on_ref_mut,
                                         (Mutable, Shared) => false,
                                     };
                                     if can_eat_inner {
@@ -353,7 +353,7 @@ impl<'a> TypingPredicate<'a> {
                                         underlying_place.deref(a)
                                     } else if o.fallback_to_outer {
                                         fallback_to_outer = FallbackToOuter(true);
-                                        if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
+                                        if o.simplify_deref_mut && bm_mtbl == Mutable {
                                             underlying_place
                                         } else {
                                             self.expr.deref(a)
@@ -366,10 +366,9 @@ impl<'a> TypingPredicate<'a> {
                                     let can_eat_inner = match (p_mtbl, *inner_mtbl) {
                                         (Shared, Shared) => true,
                                         (Mutable, Mutable) => {
-                                            bm_mtbl == Mutable
-                                                || !ctx.options.dont_eat_mut_inside_shared
+                                            bm_mtbl == Mutable || !o.dont_eat_mut_inside_shared
                                         }
-                                        (Shared, Mutable) => ctx.options.allow_ref_pat_on_ref_mut,
+                                        (Shared, Mutable) => o.allow_ref_pat_on_ref_mut,
                                         (Mutable, Shared) => false,
                                     };
                                     if can_eat_inner {
@@ -377,7 +376,7 @@ impl<'a> TypingPredicate<'a> {
                                         underlying_place.deref(a)
                                     } else if o.fallback_to_outer {
                                         fallback_to_outer = FallbackToOuter(true);
-                                        if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
+                                        if o.simplify_deref_mut && bm_mtbl == Mutable {
                                             underlying_place
                                         } else {
                                             self.expr.deref(a)
@@ -389,9 +388,9 @@ impl<'a> TypingPredicate<'a> {
                             }
                         }
                         T::Tuple(_) | T::OtherNonRef(_) | T::AbstractNonRef(..)
-                            if ctx.options.eat_inherited_ref_alone =>
+                            if o.eat_inherited_ref_alone =>
                         {
-                            if ctx.options.simplify_deref_mut && bm_mtbl == Mutable {
+                            if o.simplify_deref_mut && bm_mtbl == Mutable {
                                 underlying_place
                             } else {
                                 self.expr.deref(a)
@@ -414,7 +413,7 @@ impl<'a> TypingPredicate<'a> {
                         Rule::Deref(rule_variant, DowngradeMutToRef::Normal, fallback_to_outer),
                         expr,
                     ),
-                    (Shared, Mutable) if ctx.options.allow_ref_pat_on_ref_mut => (
+                    (Shared, Mutable) if o.allow_ref_pat_on_ref_mut => (
                         Rule::DerefMutWithShared(rule_variant),
                         expr.borrow(a, Shared).deref(a),
                     ),
@@ -424,7 +423,7 @@ impl<'a> TypingPredicate<'a> {
                 };
 
                 if let Some(mut mtbl) = reborrow_after {
-                    if ctx.options.downgrade_mut_inside_shared && mtbl == Mutable {
+                    if o.downgrade_mut_inside_shared && mtbl == Mutable {
                         mtbl = expr.scrutinee_mutability()?;
                         if mtbl == Shared
                             && let Rule::Deref(_, downgrade, _) = &mut rule
@@ -447,7 +446,7 @@ impl<'a> TypingPredicate<'a> {
             // Binding rules
             (P::Binding(mtbl, ByRef(by_ref_mtbl), name), _)
                 if matches!(
-                    ctx.options.ref_binding_on_inherited,
+                    o.ref_binding_on_inherited,
                     RefBindingOnInheritedBehavior::AllocTemporary
                 ) =>
             {
@@ -472,7 +471,7 @@ impl<'a> TypingPredicate<'a> {
                         }],
                     )),
                     ByRef(_) => {
-                        match ctx.options.ref_binding_on_inherited {
+                        match o.ref_binding_on_inherited {
                             // To replicate stable rust behavior, we inspect the binding mode and skip it.
                             // This amounts to getting ahold of the referenced place and re-borrowing it
                             // with the requested mutability.
@@ -491,7 +490,7 @@ impl<'a> TypingPredicate<'a> {
             }
             (P::Binding(Mutable, ByMove, _), _)
                 if matches!(
-                    ctx.options.mut_binding_on_inherited,
+                    o.mut_binding_on_inherited,
                     MutBindingOnInheritedBehavior::Keep
                 ) =>
             {
@@ -503,7 +502,7 @@ impl<'a> TypingPredicate<'a> {
                     // Easy case: declare the binding as expected.
                     ByMove => Ok((Rule::Binding, vec![])),
                     ByRef(_) => {
-                        match ctx.options.mut_binding_on_inherited {
+                        match o.mut_binding_on_inherited {
                             // To replicate stable rust behavior, we reset the binding mode.
                             MutBindingOnInheritedBehavior::ResetBindingMode => Ok((
                                 Rule::MutBindingResetBindingMode,
