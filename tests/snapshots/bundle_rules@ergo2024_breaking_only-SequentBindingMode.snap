@@ -16,109 +16,109 @@ info:
     always_inspect_bm: false
 ---
 move, m ⊢ p0: T0,  move, m ⊢ p1: T1
---------------------------------------- "Constructor"
+----------------------------------- "Constructor"
 move, m ⊢ [p0, p1]: [T0, T1]
 
 ref, ro ⊢ p0: T0,  ref, ro ⊢ p1: T1
---------------------------------------- "ConstructorRef"
+----------------------------------- "ConstructorRef"
 move, m ⊢ [p0, p1]: &[T0, T1]
 
 ref, ro ⊢ p0: T0,  ref, ro ⊢ p1: T1
---------------------------------------- "ConstructorRef"
+----------------------------------- "ConstructorRef"
 ref, m ⊢ [p0, p1]: [T0, T1]
 
 ref mut, m ⊢ p0: T0,  ref mut, m ⊢ p1: T1
---------------------------------------------- "ConstructorRef"
+----------------------------------------- "ConstructorRef"
 move, m ⊢ [p0, p1]: &mut [T0, T1]
 
 ref mut, m ⊢ p0: T0,  ref mut, m ⊢ p1: T1
---------------------------------------------- "ConstructorRef"
+----------------------------------------- "ConstructorRef"
 ref mut, m ⊢ [p0, p1]: [T0, T1]
 
 ref, ro ⊢ [p0, p1]: T
-------------------------- "ConstructorMultiRef"
+----------------------- "ConstructorMultiRef"
 move, m ⊢ [p0, p1]: &&T
 
 ref, ro ⊢ [p0, p1]: T
------------------------------ "ConstructorMultiRef"
+--------------------------- "ConstructorMultiRef"
 move, m ⊢ [p0, p1]: &&mut T
 
 ref, ro ⊢ [p0, p1]: T
------------------------ "ConstructorMultiRef"
+--------------------- "ConstructorMultiRef"
 ref, m ⊢ [p0, p1]: &T
 
 ref, ro ⊢ [p0, p1]: T
---------------------------- "ConstructorMultiRef"
+------------------------- "ConstructorMultiRef"
 ref, m ⊢ [p0, p1]: &mut T
 
 ref, ro ⊢ [p0, p1]: T
------------------------------ "ConstructorMultiRef"
+--------------------------- "ConstructorMultiRef"
 move, m ⊢ [p0, p1]: &mut &T
 
 ref mut, m ⊢ [p0, p1]: T
---------------------------------- "ConstructorMultiRef"
+------------------------------- "ConstructorMultiRef"
 move, m ⊢ [p0, p1]: &mut &mut T
 
 ref, ro ⊢ [p0, p1]: T
---------------------------- "ConstructorMultiRef"
+------------------------- "ConstructorMultiRef"
 ref mut, m ⊢ [p0, p1]: &T
 
 ref mut, m ⊢ [p0, p1]: T
-------------------------------- "ConstructorMultiRef"
+----------------------------- "ConstructorMultiRef"
 ref mut, m ⊢ [p0, p1]: &mut T
 
 move, ro ⊢ p: T
------------------- "Deref(EatOuter)"
+---------------- "Deref(EatOuter)"
 move, m ⊢ &p: &T
 
 move, m ⊢ p: T
--------------------------- "Deref(EatOuter)"
+------------------------ "Deref(EatOuter)"
 move, m ⊢ &mut p: &mut T
 
 ref, ro ⊢ p: T
------------------ "Deref(EatInner)"
+--------------- "Deref(EatInner)"
 ref, m ⊢ &p: &T
 
 ref mut, ro ⊢ p: T
---------------------- "Deref(EatInner)"
+------------------- "Deref(EatInner)"
 ref mut, m ⊢ &p: &T
 
 ref, m ⊢ p: T
-------------------------- "Deref(EatInner)"
+----------------------- "Deref(EatInner)"
 ref, m ⊢ &mut p: &mut T
 
 ref mut, m ⊢ p: T
------------------------------ "Deref(EatInner)"
+--------------------------- "Deref(EatInner)"
 ref mut, m ⊢ &mut p: &mut T
 
 bm, m ⊢ ref x: T
-------------------- "RefBindingResetBindingMode"
+----------------- "RefBindingResetBindingMode"
 ref, m ⊢ ref x: T
 
 bm, m ⊢ ref x: T
------------------------ "RefBindingResetBindingMode"
+--------------------- "RefBindingResetBindingMode"
 ref mut, m ⊢ ref x: T
 
 bm, m ⊢ ref mut x: T
------------------------ "RefBindingResetBindingMode"
+--------------------- "RefBindingResetBindingMode"
 ref, m ⊢ ref mut x: T
 
 bm, m ⊢ ref mut x: T
---------------------------- "RefBindingResetBindingMode"
+------------------------- "RefBindingResetBindingMode"
 ref mut, m ⊢ ref mut x: T
 
 ref, m ⊢ x: T
--------------------- "BindingBorrow"
+------------------ "BindingBorrow"
 move, m ⊢ ref x: T
 
 ref mut, m ⊢ x: T
------------------------- "BindingBorrow"
+---------------------- "BindingBorrow"
 move, m ⊢ ref mut x: T
 
 
--------------- "Binding"
+------------ "Binding"
 bm, m ⊢ x: T
 
 
--------------------- "Binding"
+------------------ "Binding"
 move, m ⊢ mut x: T

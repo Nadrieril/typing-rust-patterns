@@ -16,29 +16,29 @@ info:
     always_inspect_bm: false
 ---
 real, m ⊢ p0: T0,  real, m ⊢ p1: T1
---------------------------------------- "Constructor"
+----------------------------------- "Constructor"
 _, m ⊢ [p0, p1]: [T0, T1]
 
 real, ro ⊢ p: T
------------------ "Deref"
+--------------- "Deref"
 r, m ⊢ &p: &T
 
 real, m ⊢ p: T
------------------------ "Deref"
+--------------------- "Deref"
 r, m ⊢ &mut p: &mut T
 
 inh, m ⊢ x: &T
------------------ "BindingBorrow"
+--------------- "BindingBorrow"
 r, m ⊢ ref x: T
 
 inh, m ⊢ x: &mut T
---------------------- "BindingBorrow"
+------------------- "BindingBorrow"
 r, m ⊢ ref mut x: T
 
 
-------------- "Binding"
+----------- "Binding"
 r, m ⊢ x: T
 
 
------------------ "Binding"
+--------------- "Binding"
 r, m ⊢ mut x: T

@@ -16,37 +16,37 @@ info:
     always_inspect_bm: false
 ---
 move, m ⊢ p0: T0,  move, m ⊢ p1: T1
---------------------------------------- "Constructor"
+----------------------------------- "Constructor"
 move, m ⊢ [p0, p1]: [T0, T1]
 
 move, ro ⊢ p: T
------------------- "Deref"
+---------------- "Deref"
 move, m ⊢ &p: &T
 
 move, ro ⊢ p: T
------------------ "Deref"
+--------------- "Deref"
 ref, m ⊢ &p: T
 
 move, m ⊢ p: T
--------------------------- "Deref"
+------------------------ "Deref"
 move, m ⊢ &mut p: &mut T
 
 move, m ⊢ p: T
------------------------- "Deref"
+---------------------- "Deref"
 ref mut, m ⊢ &mut p: T
 
 ref, m ⊢ x: T
------------------- "BindingBorrow"
+---------------- "BindingBorrow"
 bm, m ⊢ ref x: T
 
 ref mut, m ⊢ x: T
----------------------- "BindingBorrow"
+-------------------- "BindingBorrow"
 bm, m ⊢ ref mut x: T
 
 
--------------- "Binding"
+------------ "Binding"
 bm, m ⊢ x: T
 
 
------------------- "Binding"
+---------------- "Binding"
 bm, m ⊢ mut x: T
