@@ -142,7 +142,7 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
     return <Button
         variant={variant}
         title={option.doc}
-        className={"text-nowrap" + (fullWidth ? " w-100" : "")}
+        className={"text-nowrap " + (fullWidth ? "w-100 mb-1" : "ms-1")}
         disabled={irrelevant_options.includes(option.name)}
         onClick={(e) => { setKey(option.name, next_value); return false; }}
     >

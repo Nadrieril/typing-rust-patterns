@@ -115,7 +115,11 @@ export default function Solver() {
                             </Offcanvas.Header>
                             <Offcanvas.Body>
                                 <Nav className="ms-auto">
-                                    <Button active={compare} onClick={() => setCompare(!compare)}>Compare</Button>
+                                    <Button
+                                        className={mainNavShow ? "mb-1" : "me-1"}
+                                        active={compare}
+                                        onClick={() => setCompare(!compare)}
+                                    >Compare</Button>
                                     <ButtonGroup title="predicate style" vertical={mainNavShow}>{styles}</ButtonGroup>
                                 </Nav>
                             </Offcanvas.Body>
