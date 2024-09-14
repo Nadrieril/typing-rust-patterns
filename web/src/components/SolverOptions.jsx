@@ -113,13 +113,14 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
     const setKey = (k, v) => setOptions(options.with_key(k, v));
     const current_val = options.get_key(option.name);
     const prettyOption = prettyOptions[option.name] || null;
-    const irrelevant_options = options.irrelevant_options_js();
+    const disabled = options.irrelevant_options_js().includes(option.name);
 
     const current_index = option.values.indexOf(current_val);
     const next_index = (current_index + 1) % option.values.length;
     const next_value = option.values[(current_index + 1) % option.values.length];
 
     const variant =
+        disabled ? "outline-light" :
         current_val == "true" ? "outline-success" :
         (current_val == "false" || current_val == "Error") ? "outline-danger" :
         "outline-light";
@@ -143,7 +144,7 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
         variant={variant}
         title={option.doc}
         className={"text-nowrap " + (fullWidth ? "w-100 mb-1" : "ms-1")}
-        disabled={irrelevant_options.includes(option.name)}
+        disabled={disabled}
         onClick={(e) => { setKey(option.name, next_value); return false; }}
     >
         {hiddenOptionsForWidth}
