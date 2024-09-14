@@ -147,7 +147,7 @@ export function OptionElem({ option, options, setOptions }) {
     </Button>
 }
 
-export default function SolverOptions({ options, setOptions }) {
+export default function SolverOptions({ options, setOptions, title }) {
     const option_elems = optionsDoc.map((option) =>
         <Nav.Item key={option.name}>
             <OptionElem {...{option, options, setOptions}}/>
@@ -156,11 +156,11 @@ export default function SolverOptions({ options, setOptions }) {
 
     return <Navbar expand="lg" className="bg-body-tertiary">
         <Container fluid>
-            <Navbar.Brand>Options</Navbar.Brand>
+            <Navbar.Brand>{title}</Navbar.Brand>
             <Navbar.Toggle/>
             <Navbar.Offcanvas placement="end">
               <Offcanvas.Header closeButton>
-                <Offcanvas.Title>Options</Offcanvas.Title>
+                <Offcanvas.Title>{title}</Offcanvas.Title>
               </Offcanvas.Header>
               <Offcanvas.Body>
                 <Nav>

@@ -93,28 +93,36 @@ export default function Solver() {
 
     return (
         <Container fluid>
-            <Navbar expand="lg" sticky="top" className="bg-body-tertiary">
-                <Container fluid>
-                    <Navbar.Brand>{title}</Navbar.Brand>
-                    <Navbar.Toggle/>
-                    <Navbar.Offcanvas placement="end">
-                        <Offcanvas.Header closeButton>
-                            <Offcanvas.Title>{title}</Offcanvas.Title>
-                        </Offcanvas.Header>
-                        <Offcanvas.Body>
-                            <Nav className="me-auto">
-                                <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
-                            </Nav>
-                            <Nav className="ms-auto">
-                                <Button active={compare} onClick={() => setCompare(!compare)}>Compare</Button>
-                                <ButtonGroup title="predicate style">{styles}</ButtonGroup>
-                            </Nav>
-                        </Offcanvas.Body>
-                    </Navbar.Offcanvas>
-                </Container>
-            </Navbar>
-            <SolverOptions options={optionsLeft} setOptions={setOptionsLeft}/>
-            {compare ? <SolverOptions options={optionsRight} setOptions={setOptionsRight}/> : null}
+            <div className="sticky-top">
+                <Navbar expand="lg" className="bg-body-tertiary">
+                    <Container fluid>
+                        <Navbar.Brand>{title}</Navbar.Brand>
+                        <Navbar.Toggle/>
+                        <Navbar.Offcanvas placement="end">
+                            <Offcanvas.Header closeButton>
+                                <Offcanvas.Title>{title}</Offcanvas.Title>
+                            </Offcanvas.Header>
+                            <Offcanvas.Body>
+                                <Nav className="me-auto">
+                                    <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
+                                </Nav>
+                                <Nav className="ms-auto">
+                                    <Button active={compare} onClick={() => setCompare(!compare)}>Compare</Button>
+                                    <ButtonGroup title="predicate style">{styles}</ButtonGroup>
+                                </Nav>
+                            </Offcanvas.Body>
+                        </Navbar.Offcanvas>
+                    </Container>
+                </Navbar>
+                {compare ?
+                    <>
+                    <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title=<>Left&nbsp;&nbsp;&nbsp;</>/>
+                    <SolverOptions options={optionsRight} setOptions={setOptionsRight} title="Right"/>
+                    </>
+                    :
+                    <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title="Options"/>
+                }
+            </div>
             <Row>
                 <p id="foo">
                     Welcome to the interactive pattern typer!<br/>
