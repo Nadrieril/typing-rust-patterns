@@ -1,6 +1,7 @@
 use crate::*;
 use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
+use std::cmp::Ordering;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -110,18 +111,18 @@ pub fn display_rules_js(options: &RuleOptions, style: PredicateStyle) -> String 
     display_rules(style, options).unwrap()
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct JointDisplayOutput {
-    pub left: String,
-    pub right: String,
-}
-
 #[wasm_bindgen]
 pub fn display_joint_rules_js(
     left: &RuleOptions,
     right: &RuleOptions,
     style: PredicateStyle,
 ) -> Vec<JsValue> {
+    #[derive(Debug, Clone, Serialize)]
+    pub struct JointDisplayOutput {
+        left: String,
+        right: String,
+    }
+
     let always_inspect_bm = matches!(style, PredicateStyle::SequentBindingMode);
     let left = RuleOptions {
         always_inspect_bm,
@@ -143,4 +144,37 @@ pub fn display_joint_rules_js(
         })
         .map(|out| JsValue::from_serde(&out).unwrap())
         .collect()
+}
+
+#[wasm_bindgen]
+pub fn compare_rulesets_js(
+    left_ruleset: &RuleOptions,
+    right_ruleset: &RuleOptions,
+    pat_depth: usize,
+    ty_depth: usize,
+) -> Vec<JsValue> {
+    #[derive(Debug, Clone, Serialize)]
+    pub struct CompareOutput {
+        req: String,
+        left: String,
+        right: String,
+    }
+
+    let a = &Arenas::default();
+    compare_rulesets(
+        a,
+        pat_depth,
+        ty_depth,
+        RuleSet::TypeBased(*left_ruleset),
+        Ordering::Equal,
+        RuleSet::TypeBased(*right_ruleset),
+    )
+    .into_iter()
+    .map(|(req, left, right)| CompareOutput {
+        req: req.to_string(),
+        left: left.to_string(),
+        right: right.to_string(),
+    })
+    .map(|out| JsValue::from_serde(&out).unwrap())
+    .collect()
 }

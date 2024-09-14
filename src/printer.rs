@@ -4,11 +4,29 @@ use std::fmt::{Debug, Display, Write};
 use crate::*;
 
 pub trait Style {
+    fn green(&self) -> String;
+    fn red(&self) -> String;
     fn dimmed(&self) -> String;
     fn tooltip(&self, text: &str) -> String;
 }
 
 impl Style for &str {
+    fn green(&self) -> String {
+        if cfg!(target_arch = "wasm32") {
+            format!("<span style=\"color: green\">{self}</span>")
+        } else {
+            use colored::Colorize;
+            <Self as Colorize>::green(self).to_string()
+        }
+    }
+    fn red(&self) -> String {
+        if cfg!(target_arch = "wasm32") {
+            format!("<span style=\"color: red\">{self}</span>")
+        } else {
+            use colored::Colorize;
+            <Self as Colorize>::red(self).to_string()
+        }
+    }
     fn dimmed(&self) -> String {
         if cfg!(target_arch = "wasm32") {
             format!("<span style=\"color: gray\">{self}</span>")
@@ -27,6 +45,12 @@ impl Style for &str {
 }
 
 impl Style for String {
+    fn green(&self) -> String {
+        self.as_str().green()
+    }
+    fn red(&self) -> String {
+        self.as_str().red()
+    }
     fn dimmed(&self) -> String {
         self.as_str().dimmed()
     }

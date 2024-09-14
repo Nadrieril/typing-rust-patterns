@@ -4,10 +4,11 @@ import init, {
     trace_solver_js,
     display_rules_js,
     display_joint_rules_js,
+    compare_rulesets_js,
 } from "../../typing_rust_patterns/typing_rust_patterns.js";
 import SolverOptions from './SolverOptions.jsx';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from "react-router-dom";
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
@@ -19,10 +20,32 @@ import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import Row from 'react-bootstrap/Row';
+import Stack from 'react-bootstrap/Stack';
 import Tab from 'react-bootstrap/Tab';
+import Table from 'react-bootstrap/Table';
 import Tabs from 'react-bootstrap/Tabs';
 
 await init({});
+
+// Like `useState`, but mirror the value in the search parameters.
+function useStateInParams(key, def, read = (x) => x, write = (x) => x) {
+    const [searchParams, setSearchParams] = useSearchParams();
+    function setSearchParam(k, v) {
+        setSearchParams((params) => {
+            params.set(k, v);
+            return params
+        });
+    }
+
+    let start_val = read(searchParams.get(key)) || def;
+
+    const [val, setVal] = useState(start_val);
+    const setValAndParams = (v) => {
+        setVal(v);
+        setSearchParam(key, write(v));
+    }
+    return [val, setValAndParams]
+}
 
 function InhRef() {
     return <span className="inherited-ref" title="inherited reference">&</span>
@@ -57,34 +80,79 @@ export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
     }, [optionsLeft, optionsRight, style]);
 
     const rows = jointDisplay.map((joint, index) => {
-        return <Row key={index}>
-            <Col><div className="monospace" dangerouslySetInnerHTML={{__html: joint.left}}/><br/></Col>
-            <Col><div className="monospace" dangerouslySetInnerHTML={{__html: joint.right}}/><br/></Col>
-        </Row>
+        return <tr key={index}>
+            <td><div className="monospace" dangerouslySetInnerHTML={{__html: joint.left}}/></td>
+            <td><div className="monospace" dangerouslySetInnerHTML={{__html: joint.right}}/></td>
+        </tr>
     });
-    return <Container fluid>
-        {rows}
-    </Container>
+    return <Table hover>
+        <thead><tr>
+            <td>Left</td>
+            <td>Right</td>
+        </tr></thead>
+        <tbody>
+            {rows}
+        </tbody>
+    </Table>
 }
 
-// Like `useState`, but mirror the value in the search parameters.
-function useStateInParams(key, def, read = (x) => x, write = (x) => x) {
-    const [searchParams, setSearchParams] = useSearchParams();
-    function setSearchParam(k, v) {
-        setSearchParams((params) => {
-            params.set(k, v);
-            return params
-        });
-    }
+export function CompareDisplay({optionsLeft, optionsRight}) {
+    const [patDepth, setPatDepth] = useStateInParams('pat_d', 3, parseInt);
+    const [tyDepth, setTyDepth] = useStateInParams('ty_d', 4, parseInt);
+    const [output, setOutput] = useState([]);
 
-    let start_val = read(searchParams.get(key)) || def;
+    // Reset output if the options change.
+    useEffect(() => {
+        setOutput([])
+    }, [optionsLeft, optionsRight]);
 
-    const [val, setVal] = useState(start_val);
-    const setValAndParams = (v) => {
-        setVal(v);
-        setSearchParam(key, write(v));
-    }
-    return [val, setValAndParams]
+    const rows = output.map((diff, index) => {
+        return <tr key={index}>
+            <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.req}}/></td>
+            <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.left}}/></td>
+            <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.right}}/></td>
+        </tr>
+    });
+    return <Stack gap={2}>
+        <Form className="mb-3">
+            <Stack direction="horizontal" gap={2} className="col-md-4">
+                <InputGroup>
+                    <InputGroup.Text>Pattern depth</InputGroup.Text>
+                    <Form.Control
+                        type="number"
+                        value={patDepth}
+                        onChange={(e) => setPatDepth(e.target.value)}
+                    />
+                </InputGroup>
+                <InputGroup>
+                    <InputGroup.Text>Type depth</InputGroup.Text>
+                    <Form.Control
+                        type="number"
+                        value={tyDepth}
+                        onChange={(e) => setTyDepth(e.target.value)}
+                    />
+                </InputGroup>
+                <Button
+                    onClick={() => setOutput(compare_rulesets_js(optionsLeft, optionsRight, patDepth, tyDepth))}
+                >
+                    Compare
+                </Button>
+            </Stack>
+        </Form>
+        {output.length ?
+            <Table bordered hover>
+                <thead><tr>
+                    <td>Query</td>
+                    <td>Left</td>
+                    <td>Right</td>
+                </tr></thead>
+                <tbody>
+                    {rows}
+                </tbody>
+            </Table>
+            : null
+        }
+    </Stack>
 }
 
 // TODO: tab the options container to support bm-based Solver
@@ -201,6 +269,11 @@ export default function Solver() {
                         : <RulesDisplay {...{options: optionsLeft, style}}/>
                     }
                 </Tab>
+               {compare ?
+                   <Tab eventKey="compare" title="Compare">
+                       <CompareDisplay {...{optionsLeft, optionsRight}}/>
+                   </Tab>
+               : null}
             </Tabs>
             </Row>
         </Container>

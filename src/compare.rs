@@ -2,6 +2,7 @@ use std::{cmp::Ordering, mem, ops::ControlFlow};
 
 use crate::*;
 use match_ergonomics_formality::Conf;
+use printer::Style;
 
 #[derive(Debug, Clone, Copy)]
 pub enum RuleSet {
@@ -120,12 +121,15 @@ impl<'a> AnalysisResult<'a> {
 
 impl std::fmt::Display for AnalysisResult<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Success(ty) => write!(f, "Success({ty})"),
-            BorrowError(ty, s) => write!(f, "BorrowError({ty:?}, \"{s:?}\")"),
-            AnalysisResult::TypeError(TypeError::External(e)) => write!(f, "TypeError(\"{e}\")"),
-            AnalysisResult::TypeError(e) => write!(f, "TypeError(\"{e:?}\")"),
-        }
+        let out = match self {
+            Success(ty) => format!("Success({ty})").green(),
+            BorrowError(ty, s) => format!("BorrowError({ty:?}, \"{s:?}\")").red(),
+            AnalysisResult::TypeError(TypeError::External(e)) => {
+                format!("TypeError(\"{e}\")").red()
+            }
+            AnalysisResult::TypeError(e) => format!("TypeError(\"{e:?}\")").red(),
+        };
+        write!(f, "{}", out)
     }
 }
 
