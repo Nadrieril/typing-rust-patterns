@@ -98,8 +98,8 @@ export default function Solver() {
 
     const [compare, setCompare] = useStateInParams('compare', false, (x) => x == 'true');
     const [style, setStyle] = useStateInParams('style', 'Sequent', validateIn(['Sequent', 'SequentBindingMode', 'Expression']));
-    const [optionsLeft, setOptionsLeft] = useStateInParams('opts1', new RuleOptions(), RuleOptions.decode, (o) => o.encode());
-    const [optionsRight, setOptionsRight] = useStateInParams('opts2', new RuleOptions(), RuleOptions.decode, (o) => o.encode());
+    const [optionsLeft, setOptionsLeft] = useStateInParams('opts1', RuleOptions.from_bundle_name_js('nadri'), RuleOptions.decode, (o) => o.encode());
+    const [optionsRight, setOptionsRight] = useStateInParams('opts2', RuleOptions.from_bundle_name_js('rfc3627'), RuleOptions.decode, (o) => o.encode());
     const [inputQuery, setInputQuery] = useStateInParams('q', "[&x]: &mut [&T]");
     const [mode, setMode] = useStateInParams('mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
 
