@@ -98,6 +98,9 @@ export default function Solver() {
                 <Navbar expand="lg" className="bg-body-tertiary">
                     <Container fluid>
                         <Navbar.Brand>{title}</Navbar.Brand>
+                        <Nav className="me-auto">
+                            <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
+                        </Nav>
                         <Navbar.Toggle/>
                         <Navbar.Offcanvas
                             placement="end"
@@ -108,12 +111,9 @@ export default function Solver() {
                             onExited={() => setMainNavShow(false)}
                         >
                             <Offcanvas.Header closeButton>
-                                <Offcanvas.Title>{title}</Offcanvas.Title>
+                                <Offcanvas.Title>General options</Offcanvas.Title>
                             </Offcanvas.Header>
                             <Offcanvas.Body>
-                                <Nav className="me-auto">
-                                    <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
-                                </Nav>
                                 <Nav className="ms-auto">
                                     <Button active={compare} onClick={() => setCompare(!compare)}>Compare</Button>
                                     <ButtonGroup title="predicate style" vertical={mainNavShow}>{styles}</ButtonGroup>

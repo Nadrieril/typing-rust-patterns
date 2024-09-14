@@ -95,15 +95,16 @@ export function Preset({ options, setOptions }) {
     });
 
     return <Form.Select
-        value={active_bundle || "none"}
+        className="w-auto me-auto"
+        value={active_bundle || "custom"}
         onChange={(e) => {
             let bundle = e.target.value;
-            if (bundle != "none") {
+            if (bundle != "custom") {
                 setOptions(RuleOptions.from_bundle_name_js(bundle));
             }
         }}
     >
-        <option value="none">---</option>
+        <option value="custom">(custom)</option>
         {bundles}
     </Form.Select>
 }
@@ -162,7 +163,8 @@ export default function SolverOptions({ options, setOptions, title }) {
 
     return <Navbar expand="lg" className="bg-body-tertiary">
         <Container fluid>
-            <Navbar.Brand>{title}</Navbar.Brand>
+            <Navbar.Brand className="text-nowrap">{title}</Navbar.Brand>
+            <Preset {...{options, setOptions}}/>
             <Navbar.Toggle/>
             <Navbar.Offcanvas
                 placement="end"
@@ -177,9 +179,6 @@ export default function SolverOptions({ options, setOptions, title }) {
                 </Offcanvas.Header>
                 <Offcanvas.Body>
                     <Nav>
-                        <Nav.Item>
-                            <Preset {...{options, setOptions}}/>
-                        </Nav.Item>
                         {option_elems}
                     </Nav>
                 </Offcanvas.Body>
