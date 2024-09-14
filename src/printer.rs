@@ -3,28 +3,35 @@ use std::fmt::{Debug, Display, Write};
 
 use crate::*;
 
-use colored::Colorize;
-#[cfg(target_arch = "wasm32")]
-mod colored {
-    pub trait Colorize {
-        fn dimmed(&self) -> String;
-        fn underline(&self) -> String;
-    }
-    impl Colorize for &str {
-        fn dimmed(&self) -> String {
+pub trait Style {
+    fn dimmed(&self) -> String;
+    fn tooltip(&self, text: &str) -> String;
+}
+
+impl Style for &str {
+    fn dimmed(&self) -> String {
+        if cfg!(target_arch = "wasm32") {
             format!("<span style=\"color: gray\">{self}</span>")
-        }
-        fn underline(&self) -> String {
-            format!("<span style=\"text-decoration: underline\" title=\"inherited reference\">{self}</span>")
+        } else {
+            use colored::Colorize;
+            <Self as Colorize>::dimmed(self).to_string()
         }
     }
-    impl Colorize for String {
-        fn dimmed(&self) -> String {
-            self.as_str().dimmed()
+    fn tooltip(&self, text: &str) -> String {
+        if cfg!(target_arch = "wasm32") {
+            format!("<span title=\"{text}\">{self}</span>")
+        } else {
+            self.to_string()
         }
-        fn underline(&self) -> String {
-            self.as_str().underline()
-        }
+    }
+}
+
+impl Style for String {
+    fn dimmed(&self) -> String {
+        self.as_str().dimmed()
+    }
+    fn tooltip(&self, text: &str) -> String {
+        self.as_str().tooltip(text)
     }
 }
 
@@ -60,9 +67,10 @@ impl<'a> TypingPredicate<'a> {
                 let bm = match self.expr.binding_mode().ok() {
                     Some(BindingMode::ByRef(_)) => {
                         if let Some(rest) = ty.strip_prefix("&mut") {
-                            ty = format!("{}{rest}", "&mut".dimmed().underline());
+                            ty =
+                                format!("{}{rest}", "&mut".dimmed().tooltip("inherited reference"));
                         } else if let Some(rest) = ty.strip_prefix("&") {
-                            ty = format!("{}{rest}", "&".dimmed().underline());
+                            ty = format!("{}{rest}", "&".dimmed().tooltip("inherited reference"));
                         }
                         &"inh".dimmed().to_string()
                     }
