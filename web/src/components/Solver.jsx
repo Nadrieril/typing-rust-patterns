@@ -126,14 +126,18 @@ export default function Solver() {
                         </Navbar.Offcanvas>
                     </Container>
                 </Navbar>
-                {compare ?
-                    <>
+
+                {/* Keep the options around and undisplayed to avoid flickering
+                    when we mount/unmount them and they have to update button
+                    widths after the first render. */}
+                <div style={{display: !compare ? 'none' : null}}>
                     <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title=<>Left&nbsp;&nbsp;&nbsp;</>/>
                     <SolverOptions options={optionsRight} setOptions={setOptionsRight} title="Right"/>
-                    </>
-                    :
+                </div>
+                <div style={{display: compare ? 'none' : null}}>
                     <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title="Options"/>
-                }
+                </div>
+
             </div>
             <Row>
                 <p id="foo">
