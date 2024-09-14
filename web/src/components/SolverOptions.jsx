@@ -79,7 +79,7 @@ export default function SolverOptions({ options, setOptions }) {
         const label = <label key={option.name} htmlFor={option.name} title={option.doc}>{question}</label>;
         const buttons = option.values.map((v) => {
             const name = prettyOption ? prettyOption[v] : v;
-            return <Button variant="light"
+            return <Button
                 key={v}
                 title={v}
                 active={current_val == v}
@@ -111,7 +111,7 @@ export default function SolverOptions({ options, setOptions }) {
         <InputGroup>
             <InputGroup.Text>Preset</InputGroup.Text>
             <Dropdown>
-                <Dropdown.Toggle variant="light">
+                <Dropdown.Toggle>
                     {active_bundle || "---"}
                 </Dropdown.Toggle>
                 <Dropdown.Menu>{bundles}</Dropdown.Menu>

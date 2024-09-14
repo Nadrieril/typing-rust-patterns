@@ -79,7 +79,7 @@ export default function Solver() {
 
     const currentStyle = style;
     const styles = availableStyles.map(style => {
-        return <Button variant="light"
+        return <Button
             key={style.name}
             active={currentStyle == style.name}
             onClick={() => setStyle(style.name)}
@@ -100,7 +100,7 @@ export default function Solver() {
                             <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
                         </Nav>
                         <Nav className="ms-auto">
-                            <Button variant="light" active={compare} onClick={() => setCompare(!compare)}>Compare</Button>
+                            <Button active={compare} onClick={() => setCompare(!compare)}>Compare</Button>
                             <ButtonGroup title="predicate style">{styles}</ButtonGroup>
                         </Nav>
                     </Navbar.Collapse>
