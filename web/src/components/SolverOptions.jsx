@@ -92,31 +92,32 @@ export function CalculateWidth({ contents, setWidth }) {
 }
 
 export function Preset({ options, setOptions }) {
-    // const [width, setWidth] = useState(0);
     const active_bundle = options.get_bundle_name_js();
     const bundles = bundlesDoc.map(bundle => {
-        return <Dropdown.Item
+        return <option
             key={bundle.name}
+            value={bundle.name}
             title={bundle.doc}
-            active={active_bundle == bundle.name}
-            onClick={() => setOptions(bundle.options)}
         >
-            {/* <CalculateWidth contents={bundle.name} setWidth={(w) => setWidth((old_w) => Math.max(old_w, w))}/> */}
             {bundle.name}
-        </Dropdown.Item>
+        </option>
     });
 
     return <Nav.Item>
         <InputGroup>
             <InputGroup.Text>Preset</InputGroup.Text>
-            <Dropdown>
-                <Dropdown.Toggle>
-                    {/* <span style={{display: "inline-block", width: width || null}}> */}
-                        {active_bundle || "---"}
-                    {/* </span> */}
-                </Dropdown.Toggle>
-                <Dropdown.Menu>{bundles}</Dropdown.Menu>
-            </Dropdown>
+            <Form.Select
+                value={active_bundle || "none"}
+                onChange={(e) => {
+                    let bundle = e.target.value;
+                    if (bundle != "none") {
+                        setOptions(RuleOptions.from_bundle_name_js(bundle));
+                    }
+                }}
+            >
+                <option value="none">---</option>
+                {bundles}
+            </Form.Select>
         </InputGroup>
     </Nav.Item>
 }

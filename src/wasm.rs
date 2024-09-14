@@ -36,6 +36,10 @@ impl RuleOptions {
             .collect()
     }
 
+    pub fn from_bundle_name_js(name: &str) -> Option<RuleOptions> {
+        Self::from_bundle_name(name)
+    }
+
     /// List options that can be changed without affecting the current rules.
     pub fn irrelevant_options_js(&self) -> Vec<String> {
         self.irrelevant_options()
