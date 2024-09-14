@@ -85,7 +85,7 @@ export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
             <td><div className="monospace" dangerouslySetInnerHTML={{__html: joint.right}}/></td>
         </tr>
     });
-    return <Table hover>
+    return <Table hover style={{tableLayout: "fixed"}}>
         <thead><tr>
             <td>Left</td>
             <td>Right</td>
@@ -257,12 +257,18 @@ export default function Solver() {
                             onChange={(e) => setInputQuery(e.target.value)}
                         />
                     </InputGroup>
-                    <Container fluid>
-                    <Row>
-                    <Col><SolverSteps {...{inputQuery, options: optionsLeft, style}}/></Col>
-                    {compare ? <Col><SolverSteps {...{inputQuery, options: optionsRight, style}}/></Col> : null}
-                    </Row>
-                    </Container>
+                    <Table style={{tableLayout: "fixed"}}>
+                        <thead><tr>
+                            <td>Left</td>
+                            <td>Right</td>
+                        </tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><SolverSteps {...{inputQuery, options: optionsLeft, style}}/></td>
+                                {compare ? <td><SolverSteps {...{inputQuery, options: optionsRight, style}}/></td> : null}
+                            </tr>
+                        </tbody>
+                    </Table>
                 </Tab>
                 <Tab eventKey="rules" title="Rules">
                     {compare
