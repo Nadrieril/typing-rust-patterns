@@ -6,36 +6,36 @@ Error: Syntax is `set option value`.
 
 Options are:
 - match_constructor_through_ref: false | true
-    whether `[p]` can match on `&[T]`; the heart of match ergonomics.
+    Whether `[p]` can match on `&[T]`; the heart of match ergonomics.
 - eat_inherited_ref_alone: false | true
-    whether `&p`/`&mut p` is allowed on an inherited reference if the underlying type isn't also a reference type
+    Whether `&p`/`&mut p` is allowed on an inherited reference if the underlying type isn't also a reference type
 - inherited_ref_on_ref: EatOuter | EatInner | EatBoth
-    how to handle a reference pattern on a double reference when the outer one is inherited
+    How to handle a reference pattern on a double reference when the outer one is inherited
 - fallback_to_outer: false | true
-    whether to try again in `EatOuter` mode when a `EatBoth` or `EatInner` case has a mutability mismatch
+    Whether to try again in `EatOuter` mode when a `EatBoth` or `EatInner` case has a mutability mismatch
 - eat_mut_inside_shared: false | true
-    in `EatInner` or `EatBoth`, `&mut p` can eat an inner `&mut T` from under a `&`
+    In `EatInner` or `EatBoth`, `&mut p` can eat an inner `&mut T` from under a `&`
 - allow_ref_pat_on_ref_mut: false | true
-    whether to allow `&p: &mut T`
+    Whether to allow a shared ref pattern on a mutable ref type
 - downgrade_mut_inside_shared: false | true
     RFC3627 rule 3: downgrade `&mut` inherited references to `&` inside a shared deref
 - ref_binding_on_inherited: Error | ResetBindingMode | AllocTemporary
-    how to handle a `ref x` binding on an inherited reference
+    How to handle a `ref x` binding on an inherited reference
 - mut_binding_on_inherited: Error | ResetBindingMode | Keep
-    how to handle a `mut x` binding on an inherited reference
+    How to handle a `mut x` binding on an inherited reference
 - simplify_deref_mut: false | true
-    whether to simplify `*&mut expr`, which removes some borrow errors
+    Whether to simplify `*&mut expr`, which removes some borrow errors
 - always_inspect_bm: false | true
-    whether to always branch on the binding mode when computing rules. this is required for the `SequentBindingMode` style
+    Whether to always branch on the binding mode when computing rules. this is required for the `SequentBindingMode` style
 - predicate_style: Expression | Sequent | BindingMode | SequentBindingMode | Stateless
     the style of the typing predicate; not all rulesets can be expressed in all styles, only `Expression` is compatible with all rulesets
 
 There also exist some predefined option-bundles. Activate one with `set <bundle>`
-- nadri: a reasonable proposal; like `stateless` but forbids `ref` bindings that create temporaries
-- stateless: a proposal that tracks no hidden state; purely type-based
-- stable_rust: emulates the behavior of current stable rust
-- rfc3627: the accepted RFC3627 behavior
-- rfc3627_2021: the accepted RFC3627 behavior under edition 2021
-- rfc3627_breaking_only: the breaking changes for edition 2024 planned in RFC3627
-- structural: purely structural matching, with no match ergonomics
-- waffle: a proposal by @WaffleLapkin (excluding the proposed rule3 extension)
+- nadri: A reasonable proposal; like `stateless` but forbids `ref` bindings that create temporaries
+- stateless: A proposal that tracks no hidden state; purely type-based
+- stable_rust: The behavior of current stable rust
+- rfc3627: The accepted RFC3627 behavior
+- rfc3627_2021: The accepted RFC3627 behavior under edition 2021
+- rfc3627_breaking_only: The breaking changes for edition 2024 planned in RFC3627
+- structural: Purely structural matching, with no match ergonomics
+- waffle: A proposal by @WaffleLapkin (excluding the proposed rule3 extension)

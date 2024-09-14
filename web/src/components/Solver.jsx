@@ -19,11 +19,13 @@ import InputGroup from 'react-bootstrap/InputGroup';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Offcanvas from 'react-bootstrap/Offcanvas';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Row from 'react-bootstrap/Row';
 import Stack from 'react-bootstrap/Stack';
 import Tab from 'react-bootstrap/Tab';
 import Table from 'react-bootstrap/Table';
 import Tabs from 'react-bootstrap/Tabs';
+import Tooltip from 'react-bootstrap/Tooltip';
 
 await init({});
 
@@ -52,8 +54,16 @@ function InhRef() {
 }
 
 const availableStyles = [
-    { name: 'Sequent', display: <>inh, _ ⊢ p: <InhRef/>T</> },
-    { name: 'SequentBindingMode', display: <>ref, _ ⊢ p: T</> },
+    {
+        name: 'Sequent',
+        display: <>inh, _ ⊢ p: <InhRef/>T</>,
+        doc: "Track the type that the user observes and whether the outermost reference in the type is real or inherited"
+    },
+    {
+        name: 'SequentBindingMode',
+        display: <>ref, _ ⊢ p: T</>,
+        doc: "Track the type of the matched place and the current binding mode"
+    },
 ];
 
 export function SolverSteps({inputQuery, options, style}) {
@@ -173,13 +183,14 @@ export default function Solver() {
 
     const currentStyle = style;
     const styles = availableStyles.map(style => {
-        return <Button
-            key={style.name}
-            active={currentStyle == style.name}
-            onClick={() => setStyle(style.name)}
-        >
-            {style.display}
-        </Button>
+        return <OverlayTrigger key={style.name} placement="bottom" overlay={<Tooltip>{style.doc}</Tooltip>}>
+            <Button
+                active={currentStyle == style.name}
+                onClick={() => setStyle(style.name)}
+            >
+                {style.display}
+            </Button>
+        </OverlayTrigger>
     });
 
     let title = <span id="title"><span>T</span>yping <span>Ru</span>st <span>P</span>atterns</span>;
@@ -209,11 +220,13 @@ export default function Solver() {
                             <Offcanvas.Body>
                                 <Nav className="ms-auto">
                                     <Stack direction={mainNavShow ? "vertical" : "horizontal"} gap={1}>
-                                        <Button
-                                            active={compare}
-                                            onClick={() => setCompare(!compare)}
-                                        >Compare</Button>
-                                        <ButtonGroup title="predicate style" vertical={mainNavShow}>{styles}</ButtonGroup>
+                                        <OverlayTrigger placement="bottom" overlay={<Tooltip>Compare two rulesets</Tooltip>}>
+                                            <Button
+                                                active={compare}
+                                                onClick={() => setCompare(!compare)}
+                                            >Compare</Button>
+                                        </OverlayTrigger>
+                                        <ButtonGroup vertical={mainNavShow}>{styles}</ButtonGroup>
                                     </Stack>
                                 </Nav>
                             </Offcanvas.Body>

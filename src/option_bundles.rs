@@ -111,43 +111,43 @@ impl RuleOptions {
         BundleDoc {
             name: "nadri",
             options: Self::NADRI,
-            doc: "a reasonable proposal; like `stateless` but \
+            doc: "A reasonable proposal; like `stateless` but \
                 forbids `ref` bindings that create temporaries",
         },
         BundleDoc {
             name: "stateless",
             options: Self::STATELESS,
-            doc: "a proposal that tracks no hidden state; purely type-based",
+            doc: "A proposal that tracks no hidden state; purely type-based",
         },
         BundleDoc {
             name: "stable_rust",
             options: Self::STABLE_RUST,
-            doc: "emulates the behavior of current stable rust",
+            doc: "The behavior of current stable rust",
         },
         BundleDoc {
             name: "rfc3627",
             options: Self::ERGO2024,
-            doc: "the accepted RFC3627 behavior",
+            doc: "The accepted RFC3627 behavior",
         },
         BundleDoc {
             name: "rfc3627_2021",
             options: Self::RFC3627_2021,
-            doc: "the accepted RFC3627 behavior under edition 2021",
+            doc: "The accepted RFC3627 behavior under edition 2021",
         },
         BundleDoc {
             name: "rfc3627_breaking_only",
             options: Self::ERGO2024_BREAKING_ONLY,
-            doc: "the breaking changes for edition 2024 planned in RFC3627",
+            doc: "The breaking changes for edition 2024 planned in RFC3627",
         },
         BundleDoc {
             name: "structural",
             options: Self::STRUCTURAL,
-            doc: "purely structural matching, with no match ergonomics",
+            doc: "Purely structural matching, with no match ergonomics",
         },
         BundleDoc {
             name: "waffle",
             options: Self::WAFFLE,
-            doc: "a proposal by @WaffleLapkin (excluding the proposed rule3 extension)",
+            doc: "A proposal by @WaffleLapkin (excluding the proposed rule3 extension)",
         },
         // ("rpjohnst", Self::RPJOHNST, "(TODO) a proposal by @rpjohnst"),
     ];

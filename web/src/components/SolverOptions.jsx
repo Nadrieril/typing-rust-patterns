@@ -11,9 +11,11 @@ import InputGroup from 'react-bootstrap/InputGroup';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Offcanvas from 'react-bootstrap/Offcanvas';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Row from 'react-bootstrap/Row';
 import Stack from 'react-bootstrap/Stack';
 import Table from 'react-bootstrap/Table';
+import Tooltip from 'react-bootstrap/Tooltip';
 
 await init({});
 
@@ -83,7 +85,8 @@ export function CalculateWidth({ contents, setWidth }) {
 }
 
 export function Preset({ options, setOptions }) {
-    const active_bundle = options.get_bundle_name_js();
+    const active_bundle_name = options.get_bundle_name_js();
+    const active_bundle = bundlesDoc.filter(bundle => bundle.name == active_bundle_name)[0];
     const bundles = bundlesDoc.map(bundle => {
         return <option
             key={bundle.name}
@@ -94,19 +97,21 @@ export function Preset({ options, setOptions }) {
         </option>
     });
 
-    return <Form.Select
-        className="w-auto me-auto"
-        value={active_bundle || "custom"}
-        onChange={(e) => {
-            let bundle = e.target.value;
-            if (bundle != "custom") {
-                setOptions(RuleOptions.from_bundle_name_js(bundle));
-            }
-        }}
-    >
-        <option value="custom">(custom)</option>
-        {bundles}
-    </Form.Select>
+    return <OverlayTrigger placement="bottom" overlay={<Tooltip>{active_bundle.doc}</Tooltip>}>
+        <Form.Select
+            className="w-auto me-auto"
+            value={active_bundle_name || "custom"}
+            onChange={(e) => {
+                let bundle = e.target.value;
+                if (bundle != "custom") {
+                    setOptions(RuleOptions.from_bundle_name_js(bundle));
+                }
+            }}
+        >
+            <option value="custom">(custom)</option>
+            {bundles}
+        </Form.Select>
+    </OverlayTrigger>
 }
 
 export function OptionElem({ option, options, setOptions, fullWidth }) {
@@ -140,18 +145,19 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
         width: ((!fullWidth) && optionsWidth) || null
     };
 
-    return <Button
-        variant={variant}
-        title={option.doc}
-        className={"text-nowrap " + (fullWidth ? "w-100" : "")}
-        disabled={disabled}
-        onClick={(e) => { setKey(option.name, next_value); return false; }}
-    >
-        {hiddenOptionsForWidth}
-        <span style={style}>
-            {prettyOption[current_val] || prettyOption.question}
-        </span>
-    </Button>
+    return <OverlayTrigger placement="bottom" overlay={<Tooltip>{option.doc}</Tooltip>}>
+        <Button
+            variant={variant}
+            className={"text-nowrap " + (fullWidth ? "w-100" : "")}
+            disabled={disabled}
+            onClick={(e) => { setKey(option.name, next_value); return false; }}
+        >
+            {hiddenOptionsForWidth}
+            <span style={style}>
+                {prettyOption[current_val] || prettyOption.question}
+            </span>
+        </Button>
+    </OverlayTrigger>
 }
 
 export default function SolverOptions({ options, setOptions, title }) {
