@@ -596,7 +596,7 @@ fn compare() -> anyhow::Result<()> {
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
                 allow_ref_pat_on_ref_mut: true,
                 downgrade_mut_inside_shared: true,
-                dont_eat_mut_inside_shared: true,
+                eat_mut_inside_shared: false,
                 ..RuleOptions::ERGO2024
             }),
             Somewhat.expect(Equal).shallower(),

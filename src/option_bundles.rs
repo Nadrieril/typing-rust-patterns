@@ -12,7 +12,7 @@ impl RuleOptions {
         simplify_deref_mut: true,
         eat_inherited_ref_alone: false,
         downgrade_mut_inside_shared: false,
-        dont_eat_mut_inside_shared: false,
+        eat_mut_inside_shared: true,
         always_inspect_bm: false,
     };
 
@@ -27,7 +27,7 @@ impl RuleOptions {
         simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
         downgrade_mut_inside_shared: true,
-        dont_eat_mut_inside_shared: false,
+        eat_mut_inside_shared: true,
         always_inspect_bm: false,
     };
 
@@ -43,7 +43,7 @@ impl RuleOptions {
         simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
         downgrade_mut_inside_shared: false,
-        dont_eat_mut_inside_shared: false,
+        eat_mut_inside_shared: true,
         always_inspect_bm: false,
     };
 
@@ -61,7 +61,7 @@ impl RuleOptions {
         fallback_to_outer: false,
         allow_ref_pat_on_ref_mut: false,
         eat_inherited_ref_alone: false,
-        dont_eat_mut_inside_shared: true,
+        eat_mut_inside_shared: false,
         ..Self::STATELESS
     };
 
@@ -81,7 +81,7 @@ impl RuleOptions {
 
     pub const ERGO2024_BREAKING_ONLY_EXT: Self = RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
-        dont_eat_mut_inside_shared: true,
+        eat_mut_inside_shared: false,
         ..RuleOptions::ERGO2024_BREAKING_ONLY
     };
 

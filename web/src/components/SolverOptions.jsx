@@ -65,9 +65,9 @@ const prettyOptions = {
         primary: false,
         question: <>&mut p: <InhMutRef/> &T</>,
     },
-    dont_eat_mut_inside_shared: {
+    eat_mut_inside_shared: {
         primary: false,
-        question: <>not(&mut p: <InhRef/>&mut T)</>,
+        question: <>&mut p: <InhRef/>&mut T</>,
     },
     downgrade_mut_inside_shared: {
         primary: false,

@@ -68,8 +68,8 @@ pub struct RuleOptions {
     /// If we've dereferenced a shared reference, any subsequent `&mut` inherited reference becomes
     /// `&`. This is RFC3627 rule 3.
     pub downgrade_mut_inside_shared: bool,
-    /// In `EatInner` or `EatBoth`, disallow eating an inner `&mut T` with `&mut p` from under a `&`.
-    pub dont_eat_mut_inside_shared: bool,
+    /// In `EatInner` or `EatBoth`, allow eating an inner `&mut T` with `&mut p` from under a `&`.
+    pub eat_mut_inside_shared: bool,
     /// What happens with a `ref mut? x` binding and an inherited reference.
     pub ref_binding_on_inherited: RefBindingOnInheritedBehavior,
     /// What happens with a `mut x` binding and an inherited reference.
@@ -112,10 +112,10 @@ impl RuleOptions {
                 case has a mutability mismatch",
         },
         OptionsDoc {
-            name: "dont_eat_mut_inside_shared",
-            values: &["true", "false"],
-            doc: "in `EatInner` or `EatBoth`, disallow eating an inner `&mut T` \
-                with `&mut p` from under a `&`",
+            name: "eat_mut_inside_shared",
+            values: &["false", "true"],
+            doc: "in `EatInner` or `EatBoth`, `&mut p` can eat an inner `&mut T` \
+                from under a `&`",
         },
         OptionsDoc {
             name: "allow_ref_pat_on_ref_mut",
@@ -342,7 +342,7 @@ impl<'a> TypingPredicate<'a> {
                                     let can_eat_inner = match (p_mtbl, *inner_mtbl) {
                                         (Shared, Shared) => true,
                                         (Mutable, Mutable) => {
-                                            bm_mtbl == Mutable || !o.dont_eat_mut_inside_shared
+                                            bm_mtbl == Mutable || o.eat_mut_inside_shared
                                         }
                                         (Shared, Mutable) => o.allow_ref_pat_on_ref_mut,
                                         (Mutable, Shared) => false,
@@ -366,7 +366,7 @@ impl<'a> TypingPredicate<'a> {
                                     let can_eat_inner = match (p_mtbl, *inner_mtbl) {
                                         (Shared, Shared) => true,
                                         (Mutable, Mutable) => {
-                                            bm_mtbl == Mutable || !o.dont_eat_mut_inside_shared
+                                            bm_mtbl == Mutable || o.eat_mut_inside_shared
                                         }
                                         (Shared, Mutable) => o.allow_ref_pat_on_ref_mut,
                                         (Mutable, Shared) => false,

@@ -140,9 +140,9 @@ The old ruleset is on the left, and the new one on the right.
 
 allow_ref_pat_on_ref_mut: true
 always_inspect_bm: false
-dont_eat_mut_inside_shared: false
 downgrade_mut_inside_shared: false -> true
 eat_inherited_ref_alone: true
+eat_mut_inside_shared: true
 fallback_to_outer: false -> true
 inherited_ref_on_ref: "EatOuter" -> "EatInner"
 match_constructor_through_ref: true
