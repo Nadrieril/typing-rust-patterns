@@ -1,5 +1,6 @@
 use crate::*;
 use gloo_utils::format::JsValueSerdeExt;
+use printer::Style;
 use serde::Serialize;
 use std::cmp::Ordering;
 use wasm_bindgen::prelude::*;
@@ -138,8 +139,12 @@ pub fn display_joint_rules_js(
         .into_iter()
         .map(|joint_rule| {
             let (left, right) = joint_rule.left_and_right();
-            let left = left.map(|r| r.display(style).unwrap()).unwrap_or_default();
-            let right = right.map(|r| r.display(style).unwrap()).unwrap_or_default();
+            let mut left = left.map(|r| r.display(style).unwrap()).unwrap_or_default();
+            let mut right = right.map(|r| r.display(style).unwrap()).unwrap_or_default();
+            if left != right {
+                left = left.red();
+                right = right.green();
+            }
             JointDisplayOutput { left, right }
         })
         .map(|out| JsValue::from_serde(&out).unwrap())
