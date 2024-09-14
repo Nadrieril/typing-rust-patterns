@@ -69,6 +69,22 @@ impl RuleOptions {
     pub fn get_bundle_name_js(&self) -> Option<String> {
         self.get_bundle_name().map(String::from)
     }
+
+    /// Encode the current options as base64.
+    pub fn encode(&self) -> String {
+        use base64::{engine::general_purpose::URL_SAFE, Engine as _};
+        let config = bincode::config::standard();
+        let bits = bincode::encode_to_vec(self, config).unwrap();
+        URL_SAFE.encode(bits)
+    }
+
+    /// Decode the current options from base64.
+    pub fn decode(x: JsValue) -> Option<RuleOptions> {
+        use base64::{engine::general_purpose::URL_SAFE, Engine as _};
+        let config = bincode::config::standard();
+        let bits = URL_SAFE.decode(x.as_string()?).ok()?;
+        Some(bincode::decode_from_slice(&bits, config).ok()?.0)
+    }
 }
 
 #[wasm_bindgen]

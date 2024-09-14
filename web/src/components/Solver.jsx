@@ -8,6 +8,7 @@ import init, {
 import SolverOptions from './SolverOptions.jsx';
 
 import { useState, useMemo } from 'react';
+import { useSearchParams } from "react-router-dom";
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import Col from 'react-bootstrap/Col';
@@ -66,17 +67,41 @@ export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
     </Container>
 }
 
+// Like `useState`, but mirror the value in the search parameters.
+function useStateInParams(key, def, read = (x) => x, write = (x) => x) {
+    const [searchParams, setSearchParams] = useSearchParams();
+    function setSearchParam(k, v) {
+        setSearchParams((params) => {
+            params.set(k, v);
+            return params
+        });
+    }
+
+    let start_val = read(searchParams.get(key)) || def;
+
+    const [val, setVal] = useState(start_val);
+    const setValAndParams = (v) => {
+        setVal(v);
+        setSearchParam(key, write(v));
+    }
+    return [val, setValAndParams]
+}
+
 // TODO: tab the options container to support bm-based Solver
-// TODO: encode current view in URL for sharing
 // TODO: make hover info more visible
 // TODO: add offcanvas with predicate and rules explanations
 export default function Solver() {
-    const [compare, setCompare] = useState(false);
-    const [style, setStyle] = useState('Sequent');
-    const [optionsLeft, setOptionsLeft] = useState(new RuleOptions());
-    const [optionsRight, setOptionsRight] = useState(new RuleOptions());
-    const [inputQuery, setInputPattern] = useState("[&x]: &mut [&T]");
-    const [mode, setMode] = useState('typechecker');
+    // Decoding function that simply checks that the value is in the given array.
+    function validateIn(allowed) {
+        return (v) => allowed.includes(v) ? v : null;
+    }
+
+    const [compare, setCompare] = useStateInParams('compare', false, (x) => x == 'true');
+    const [style, setStyle] = useStateInParams('style', 'Sequent', validateIn(['Sequent', 'SequentBindingMode', 'Expression']));
+    const [optionsLeft, setOptionsLeft] = useStateInParams('opts1', new RuleOptions(), RuleOptions.decode, (o) => o.encode());
+    const [optionsRight, setOptionsRight] = useStateInParams('opts2', new RuleOptions(), RuleOptions.decode, (o) => o.encode());
+    const [inputQuery, setInputQuery] = useStateInParams('q', "[&x]: &mut [&T]");
+    const [mode, setMode] = useStateInParams('mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
 
     const currentStyle = style;
     const styles = availableStyles.map(style => {
@@ -160,7 +185,7 @@ export default function Solver() {
                         <Form.Control
                             placeholder="[&x]: &mut [&T]"
                             value={inputQuery}
-                            onChange={(e) => setInputPattern(e.target.value)}
+                            onChange={(e) => setInputQuery(e.target.value)}
                         />
                     </InputGroup>
                     <Container fluid>
