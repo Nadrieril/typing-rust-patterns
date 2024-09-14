@@ -86,7 +86,7 @@ export function CalculateWidth({ contents, setWidth }) {
 
 export function Preset({ options, setOptions }) {
     const active_bundle_name = options.get_bundle_name_js();
-    const active_bundle = bundlesDoc.filter(bundle => bundle.name == active_bundle_name)[0];
+    const active_bundle = bundlesDoc.filter(bundle => bundle.name == active_bundle_name).pop();
     const bundles = bundlesDoc.map(bundle => {
         return <option
             key={bundle.name}
@@ -97,7 +97,7 @@ export function Preset({ options, setOptions }) {
         </option>
     });
 
-    return <OverlayTrigger placement="bottom" overlay={<Tooltip>{active_bundle.doc}</Tooltip>}>
+    return <OverlayTrigger placement="bottom" overlay={<Tooltip>{active_bundle ? active_bundle.doc : "This ruleset does not have a name"}</Tooltip>}>
         <Form.Select
             className="w-auto me-auto"
             value={active_bundle_name || "custom"}
