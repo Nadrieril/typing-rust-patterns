@@ -89,7 +89,6 @@ export default function Solver() {
     });
 
     return (
-        <>
         <Container fluid>
             <Navbar expand="lg" sticky="top" className="bg-body-tertiary">
                 <Container fluid>
@@ -106,16 +105,14 @@ export default function Solver() {
                     </Navbar.Collapse>
                 </Container>
             </Navbar>
+            <SolverOptions options={optionsLeft} setOptions={setOptionsLeft}/>
+            {compare ? <SolverOptions options={optionsRight} setOptions={setOptionsRight}/> : null}
             <Row>
                 <p id="foo">
                     Welcome to the interactive pattern typer!<br/>
                     Write <span className="monospace">`pattern: type`</span> in the input box to see it get typechecked.<br/>
                     Example: <span className="monospace">`&[ref x]: &[T]`</span>
                 </p>
-            </Row>
-            <Row>
-            <Col><SolverOptions options={optionsLeft} setOptions={setOptionsLeft}/></Col>
-            {compare ? <Col><SolverOptions options={optionsRight} setOptions={setOptionsRight}/></Col> : null}
             </Row>
             <Row>
             <Tabs
@@ -150,6 +147,5 @@ export default function Solver() {
             </Tabs>
             </Row>
         </Container>
-        </>
     );
 }
