@@ -1,18 +1,18 @@
 ---
 source: src/compute_rules.rs
 info:
-  bundle_name: ergo2024_breaking_only
+  bundle_name: nadri
   options:
     match_constructor_through_ref: true
-    eat_inherited_ref_alone: false
-    inherited_ref_on_ref: EatInner
+    eat_inherited_ref_alone: true
+    inherited_ref_on_ref: EatOuter
     fallback_to_outer: false
-    allow_ref_pat_on_ref_mut: false
+    allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
     downgrade_mut_inside_shared: false
     eat_mut_inside_shared: true
-    ref_binding_on_inherited: ResetBindingMode
-    mut_binding_on_inherited: Error
+    ref_binding_on_inherited: Error
+    mut_binding_on_inherited: Keep
     always_inspect_bm: false
 ---
 real, m ⊢ p0: T0,  real, m ⊢ p1: T1
@@ -44,44 +44,16 @@ inh, m ⊢ [p0, p1]: &mut T
 r, m ⊢ [p0, p1]: &mut &mut T
 
 real, ro ⊢ p: T
----------------- "Deref(EatOuter)"
-real, m ⊢ &p: &T
+--------------- "Deref"
+r, m ⊢ &p: &T
 
 real, m ⊢ p: T
------------------------- "Deref(EatOuter)"
-real, m ⊢ &mut p: &mut T
+--------------------- "Deref"
+r, m ⊢ &mut p: &mut T
 
-inh, ro ⊢ p: &T
----------------- "Deref(EatInner)"
-inh, m ⊢ &p: &&T
-
-inh, ro ⊢ p: &mut T
--------------------- "Deref(EatInner)"
-inh, m ⊢ &p: &mut &T
-
-inh, m ⊢ p: &T
------------------------- "Deref(EatInner)"
-inh, m ⊢ &mut p: &&mut T
-
-inh, m ⊢ p: &mut T
----------------------------- "Deref(EatInner)"
-inh, m ⊢ &mut p: &mut &mut T
-
-r, m ⊢ ref x: T
------------------- "RefBindingResetBindingMode"
-inh, m ⊢ ref x: &T
-
-r, m ⊢ ref x: T
----------------------- "RefBindingResetBindingMode"
-inh, m ⊢ ref x: &mut T
-
-r, m ⊢ ref mut x: T
----------------------- "RefBindingResetBindingMode"
-inh, m ⊢ ref mut x: &T
-
-r, m ⊢ ref mut x: T
--------------------------- "RefBindingResetBindingMode"
-inh, m ⊢ ref mut x: &mut T
+real, ro ⊢ p: T
+----------------- "DerefMutWithShared"
+r, m ⊢ &p: &mut T
 
 inh, m ⊢ x: &T
 ------------------ "BindingBorrow"
@@ -96,5 +68,5 @@ real, m ⊢ ref mut x: T
 r, m ⊢ x: T
 
 
------------------- "Binding"
-real, m ⊢ mut x: T
+--------------- "Binding"
+r, m ⊢ mut x: T

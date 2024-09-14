@@ -15,7 +15,7 @@ pub struct BundleDocJs {
 impl RuleOptions {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        RuleOptions::DEFAULT
+        RuleOptions::NADRI
     }
 
     pub fn options_doc() -> Vec<JsValue> {

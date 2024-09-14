@@ -13,16 +13,18 @@ info:
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: Error
     always_inspect_bm: false
-  bundle_name: ergo2024
-  request: "[&mut x]: &[&mut T]"
+  bundle_name: rfc3627
+  request: "[&mut &x]: &[&mut T]"
 ---
-[&mut x] @ s: &[&mut T]
+[&mut &x] @ s: &[&mut T]
 // Applying rule `ConstructorRef`
-&mut x @ &(*s).0: &&mut T
+&mut &x @ &(*s).0: &&mut T
 // Applying rule `Deref(EatInner)`
-x @ &*(*s).0: &T
+&x @ &*(*s).0: &T
+// Applying rule `Deref(EatOuter)`
+x @ *&*(*s).0: T
 // Applying rule `Binding`
-let x: &T = &*(*s).0
+let x: T = *&*(*s).0
 
 // Final bindings (simplified):
-let x: &T = &*(*s).0;
+let x: T = *(*s).0;

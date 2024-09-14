@@ -48,7 +48,7 @@ impl RuleOptions {
     };
 
     /// The default setting for the solver. A reasonable proposal.
-    pub const DEFAULT: Self = RuleOptions {
+    pub const NADRI: Self = RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
         ..Self::STATELESS
     };
@@ -109,8 +109,8 @@ impl RuleOptions {
     /// The known bundles, with a short explanation.
     pub const KNOWN_OPTION_BUNDLES: &[BundleDoc] = &[
         BundleDoc {
-            name: "default",
-            options: Self::DEFAULT,
+            name: "nadri",
+            options: Self::NADRI,
             doc: "a reasonable proposal; like `stateless` but \
                 forbids `ref` bindings that create temporaries",
         },
@@ -125,7 +125,7 @@ impl RuleOptions {
             doc: "emulates the behavior of current stable rust",
         },
         BundleDoc {
-            name: "ergo2024",
+            name: "rfc3627",
             options: Self::ERGO2024,
             doc: "the accepted RFC3627 behavior",
         },
@@ -135,7 +135,7 @@ impl RuleOptions {
             doc: "the accepted RFC3627 behavior under edition 2021",
         },
         BundleDoc {
-            name: "ergo2024_breaking_only",
+            name: "rfc3627_breaking_only",
             options: Self::ERGO2024_BREAKING_ONLY,
             doc: "the breaking changes for edition 2024 planned in RFC3627",
         },

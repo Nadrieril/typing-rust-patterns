@@ -14,8 +14,7 @@ Run `cargo run` to run the tool. It provides an interactive CLI interface with i
 `set` to see the various options.
 
 The ruleset in my [RFC draft][overhaul_rfc] is called `stateless` in the tool. This is capable of
-emulating stable rust behavior, RFC3627 behavior (named `ergo2024` in the tool), as well as a number
-of alternative proposals.
+emulating stable rust behavior, RFC3627 behavior, as well as a number of alternative proposals.
 
 ## Typing rules
 

@@ -1,6 +1,6 @@
 ---
 source: tests/trace_cli.rs
-info: "set ergo2024\nset predicate_style BindingMode\nrules"
+info: "set rfc3627\nset predicate_style BindingMode\nrules"
 ---
 The two rulesets are described by the following sets of rules, with differences highlighted.
 The old ruleset is on the left, and the new one on the right.

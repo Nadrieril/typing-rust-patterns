@@ -446,13 +446,13 @@ fn compare() -> anyhow::Result<()> {
     let a = &Arenas::default();
     let compare: &[(&str, RuleSet, TestSettings, RuleSet)] = &[
         (
-            "default",
+            "nadri",
             TypeBased(RuleOptions {
                 // `ergo-formality` doesn't support the `Keep` option.
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
                 // `ergo-formality` doesn't support any option.
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
-                ..RuleOptions::DEFAULT
+                ..RuleOptions::NADRI
             }),
             Somewhat.expect(Equal).shallower(),
             BindingModeBased({

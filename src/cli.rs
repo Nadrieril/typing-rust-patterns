@@ -54,7 +54,7 @@ impl CliState {
     pub fn new() -> Self {
         Self {
             history: Vec::new(),
-            options: RuleOptions::DEFAULT,
+            options: RuleOptions::NADRI,
             predicate_style: PredicateStyle::Sequent,
             saved: None,
         }

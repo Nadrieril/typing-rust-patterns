@@ -4,7 +4,7 @@ use typing_rust_patterns::*;
 
 #[test]
 fn generate_design_doc() -> anyhow::Result<()> {
-    let options = RuleOptions::DEFAULT;
+    let options = RuleOptions::NADRI;
 
     let examples = [
         ("[&x]: &[&T]", "`x: &T`"),

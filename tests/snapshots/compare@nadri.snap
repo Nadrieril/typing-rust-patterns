@@ -1,6 +1,6 @@
 ---
 source: src/compare.rs
-info: default
+info: nadri
 ---
 Difference on `[&ref x]: &mut [&CT]`:
    left returned: Success(&&CT)

@@ -1,18 +1,18 @@
 ---
 source: src/compute_rules.rs
 info:
-  bundle_name: default
+  bundle_name: rfc3627_breaking_only
   options:
     match_constructor_through_ref: true
-    eat_inherited_ref_alone: true
-    inherited_ref_on_ref: EatOuter
+    eat_inherited_ref_alone: false
+    inherited_ref_on_ref: EatInner
     fallback_to_outer: false
-    allow_ref_pat_on_ref_mut: true
+    allow_ref_pat_on_ref_mut: false
     simplify_deref_mut: true
     downgrade_mut_inside_shared: false
     eat_mut_inside_shared: true
-    ref_binding_on_inherited: Error
-    mut_binding_on_inherited: Keep
+    ref_binding_on_inherited: ResetBindingMode
+    mut_binding_on_inherited: Error
     always_inspect_bm: false
 ---
 move, m ⊢ p0: T0,  move, m ⊢ p1: T1
@@ -68,28 +68,44 @@ ref mut, m ⊢ [p0, p1]: T
 ref mut, m ⊢ [p0, p1]: &mut T
 
 move, ro ⊢ p: T
----------------- "Deref"
+---------------- "Deref(EatOuter)"
 move, m ⊢ &p: &T
 
-move, ro ⊢ p: T
---------------- "Deref"
-ref, m ⊢ &p: T
-
 move, m ⊢ p: T
------------------------- "Deref"
+------------------------ "Deref(EatOuter)"
 move, m ⊢ &mut p: &mut T
 
-move, m ⊢ p: T
----------------------- "Deref"
-ref mut, m ⊢ &mut p: T
+ref, ro ⊢ p: T
+--------------- "Deref(EatInner)"
+ref, m ⊢ &p: &T
 
-move, ro ⊢ p: T
--------------------- "DerefMutWithShared"
-move, m ⊢ &p: &mut T
+ref mut, ro ⊢ p: T
+------------------- "Deref(EatInner)"
+ref mut, m ⊢ &p: &T
 
-move, ro ⊢ p: T
------------------- "DerefMutWithShared"
-ref mut, m ⊢ &p: T
+ref, m ⊢ p: T
+----------------------- "Deref(EatInner)"
+ref, m ⊢ &mut p: &mut T
+
+ref mut, m ⊢ p: T
+--------------------------- "Deref(EatInner)"
+ref mut, m ⊢ &mut p: &mut T
+
+bm, m ⊢ ref x: T
+----------------- "RefBindingResetBindingMode"
+ref, m ⊢ ref x: T
+
+bm, m ⊢ ref x: T
+--------------------- "RefBindingResetBindingMode"
+ref mut, m ⊢ ref x: T
+
+bm, m ⊢ ref mut x: T
+--------------------- "RefBindingResetBindingMode"
+ref, m ⊢ ref mut x: T
+
+bm, m ⊢ ref mut x: T
+------------------------- "RefBindingResetBindingMode"
+ref mut, m ⊢ ref mut x: T
 
 ref, m ⊢ x: T
 ------------------ "BindingBorrow"
@@ -104,5 +120,5 @@ move, m ⊢ ref mut x: T
 bm, m ⊢ x: T
 
 
----------------- "Binding"
-bm, m ⊢ mut x: T
+------------------ "Binding"
+move, m ⊢ mut x: T

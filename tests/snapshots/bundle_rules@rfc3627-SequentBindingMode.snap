@@ -1,7 +1,7 @@
 ---
 source: src/compute_rules.rs
 info:
-  bundle_name: ergo2024
+  bundle_name: rfc3627
   options:
     match_constructor_through_ref: true
     eat_inherited_ref_alone: true
