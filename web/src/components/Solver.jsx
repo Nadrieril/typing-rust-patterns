@@ -90,6 +90,7 @@ export default function Solver() {
     });
 
     let title = <span id="title"><span>T</span>yping <span>Ru</span>st <span>P</span>atterns</span>;
+    const [mainNavShow, setMainNavShow] = useState(false);
 
     return (
         <Container fluid>
@@ -98,7 +99,14 @@ export default function Solver() {
                     <Container fluid>
                         <Navbar.Brand>{title}</Navbar.Brand>
                         <Navbar.Toggle/>
-                        <Navbar.Offcanvas placement="end">
+                        <Navbar.Offcanvas
+                            placement="end"
+                            scroll
+                            backdrop={false}
+                            className="w-auto"
+                            onEnter={() => setMainNavShow(true)}
+                            onExited={() => setMainNavShow(false)}
+                        >
                             <Offcanvas.Header closeButton>
                                 <Offcanvas.Title>{title}</Offcanvas.Title>
                             </Offcanvas.Header>
@@ -108,7 +116,7 @@ export default function Solver() {
                                 </Nav>
                                 <Nav className="ms-auto">
                                     <Button active={compare} onClick={() => setCompare(!compare)}>Compare</Button>
-                                    <ButtonGroup title="predicate style">{styles}</ButtonGroup>
+                                    <ButtonGroup title="predicate style" vertical={mainNavShow}>{styles}</ButtonGroup>
                                 </Nav>
                             </Offcanvas.Body>
                         </Navbar.Offcanvas>

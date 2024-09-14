@@ -108,7 +108,7 @@ export function Preset({ options, setOptions }) {
     </Form.Select>
 }
 
-export function OptionElem({ option, options, setOptions }) {
+export function OptionElem({ option, options, setOptions, fullWidth }) {
     const setKey = (k, v) => setOptions(options.with_key(k, v));
     const current_val = options.get_key(option.name);
     const prettyOption = prettyOptions[option.name] || null;
@@ -133,24 +133,30 @@ export function OptionElem({ option, options, setOptions }) {
         />
     });
 
+    const style = {
+        display: "inline-block",
+        width: ((!fullWidth) && optionsWidth) || null
+    };
+
     return <Button
         variant={variant}
         title={option.doc}
-        className="text-nowrap"
+        className={"text-nowrap" + (fullWidth ? " w-100" : "")}
         disabled={irrelevant_options.includes(option.name)}
         onClick={(e) => { setKey(option.name, next_value); return false; }}
     >
         {hiddenOptionsForWidth}
-        <span style={{display: "inline-block", width: optionsWidth || null}}>
+        <span style={style}>
             {prettyOption[current_val] || prettyOption.question}
         </span>
     </Button>
 }
 
 export default function SolverOptions({ options, setOptions, title }) {
+    const [navShow, setNavShow] = useState(false);
     const option_elems = optionsDoc.map((option) =>
         <Nav.Item key={option.name}>
-            <OptionElem {...{option, options, setOptions}}/>
+            <OptionElem {...{option, options, setOptions, fullWidth: navShow}}/>
         </Nav.Item>
     );
 
@@ -158,18 +164,25 @@ export default function SolverOptions({ options, setOptions, title }) {
         <Container fluid>
             <Navbar.Brand>{title}</Navbar.Brand>
             <Navbar.Toggle/>
-            <Navbar.Offcanvas placement="end">
-              <Offcanvas.Header closeButton>
-                <Offcanvas.Title>{title}</Offcanvas.Title>
-              </Offcanvas.Header>
-              <Offcanvas.Body>
-                <Nav>
-                    <Nav.Item>
-                        <Preset {...{options, setOptions}}/>
-                    </Nav.Item>
-                    {option_elems}
-                </Nav>
-              </Offcanvas.Body>
+            <Navbar.Offcanvas
+                placement="end"
+                scroll
+                backdrop={false}
+                className="w-auto"
+                onEnter={() => setNavShow(true)}
+                onExited={() => setNavShow(false)}
+            >
+                <Offcanvas.Header closeButton>
+                    <Offcanvas.Title>{title}</Offcanvas.Title>
+                </Offcanvas.Header>
+                <Offcanvas.Body>
+                    <Nav>
+                        <Nav.Item>
+                            <Preset {...{options, setOptions}}/>
+                        </Nav.Item>
+                        {option_elems}
+                    </Nav>
+                </Offcanvas.Body>
             </Navbar.Offcanvas>
         </Container>
     </Navbar>
