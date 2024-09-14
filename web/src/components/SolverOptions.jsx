@@ -161,7 +161,7 @@ export default function SolverOptions({ options, setOptions, title }) {
         </Nav.Item>
     );
 
-    return <Navbar expand="lg" className="bg-body-tertiary">
+    return <Navbar expand="xl" className="bg-body-tertiary">
         <Container fluid>
             <Navbar.Brand className="text-nowrap">{title}</Navbar.Brand>
             <Preset {...{options, setOptions}}/>

@@ -95,7 +95,7 @@ export default function Solver() {
     return (
         <Container fluid>
             <div className="sticky-top">
-                <Navbar expand="lg" className="bg-body-tertiary">
+                <Navbar expand="md" className="bg-body-tertiary">
                     <Container fluid>
                         <Navbar.Brand>{title}</Navbar.Brand>
                         <Nav className="me-auto">
