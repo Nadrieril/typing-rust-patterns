@@ -127,9 +127,12 @@ export default function SolverOptions({ options, setOptions }) {
     function make_option_elem(option) {
         const current_val = options.get_key(option.name);
         const prettyOption = prettyOptions[option.name] || null;
+        const irrelevant_options = options.irrelevant_options_js();
+
         const current_index = option.values.indexOf(current_val);
         const next_index = (current_index + 1) % option.values.length;
         const next_value = option.values[(current_index + 1) % option.values.length];
+
         const variant =
             current_val == "true" ? "outline-success" :
             (current_val == "false" || current_val == "Error") ? "outline-danger" :
@@ -146,6 +149,7 @@ export default function SolverOptions({ options, setOptions }) {
                 variant={variant}
                 title={option.doc}
                 className="text-nowrap"
+                disabled={irrelevant_options.includes(option.name)}
                 onClick={(e) => { setKey(option.name, next_value); return false; }}
             >
                 {hiddenOptionsForWidth}

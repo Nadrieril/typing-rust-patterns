@@ -36,6 +36,15 @@ impl RuleOptions {
             .collect()
     }
 
+    /// List options that can be changed without affecting the current rules.
+    pub fn irrelevant_options_js(&self) -> Vec<String> {
+        self.irrelevant_options()
+            .iter()
+            .copied()
+            .map(str::to_owned)
+            .collect()
+    }
+
     pub fn get_key(&self, key: &str) -> String {
         serde_yaml::to_string(&self.to_map()[key])
             .unwrap()

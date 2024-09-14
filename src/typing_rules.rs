@@ -151,6 +151,28 @@ impl RuleOptions {
         },
     ];
 
+    /// List options that can be changed without affecting the current rules.
+    pub fn irrelevant_options(self) -> &'static [&'static str] {
+        if !self.match_constructor_through_ref {
+            &[
+                "eat_inherited_ref_alone",
+                "inherited_ref_on_ref",
+                "fallback_to_outer",
+                "downgrade_mut_inside_shared",
+                "eat_mut_inside_shared",
+                "ref_binding_on_inherited",
+                "mut_binding_on_inherited",
+            ]
+        } else if matches!(
+            self.inherited_ref_on_ref,
+            InheritedRefOnRefBehavior::EatOuter
+        ) {
+            &["fallback_to_outer", "eat_mut_inside_shared"]
+        } else {
+            &[]
+        }
+    }
+
     pub fn to_map(&self) -> serde_json::Map<String, serde_json::Value> {
         let serde_json::Value::Object(map) = serde_json::to_value(self).unwrap() else {
             panic!()
