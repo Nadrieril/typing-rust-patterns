@@ -143,7 +143,7 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
     return <Button
         variant={variant}
         title={option.doc}
-        className={"text-nowrap " + (fullWidth ? "w-100 mb-1" : "ms-1")}
+        className={"text-nowrap " + (fullWidth ? "w-100" : "")}
         disabled={disabled}
         onClick={(e) => { setKey(option.name, next_value); return false; }}
     >
@@ -180,7 +180,9 @@ export default function SolverOptions({ options, setOptions, title }) {
                 </Offcanvas.Header>
                 <Offcanvas.Body>
                     <Nav>
-                        {option_elems}
+                        <Stack direction={navShow ? "vertical" : "horizontal"} gap={1} className={navShow ? "" : "ms-1"}>
+                            {option_elems}
+                        </Stack>
                     </Nav>
                 </Offcanvas.Body>
             </Navbar.Offcanvas>
