@@ -162,6 +162,7 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
 
 export default function SolverOptions({ options, setOptions, title }) {
     const [navShow, setNavShow] = useState(false);
+    const [solverBtnWidth, setSolverBtnWidth] = useState(0);
 
     const select_solver = <OverlayTrigger
         placement="bottom"
@@ -174,7 +175,11 @@ export default function SolverOptions({ options, setOptions, title }) {
             variant="outline-light"
             onClick={() => setOptions(options.with_solver(!options.get_solver()))}
         >
-            {options.get_solver() ? "Ty" : "BM"}
+            <CalculateWidth contents={"Ty"} setWidth={(w) => setSolverBtnWidth((old_w) => Math.max(old_w, w))} />
+            <CalculateWidth contents={"BM"} setWidth={(w) => setSolverBtnWidth((old_w) => Math.max(old_w, w))} />
+            <span style={{display: "inline-block", width: solverBtnWidth || null}}>
+                {options.get_solver() ? "Ty" : "BM"}
+            </span>
         </Button>
     </OverlayTrigger>;
 
