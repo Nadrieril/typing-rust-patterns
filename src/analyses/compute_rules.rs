@@ -330,6 +330,41 @@ impl PredicateStyle {
 #[derive(Debug)]
 pub struct IncompatibleStyle;
 
+enum RenderablePredicate<'a> {
+    Pred(TypingPredicate<'a>),
+    ExprNotRef(ExprKind<'a>),
+    TyNotRef(Type<'a>),
+    BindingMode(ExprKind<'a>, BindingMode),
+    Mutability(ExprKind<'a>, Mutability),
+}
+
+impl RenderablePredicate<'_> {
+    fn display(&self, style: PredicateStyle) -> String {
+        match self {
+            RenderablePredicate::Pred(p) => p.display(style),
+            RenderablePredicate::ExprNotRef(e) => format!("{e} is not a reference"),
+            RenderablePredicate::TyNotRef(ty) => format!("{ty} is not a reference"),
+            RenderablePredicate::BindingMode(e, bm) => format!("binding_mode({e}) = {}", bm.name()),
+            RenderablePredicate::Mutability(e, mtbl) => {
+                let mtbl = match mtbl {
+                    Mutability::Shared => "read-only",
+                    Mutability::Mutable => "mutable",
+                };
+                format!("{e} {mtbl}")
+            }
+        }
+    }
+}
+
+/// Intermediate representation used in the display process.
+struct RenderableTypingRule<'a> {
+    name: Rule,
+    preconditions: Vec<RenderablePredicate<'a>>,
+    postconditions: Vec<RenderablePredicate<'a>>,
+    /// Remember the options used.
+    options: RuleOptions,
+}
+
 impl<'a> TypingRule<'a> {
     /// Collects the side constraints stored in the expression and type.
     fn collect_side_constraints(&self) -> SideConstraints {
@@ -339,11 +374,13 @@ impl<'a> TypingRule<'a> {
     }
 
     // TODO: deprecate `BindingMode` style
-    // TODO: output intermediate representation before printing
-    pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
+    fn make_renderable(
+        &'a self,
+        a: &'a Arenas<'a>,
+        style: PredicateStyle,
+    ) -> Result<RenderableTypingRule<'a>, IncompatibleStyle> {
         use PredicateStyle::*;
         let abstract_expr = ExprKind::ABSTRACT;
-        let a = &Arenas::default();
 
         let mut cstrs = self.collect_side_constraints();
         if matches!(style, Sequent | BindingMode | Stateless) {
@@ -371,41 +408,27 @@ impl<'a> TypingRule<'a> {
             _ => {}
         }
 
-        let mut postconditions_str = rule.postcondition.display(style);
-
+        let mut postconditions = vec![RenderablePredicate::Pred(rule.postcondition)];
         match style {
             Expression => {
                 if cstrs.abstract_expr_is_not_ref {
-                    let _ = write!(
-                        &mut postconditions_str,
-                        ", {} is not a reference",
-                        abstract_expr
-                    );
+                    postconditions.push(RenderablePredicate::ExprNotRef(abstract_expr));
                 }
             }
             BindingMode => {
                 if let Some(bm) = cstrs.binding_mode {
-                    let bm = bm.name();
-                    let _ = write!(
-                        &mut postconditions_str,
-                        ", binding_mode({}) = {bm}",
-                        abstract_expr
-                    );
+                    postconditions.push(RenderablePredicate::BindingMode(abstract_expr, bm));
                 }
             }
             _ => {}
         }
         for ty in cstrs.non_ref_types {
-            let _ = write!(&mut postconditions_str, ", {ty} is not a reference",);
+            postconditions.push(RenderablePredicate::TyNotRef(Type::OtherNonRef(ty)));
         }
         if let Some(mtbl) = cstrs.scrutinee_mutability {
             match style {
                 Expression | BindingMode => {
-                    let mtbl = match mtbl {
-                        Mutability::Shared => "read-only",
-                        Mutability::Mutable => "mutable",
-                    };
-                    let _ = write!(&mut postconditions_str, ", {abstract_expr} {mtbl}",);
+                    postconditions.push(RenderablePredicate::Mutability(abstract_expr, mtbl));
                 }
                 // We already print this information with the predicate.
                 Sequent | SequentBindingMode => {}
@@ -413,14 +436,47 @@ impl<'a> TypingRule<'a> {
             }
         }
 
-        let mut preconditions_str = rule
+        let preconditions = rule
+            .preconditions
+            .into_iter()
+            .map(RenderablePredicate::Pred)
+            .collect();
+
+        Ok(RenderableTypingRule {
+            name: self.name,
+            preconditions,
+            postconditions,
+            options: self.options,
+        })
+    }
+
+    pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
+        let a = &Arenas::default();
+        self.make_renderable(a, style)?.display(style)
+    }
+}
+
+impl<'a> RenderableTypingRule<'a> {
+    // TODO: deprecate `BindingMode` style
+    pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
+        use PredicateStyle::*;
+
+        let postconditions_str = self
+            .postconditions
+            .iter()
+            .map(|x| x.display(style))
+            .join(", ");
+        let mut preconditions_str = self
             .preconditions
             .iter()
-            .map(|pred| pred.display(style))
+            .map(|x| x.display(style))
             .join(",  ");
 
         if let BindingMode = style
-            && let Some(ByRef(..)) = cstrs.binding_mode
+            && self
+                .postconditions
+                .iter()
+                .any(|x| matches!(x, RenderablePredicate::BindingMode(_, ByRef(..))))
         {
             // In binding mode style, dereferencing the bm is called "resetting".
             preconditions_str = preconditions_str.replace("*q", "reset(q)");
