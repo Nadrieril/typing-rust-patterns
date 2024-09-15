@@ -35,8 +35,14 @@ impl<'a> ComparisonState<'a> {
                     remaining_pat_depth: remaining,
                     remaining_ty_depth: self.remaining_ty_depth,
                     req: self.req.subst_pat(a, pat),
-                    left_state: self.left_state.map_continue(|pred| pred.subst_pat(a, pat)),
-                    right_state: self.right_state.map_continue(|pred| pred.subst_pat(a, pat)),
+                    left_state: self
+                        .left_state
+                        .clone()
+                        .map_continue(|pred| pred.subst_pat(a, pat)),
+                    right_state: self
+                        .right_state
+                        .clone()
+                        .map_continue(|pred| pred.subst_pat(a, pat)),
                 })
                 .collect(),
         }
@@ -55,10 +61,12 @@ impl<'a> ComparisonState<'a> {
                     req: self.req.subst_ty(a, ty),
                     left_state: self
                         .left_state
+                        .clone()
                         .map_continue(|pred| pred.subst_ty(a, ty))
                         .map_break(|res| res.subst_ty(a, ty)),
                     right_state: self
                         .right_state
+                        .clone()
                         .map_continue(|pred| pred.subst_ty(a, ty))
                         .map_break(|res| res.subst_ty(a, ty)),
                 })
@@ -90,12 +98,16 @@ impl<'a> ComparisonState<'a> {
                         Ok((_rule, next)) => {
                             if next.is_empty() {
                                 let ty = *pred.expr.ty;
+                                let Pattern::Binding(_, _, name) = pred.pat else {
+                                    unreachable!()
+                                };
+                                let bindings = BindingAssignments::new([(*name, ty)]);
                                 match pred.expr.simplify(ctx).borrow_check() {
                                     Err(BorrowCheckError::OverlyGeneral(deepening)) => {
                                         return Some(deepening)
                                     }
-                                    Err(err) => Break(BorrowError(ty, err)),
-                                    Ok(_) => Break(Success(ty)),
+                                    Err(err) => Break(BorrowError(bindings, err)),
+                                    Ok(_) => Break(Success(bindings)),
                                 }
                             } else {
                                 assert_eq!(next.len(), 1); // we only deepen with arity-1 tuples
@@ -151,7 +163,7 @@ pub fn compare_rulesets<'a>(
         remaining_pat_depth: pat_depth + 1,
         remaining_ty_depth: ty_depth + 1,
         req,
-        left_state: start_state,
+        left_state: start_state.clone(),
         right_state: start_state,
     }];
     let mut complete = vec![];
@@ -159,8 +171,8 @@ pub fn compare_rulesets<'a>(
         for mut state in mem::take(&mut states) {
             // Deepen each state until either completion or deepening is required.
             let opt_deepen = state.step(a, left_ruleset, right_ruleset);
-            let left_res = state.left_state;
-            let right_res = state.right_state;
+            let left_res = &state.left_state;
+            let right_res = &state.right_state;
             // No need to continue if one side already errored as expected.
             match expected_order {
                 Less if matches!(left_res, Break(TypeError(_) | BorrowError(..))) => continue,
@@ -170,24 +182,24 @@ pub fn compare_rulesets<'a>(
             match opt_deepen {
                 None => {
                     // No deepening required, hence this is a concrete predicate or both errored.
-                    let left_res = left_res.break_value().unwrap();
-                    let right_res = right_res.break_value().unwrap();
+                    let left_res = state.left_state.break_value().unwrap();
+                    let right_res = state.right_state.break_value().unwrap();
                     // Skip if the results match.
-                    match (left_res, right_res) {
-                        (Success(lty), Success(rty)) if lty == rty => continue,
+                    match (&left_res, &right_res) {
+                        (Success(ltys), Success(rtys)) if ltys == rtys => continue,
                         (TypeError(_) | BorrowError(..), TypeError(_) | BorrowError(..)) => {
                             continue
                         }
                         // These borrow errors only come from this solver, whose borrow checker is
                         // more accurate than the other. Hence if both agree on types we ignore the
                         // borrowck error.
-                        (BorrowError(lty, _), Success(rty))
-                            if right_ruleset.is_bm_based() && lty == rty =>
+                        (BorrowError(ltys, _), Success(rtys))
+                            if right_ruleset.is_bm_based() && ltys == rtys =>
                         {
                             continue
                         }
-                        (Success(lty), BorrowError(rty, _))
-                            if left_ruleset.is_bm_based() && lty == rty =>
+                        (Success(ltys), BorrowError(rtys, _))
+                            if left_ruleset.is_bm_based() && ltys == rtys =>
                         {
                             continue
                         }

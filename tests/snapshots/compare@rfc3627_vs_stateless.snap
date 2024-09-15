@@ -4,34 +4,34 @@ info: rfc3627_vs_stateless
 ---
 Difference on `[&ref x]: &[&T]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&T)
+  right returned: Success(x: &&T)
 Difference on `[&ref x]: &[&mut T]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&mut T)
+  right returned: Success(x: &&mut T)
 Difference on `[&ref x]: &mut [&T]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&T)
+  right returned: Success(x: &&T)
 Difference on `[&ref x]: &mut [&mut T]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&mut T)
+  right returned: Success(x: &&mut T)
 Difference on `[&x]: &[&mut T]`:
-   left returned: Success(&T)
-  right returned: BorrowError(&mut T, "CantCopyRefMut")
+   left returned: Success(x: &T)
+  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
 Difference on `[&x]: &mut [&mut T]`:
-   left returned: Success(&T)
-  right returned: BorrowError(&mut T, "CantCopyRefMut")
+   left returned: Success(x: &T)
+  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
 Difference on `[&(mut x)]: &[&T]`:
    left returned: TypeError("MutOnRef")
-  right returned: Success(&T)
+  right returned: Success(x: &T)
 Difference on `[&(mut x)]: &mut [&T]`:
    left returned: TypeError("MutOnRef")
-  right returned: Success(&T)
+  right returned: Success(x: &T)
 Difference on `[&mut ref x]: &mut [&mut T]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&&mut T)
+  right returned: Success(x: &&mut T)
 Difference on `[&mut ref mut x]: &mut [&mut T]`:
    left returned: TypeError("RefOnRef")
-  right returned: Success(&mut &mut T)
+  right returned: Success(x: &mut &mut T)
 Difference on `[&mut x]: &mut [&mut T]`:
-   left returned: Success(&mut T)
-  right returned: BorrowError(&mut T, "CantCopyRefMut")
+   left returned: Success(x: &mut T)
+  right returned: BorrowError(x: &mut T, "CantCopyRefMut")

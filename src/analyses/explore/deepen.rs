@@ -27,7 +27,7 @@ impl<'a> Pattern<'a> {
                     };
                     let subpats = subnames
                         .iter()
-                        .map(|name| Pattern::Abstract(a.bump.alloc_str(name)));
+                        .map(|name| Pattern::Abstract(a.alloc_str(name)));
                     Pattern::Tuple(a.bump.alloc_slice_fill_iter(subpats))
                 };
                 [tuple]
@@ -81,7 +81,7 @@ impl<'a> Type<'a> {
                 } else {
                     // In `!many` mode, we directly expand an abstract type into a tuple or a leaf
                     // type.
-                    out.insert(0, Type::OtherNonRef(a.bump.alloc_str(&format!("C{name}"))));
+                    out.insert(0, Type::OtherNonRef(a.alloc_str(&format!("C{name}"))));
                     out.push(Type::Tuple(std::slice::from_ref(self)));
                 }
                 out
@@ -93,7 +93,7 @@ impl<'a> Type<'a> {
                     let subnames: &[&str] = &[&(name.to_string() + "0"), &(name.to_string() + "1")];
                     let subtypes = subnames
                         .iter()
-                        .map(|name| Type::Abstract(a.bump.alloc_str(&name)));
+                        .map(|name| Type::Abstract(a.alloc_str(&name)));
                     vec![Type::Tuple(a.bump.alloc_slice_fill_iter(subtypes))]
                 } else {
                     panic!("unexpected `AbstractNonRef`")

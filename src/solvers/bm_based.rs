@@ -137,7 +137,12 @@ pub fn typecheck_with_formality<'a>(
     let stmt = req.to_bm_based();
     let r = Reduction::from_stmt(conf, stmt);
     match r.to_type() {
-        Ok((_ident, ty)) => Success(Type::from_bm_based(a, &ty)),
+        Ok((ident, ty)) => {
+            let ty = Type::from_bm_based(a, &ty);
+            let name = a.alloc_str(&ident.name);
+            let bindings = BindingAssignments::new([(name, ty)]);
+            Success(bindings)
+        }
         Err(e) => TypingResult::TypeError(TypeError::External(e)),
     }
 }

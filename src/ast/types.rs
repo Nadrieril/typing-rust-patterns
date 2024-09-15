@@ -169,6 +169,11 @@ pub struct Arenas<'a> {
     phantom: PhantomData<&'a ()>,
 }
 
+impl<'a> Arenas<'a> {
+    pub fn alloc_str(&'a self, s: &str) -> &'a str {
+        self.bump.alloc_str(s)
+    }
+}
 impl<'a> Pattern<'a> {
     pub fn alloc(self, arenas: &'a Arenas<'a>) -> &'a Self {
         arenas.bump.alloc(self)

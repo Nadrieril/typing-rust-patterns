@@ -297,11 +297,26 @@ impl Display for PredicateStyle {
     }
 }
 
+impl std::fmt::Display for BindingAssignments<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.assignments
+                .iter()
+                .map(|(name, ty)| format!("{name}: {ty}"))
+                .format(", ")
+        )
+    }
+}
+
 impl std::fmt::Display for TypingResult<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let out = match self {
-            TypingResult::Success(ty) => format!("Success({ty})").green(),
-            TypingResult::BorrowError(ty, s) => format!("BorrowError({ty:?}, \"{s:?}\")").red(),
+            TypingResult::Success(bindings) => format!("Success({bindings})").green(),
+            TypingResult::BorrowError(bindings, s) => {
+                format!("BorrowError({bindings}, \"{s:?}\")").red()
+            }
             TypingResult::TypeError(TypeError::External(e)) => format!("TypeError(\"{e}\")").red(),
             TypingResult::TypeError(e) => format!("TypeError(\"{e:?}\")").red(),
         };

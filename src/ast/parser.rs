@@ -126,7 +126,7 @@ where
         .followed_by(multispace0)
         .map(|((mtbl, mode), name)| {
             // Cheat: allow parsing an abstract pattern for debugging purposes.
-            let name = ctx.bump.alloc_str(name);
+            let name = ctx.alloc_str(name);
             if name.starts_with("ap") {
                 Pattern::Abstract(name)
             } else {
@@ -199,7 +199,7 @@ where
 {
     let ident = take_while(|c: char| c.is_alphanumeric() || c == '_');
     ident.followed_by(multispace0).map(|name| {
-        let name = ctx.bump.alloc_str(name);
+        let name = ctx.alloc_str(name);
         // Cheat: allow parsing an abstract type for debugging purposes.
         if name.starts_with("AT") {
             Type::Abstract(name)

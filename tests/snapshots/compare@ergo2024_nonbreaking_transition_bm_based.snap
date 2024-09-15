@@ -3,8 +3,8 @@ source: src/analyses/compare.rs
 info: ergo2024_nonbreaking_transition_bm_based
 ---
 Difference on `[&x]: &mut [&&mut CT]`:
-   left returned: Success(&mut &mut CT)
-  right returned: Success(&&mut CT)
+   left returned: Success(x: &mut &mut CT)
+  right returned: Success(x: &&mut CT)
 Difference on `&[x]: &&mut [&mut CT]`:
-   left returned: Success(&mut &mut CT)
-  right returned: Success(&&mut CT)
+   left returned: Success(x: &mut &mut CT)
+  right returned: Success(x: &&mut CT)

@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::*;
 
 mod analysis;
@@ -10,10 +12,23 @@ pub use bm_based::*;
 pub use ty_based::*;
 pub use typing_rules::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BindingAssignments<'a> {
+    pub assignments: BTreeMap<&'a str, Type<'a>>,
+}
+
+impl<'a> BindingAssignments<'a> {
+    pub fn new(assignments: impl IntoIterator<Item = (&'a str, Type<'a>)>) -> Self {
+        Self {
+            assignments: assignments.into_iter().collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum TypingResult<'a> {
-    Success(Type<'a>),
-    BorrowError(Type<'a>, BorrowCheckError),
+    Success(BindingAssignments<'a>),
+    BorrowError(BindingAssignments<'a>, BorrowCheckError),
     TypeError(TypeError),
 }
 

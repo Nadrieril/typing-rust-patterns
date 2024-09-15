@@ -87,13 +87,28 @@ impl<'a> TypingPredicate<'a> {
     }
 }
 
+impl<'a> BindingAssignments<'a> {
+    /// Replace the abstract types (if any) with the given type.
+    pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
+        Self {
+            assignments: self
+                .assignments
+                .iter()
+                .map(|(name, ty)| (*name, ty.subst(a, replace)))
+                .collect(),
+        }
+    }
+}
+
 impl<'a> TypingResult<'a> {
     /// Replace the abstract types (if any) with the given type.
     pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
-        match *self {
-            TypingResult::Success(ty) => TypingResult::Success(ty.subst(a, replace)),
-            TypingResult::BorrowError(ty, e) => TypingResult::BorrowError(ty.subst(a, replace), e),
-            TypingResult::TypeError(_) => *self,
+        match self {
+            TypingResult::Success(bindings) => TypingResult::Success(bindings.subst_ty(a, replace)),
+            TypingResult::BorrowError(bindings, e) => {
+                TypingResult::BorrowError(bindings.subst_ty(a, replace), *e)
+            }
+            TypingResult::TypeError(e) => TypingResult::TypeError(*e),
         }
     }
 }

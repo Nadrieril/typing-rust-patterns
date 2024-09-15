@@ -139,10 +139,16 @@ pub fn typecheck_with_this_crate<'a>(
             assert_eq!(solver.done_predicates.len(), 1);
             let pred = solver.done_predicates[0];
             let ty = *pred.expr.ty;
+            let Pattern::Binding(_, _, name) = pred.pat else {
+                unreachable!()
+            };
+            let bindings = BindingAssignments::new([(*name, ty)]);
             match pred.expr.simplify(ctx).borrow_check() {
                 // This error isn't handled by `match-ergo-formality` so we ignore it.
-                Ok(()) | Err(BorrowCheckError::CantCopyNestedRefMut) => TypingResult::Success(ty),
-                Err(err) => TypingResult::BorrowError(ty, err),
+                Ok(()) | Err(BorrowCheckError::CantCopyNestedRefMut) => {
+                    TypingResult::Success(bindings)
+                }
+                Err(err) => TypingResult::BorrowError(bindings, err),
             }
         }
         CantStep::NoApplicableRule(_, err) => TypingResult::TypeError(err),

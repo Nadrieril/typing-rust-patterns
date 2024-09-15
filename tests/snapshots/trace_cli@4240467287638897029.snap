@@ -164,181 +164,181 @@ ref_binding_on_inherited: "Error"
 simplify_deref_mut: true
 Difference on `&[&mut ref x]: &&mut [T]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(&T)
+  current returned: Success(x: &T)
 Difference on `&[&mut ref x]: &mut &mut [T]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(&T)
+  current returned: Success(x: &T)
 Difference on `&[&mut x]: &&mut [CT]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(CT)
+  current returned: Success(x: CT)
 Difference on `&[&mut x]: &mut &mut [CT]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(CT)
+  current returned: Success(x: CT)
 Difference on `&[&mut mut x]: &&mut [CT]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(CT)
+  current returned: Success(x: CT)
 Difference on `&[&mut mut x]: &mut &mut [CT]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(CT)
+  current returned: Success(x: CT)
 Difference on `&[x]: &&mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[x]: &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[mut x]: &&mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[mut x]: &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `[&[x]]: [&&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `[&[x]]: [&mut &mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `[&[x]]: &[&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `[&[x]]: &mut [&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `[&[mut x]]: [&&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `[&[mut x]]: [&mut &mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `[&[mut x]]: &[&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `[&[mut x]]: &mut [&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[[x]]: &[&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[[x]]: &&mut [[T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[[x]]: &mut [&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[[x]]: &mut &mut [[T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[[mut x]]: &[&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[[mut x]]: &&mut [[T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[[mut x]]: &mut [&mut [T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[[mut x]]: &mut &mut [[T]]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[&mut ref x]: &&mut &mut [T]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(&T)
+  current returned: Success(x: &T)
 Difference on `&[&mut ref x]: &mut &mut &mut [T]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(&T)
+  current returned: Success(x: &T)
 Difference on `&[&mut x]: &&mut [[CT]]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success([CT])
+  current returned: Success(x: [CT])
 Difference on `&[&mut x]: &&mut [&T]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(&T)
+  current returned: Success(x: &T)
 Difference on `&[&mut x]: &&mut &mut [CT]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(CT)
+  current returned: Success(x: CT)
 Difference on `&[&mut x]: &mut &mut [[CT]]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success([CT])
+  current returned: Success(x: [CT])
 Difference on `&[&mut x]: &mut &mut [&T]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(&T)
+  current returned: Success(x: &T)
 Difference on `&[&mut x]: &mut &mut &mut [CT]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(CT)
+  current returned: Success(x: CT)
 Difference on `&[&mut mut x]: &&mut [[CT]]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success([CT])
+  current returned: Success(x: [CT])
 Difference on `&[&mut mut x]: &&mut [&T]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(&T)
+  current returned: Success(x: &T)
 Difference on `&[&mut mut x]: &&mut &mut [CT]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(CT)
+  current returned: Success(x: CT)
 Difference on `&[&mut mut x]: &mut &mut [[CT]]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success([CT])
+  current returned: Success(x: [CT])
 Difference on `&[&mut mut x]: &mut &mut [&T]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(&T)
+  current returned: Success(x: &T)
 Difference on `&[&mut mut x]: &mut &mut &mut [CT]`:
     saved returned: TypeError("MutabilityMismatch")
-  current returned: Success(CT)
+  current returned: Success(x: CT)
 Difference on `&[x]: &&mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[x]: &mut &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[mut x]: &&mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&[mut x]: &mut &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&[x]: &&&mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&[x]: &&mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&[x]: &mut &&mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&[x]: &mut &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&[mut x]: &&&mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&[mut x]: &&mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&[mut x]: &mut &&mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&[mut x]: &mut &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&mut [x]: &&mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&mut [x]: &mut &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&mut [mut x]: &&mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&&mut [mut x]: &mut &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&mut &[x]: &mut &&mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&mut &[x]: &mut &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&mut &[mut x]: &mut &&mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
 Difference on `&mut &[mut x]: &mut &mut &mut [T]`:
-    saved returned: Success(&T)
-  current returned: BorrowError(&mut T, "MutBorrowBehindSharedBorrow")
+    saved returned: Success(x: &T)
+  current returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
