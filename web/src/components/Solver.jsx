@@ -66,6 +66,59 @@ const availableStyles = [
     },
 ];
 
+export function MainNavBar({compare, setCompare, style, setStyle}) {
+    const [mainNavShow, setMainNavShow] = useState(false);
+
+    const currentStyle = style;
+    const styles = availableStyles.map(style => {
+        return <OverlayTrigger key={style.name} placement="bottom" overlay={<Tooltip>{style.doc}</Tooltip>}>
+            <Button
+                active={currentStyle == style.name}
+                onClick={() => setStyle(style.name)}
+            >
+                {style.display}
+            </Button>
+        </OverlayTrigger>
+    });
+
+    let title = <span id="title"><span>T</span>yping <span>Ru</span>st <span>P</span>atterns</span>;
+
+    return <Navbar expand="md" className="bg-body-tertiary">
+        <Container fluid>
+            <Navbar.Brand>{title}</Navbar.Brand>
+            <Nav className="me-auto">
+                <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
+            </Nav>
+            <Navbar.Toggle/>
+            <Navbar.Offcanvas
+                placement="end"
+                scroll
+                backdrop={false}
+                className="w-auto"
+                onEnter={() => setMainNavShow(true)}
+                onExited={() => setMainNavShow(false)}
+            >
+                <Offcanvas.Header closeButton>
+                    <Offcanvas.Title>General options</Offcanvas.Title>
+                </Offcanvas.Header>
+                <Offcanvas.Body>
+                    <Nav className="ms-auto">
+                        <Stack direction={mainNavShow ? "vertical" : "horizontal"} gap={1}>
+                            <OverlayTrigger placement="bottom" overlay={<Tooltip>Compare two rulesets</Tooltip>}>
+                                <Button
+                                    active={compare}
+                                    onClick={() => setCompare(!compare)}
+                                >Compare</Button>
+                            </OverlayTrigger>
+                            <ButtonGroup vertical={mainNavShow}>{styles}</ButtonGroup>
+                        </Stack>
+                    </Nav>
+                </Offcanvas.Body>
+            </Navbar.Offcanvas>
+        </Container>
+    </Navbar>
+}
+
 export function SolverSteps({inputQuery, options, style}) {
     const solverSteps = useMemo(() => {
         const __html = trace_solver_js(inputQuery, options, style_from_name(style));
@@ -166,7 +219,6 @@ export function CompareDisplay({optionsLeft, optionsRight}) {
 }
 
 // TODO: tab the options container to support bm-based Solver
-// TODO: make hover info more visible
 // TODO: add offcanvas with predicate and rules explanations
 export default function Solver() {
     // Decoding function that simply checks that the value is in the given array.
@@ -181,58 +233,10 @@ export default function Solver() {
     const [inputQuery, setInputQuery] = useStateInParams('q', "[&x]: &mut [&T]");
     const [mode, setMode] = useStateInParams('mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
 
-    const currentStyle = style;
-    const styles = availableStyles.map(style => {
-        return <OverlayTrigger key={style.name} placement="bottom" overlay={<Tooltip>{style.doc}</Tooltip>}>
-            <Button
-                active={currentStyle == style.name}
-                onClick={() => setStyle(style.name)}
-            >
-                {style.display}
-            </Button>
-        </OverlayTrigger>
-    });
-
-    let title = <span id="title"><span>T</span>yping <span>Ru</span>st <span>P</span>atterns</span>;
-    const [mainNavShow, setMainNavShow] = useState(false);
-
     return (
         <Container fluid>
             <div className="sticky-top">
-                <Navbar expand="md" className="bg-body-tertiary">
-                    <Container fluid>
-                        <Navbar.Brand>{title}</Navbar.Brand>
-                        <Nav className="me-auto">
-                            <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
-                        </Nav>
-                        <Navbar.Toggle/>
-                        <Navbar.Offcanvas
-                            placement="end"
-                            scroll
-                            backdrop={false}
-                            className="w-auto"
-                            onEnter={() => setMainNavShow(true)}
-                            onExited={() => setMainNavShow(false)}
-                        >
-                            <Offcanvas.Header closeButton>
-                                <Offcanvas.Title>General options</Offcanvas.Title>
-                            </Offcanvas.Header>
-                            <Offcanvas.Body>
-                                <Nav className="ms-auto">
-                                    <Stack direction={mainNavShow ? "vertical" : "horizontal"} gap={1}>
-                                        <OverlayTrigger placement="bottom" overlay={<Tooltip>Compare two rulesets</Tooltip>}>
-                                            <Button
-                                                active={compare}
-                                                onClick={() => setCompare(!compare)}
-                                            >Compare</Button>
-                                        </OverlayTrigger>
-                                        <ButtonGroup vertical={mainNavShow}>{styles}</ButtonGroup>
-                                    </Stack>
-                                </Nav>
-                            </Offcanvas.Body>
-                        </Navbar.Offcanvas>
-                    </Container>
-                </Navbar>
+                <MainNavBar {...{compare, setCompare, style, setStyle}}/>
 
                 {/* Keep the options around and undisplayed to avoid flickering
                     when we mount/unmount them and they have to update button
@@ -244,7 +248,6 @@ export default function Solver() {
                 <div style={{display: compare ? 'none' : null}}>
                     <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title="Options"/>
                 </div>
-
             </div>
             <Row>
                 <p id="foo">
