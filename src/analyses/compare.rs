@@ -93,7 +93,11 @@ impl<'a> ComparisonState<'a> {
                     }
                 }
                 RuleSet::TypeBased(options) => {
-                    let ctx = TypingCtx { arenas: a, options };
+                    let ctx = TypingCtx {
+                        arenas: a,
+                        options,
+                        always_inspect_bm: false,
+                    };
                     match pred.step(ctx) {
                         Ok((_rule, next)) => {
                             if next.is_empty() {

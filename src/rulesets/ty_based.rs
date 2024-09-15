@@ -70,7 +70,6 @@ pub struct RuleOptions {
     pub ref_binding_on_inherited: RefBindingOnInheritedBehavior,
     /// What happens with a `mut x` binding and an inherited reference.
     pub mut_binding_on_inherited: MutBindingOnInheritedBehavior,
-    pub always_inspect_bm: bool,
 }
 
 impl RuleOptions {
@@ -305,21 +304,6 @@ pub const TY_BASED_OPTIONS_DOC: &[OptionsDoc] = &[
             },
         ],
     },
-    OptionsDoc {
-        name: "always_inspect_bm",
-        doc: "Whether to always branch on the binding mode when computing rules. \
-                this is required for the `SequentBindingMode` style",
-        values: &[
-            OptionValue {
-                name: "false",
-                doc: "TODO",
-            },
-            OptionValue {
-                name: "true",
-                doc: "TODO",
-            },
-        ],
-    },
 ];
 
 impl RuleOptions {
@@ -335,7 +319,6 @@ impl RuleOptions {
         eat_inherited_ref_alone: false,
         downgrade_mut_inside_shared: false,
         eat_mut_inside_shared: true,
-        always_inspect_bm: false,
     };
 
     /// Reproduces RFC3627 (match ergonomics 2024) behavior
@@ -350,7 +333,6 @@ impl RuleOptions {
         eat_inherited_ref_alone: true,
         downgrade_mut_inside_shared: true,
         eat_mut_inside_shared: true,
-        always_inspect_bm: false,
     };
 
     /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
@@ -366,7 +348,6 @@ impl RuleOptions {
         eat_inherited_ref_alone: true,
         downgrade_mut_inside_shared: false,
         eat_mut_inside_shared: true,
-        always_inspect_bm: false,
     };
 
     /// The default setting for the solver. A reasonable proposal.

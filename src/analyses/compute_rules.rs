@@ -82,6 +82,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
 /// starting predicates.
 pub fn compute_joint_rules<'a>(
     a: &'a Arenas<'a>,
+    always_inspect_bm: bool,
     left: RuleOptions,
     right: RuleOptions,
 ) -> Vec<EitherOrBoth<TypingRule<'a>>> {
@@ -90,10 +91,12 @@ pub fn compute_joint_rules<'a>(
     let left = TypingCtx {
         arenas: a,
         options: left,
+        always_inspect_bm,
     };
     let right = TypingCtx {
         arenas: a,
         options: right,
+        always_inspect_bm,
     };
 
     let mut rules = Vec::new();
@@ -544,10 +547,11 @@ fn bundle_rules() -> anyhow::Result<()> {
         .map(|(b, style)| (b.name, b.ruleset, style));
 
     for (name, options, style) in bundles {
-        let mut ctx = TypingCtx { arenas, options };
-        if matches!(style, PredicateStyle::SequentBindingMode) {
-            ctx.options.always_inspect_bm = true;
-        }
+        let ctx = TypingCtx {
+            arenas,
+            options,
+            always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
+        };
 
         let mut typing_rules = compute_rules(ctx);
         typing_rules.sort_by_key(|rule| rule.name);

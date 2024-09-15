@@ -46,13 +46,7 @@ impl RuleSet {
 
     pub fn trace_solver(&self, req: &TypingRequest<'_>, style: PredicateStyle) -> String {
         match *self {
-            RuleSet::TypeBased(options) => {
-                let options = RuleOptions {
-                    always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
-                    ..options
-                };
-                trace_solver(*req, options, style)
-            }
+            RuleSet::TypeBased(options) => trace_solver(*req, options, style),
             RuleSet::BindingModeBased(conf) => trace_with_formality(conf, req),
         }
     }

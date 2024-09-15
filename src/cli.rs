@@ -115,7 +115,8 @@ impl CliState {
     ) -> Result<String, IncompatibleStyle> {
         let style = self.predicate_style;
         let arenas = &Arenas::default();
-        let joint_rules = compute_joint_rules(arenas, left, right);
+        let always_inspect_bm = matches!(style, PredicateStyle::SequentBindingMode);
+        let joint_rules = compute_joint_rules(arenas, always_inspect_bm, left, right);
 
         let mut out = String::new();
         for joint_rule in joint_rules {
@@ -257,14 +258,6 @@ impl CliState {
             match parse_set_cmd(cmd, self) {
                 // Display what changed.
                 Ok(_) => {
-                    if matches!(self.predicate_style, PredicateStyle::SequentBindingMode) {
-                        // The `SequentBindingMode` style cannot work without `always_inspect_bm`.
-                        if !matches!(old_style, PredicateStyle::SequentBindingMode) {
-                            self.options.always_inspect_bm = true;
-                        } else if old_options.always_inspect_bm && !self.options.always_inspect_bm {
-                            self.predicate_style = PredicateStyle::BindingMode;
-                        }
-                    }
                     if old_options != self.options {
                         println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
                         println!("The old ruleset is on the left, and the new one on the right.");
@@ -415,7 +408,11 @@ pub fn display_rules(
     options: RuleOptions,
 ) -> Result<String, IncompatibleStyle> {
     let arenas = &Arenas::default();
-    let ctx = TypingCtx { arenas, options };
+    let ctx = TypingCtx {
+        arenas,
+        options,
+        always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
+    };
     let typing_rules = compute_rules(ctx);
     let mut out = String::new();
     for rule in typing_rules {

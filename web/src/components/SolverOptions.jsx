@@ -185,7 +185,7 @@ export default function SolverOptions({ options, setOptions, title }) {
 
     const option_elems = options
         .options_doc()
-        .filter((opt) => opt.name != "simplify_deref_mut" && opt.name != "always_inspect_bm")
+        .filter((opt) => opt.name != "simplify_deref_mut")
         .map((option) =>
         <Nav.Item key={option.name}>
             <OptionElem {...{option, options, setOptions, fullWidth: navShow}}/>

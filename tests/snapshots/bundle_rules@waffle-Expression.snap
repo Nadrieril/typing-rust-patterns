@@ -13,7 +13,6 @@ info:
     eat_mut_inside_shared: true
     ref_binding_on_inherited: ResetBindingMode
     mut_binding_on_inherited: Error
-    always_inspect_bm: false
 ---
 p0 @ e.0: T0,  p1 @ e.1: T1
 --------------------------- "Constructor"

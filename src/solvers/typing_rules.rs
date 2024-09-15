@@ -57,7 +57,7 @@ impl<'a> TypingPredicate<'a> {
         use Type as T;
         let a = ctx.arenas;
         let o = ctx.options;
-        if o.always_inspect_bm && !matches!(self.expr.ty, Type::Abstract(..)) {
+        if ctx.always_inspect_bm && !matches!(self.expr.ty, Type::Abstract(..)) {
             let _ = self.expr.binding_mode()?;
         }
 

@@ -8,8 +8,11 @@ use crate::*;
 
 #[derive(Clone, Copy)]
 pub struct TypingCtx<'a> {
-    pub options: RuleOptions,
     pub arenas: &'a Arenas<'a>,
+    pub options: RuleOptions,
+    /// Whether to always branch on the binding mode when computing rules. This is required for the
+    /// `SequentBindingMode` style
+    pub always_inspect_bm: bool,
 }
 
 pub enum CantStep<'a> {
@@ -138,14 +141,18 @@ pub fn trace_solver<'a>(
     style: PredicateStyle,
 ) -> String {
     let arenas = &Arenas::default();
-    let ctx = TypingCtx { arenas, options };
+    let ctx = TypingCtx {
+        arenas,
+        options,
+        always_inspect_bm: false,
+    };
     let mut trace = String::new();
     run_solver(ctx, &request, |solver, event| match event {
         SolverTraceEvent::Start => {
             let _ = write!(&mut trace, "{}\n", solver.display_state(style));
         }
         SolverTraceEvent::Step(rule) => {
-            let line = format!("// Applying rule `{}`", rule.display(options));
+            let line = format!("// Applying rule `{}`", rule.display(ctx.options));
             let _ = write!(&mut trace, "{}\n", line.comment());
             let _ = write!(&mut trace, "{}\n", solver.display_state(style));
         }
@@ -168,6 +175,10 @@ pub fn typecheck_with_this_crate<'a>(
     options: RuleOptions,
     req: &TypingRequest<'a>,
 ) -> TypingResult<'a> {
-    let ctx = TypingCtx { arenas, options };
+    let ctx = TypingCtx {
+        arenas,
+        options,
+        always_inspect_bm: false,
+    };
     run_solver(ctx, req, |_, _| {})
 }

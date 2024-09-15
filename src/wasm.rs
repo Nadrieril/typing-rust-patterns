@@ -136,11 +136,11 @@ impl RuleSetJs {
         assert!(self.this_solver);
         let arenas = &Arenas::default();
         let options = self.ty_based;
-        let options = RuleOptions {
+        let ctx = TypingCtx {
+            arenas,
+            options,
             always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
-            ..options
         };
-        let ctx = TypingCtx { arenas, options };
         compute_rules(ctx)
             .into_iter()
             .map(|rule| rule.display(style).unwrap())
@@ -181,18 +181,9 @@ pub fn display_joint_rules_js(
 
     assert!(left.this_solver);
     assert!(right.this_solver);
-    let always_inspect_bm = matches!(style, PredicateStyle::SequentBindingMode);
-    let left = RuleOptions {
-        always_inspect_bm,
-        ..left.ty_based
-    };
-    let right = RuleOptions {
-        always_inspect_bm,
-        ..right.ty_based
-    };
-
     let arenas = &Arenas::default();
-    compute_joint_rules(arenas, left, right)
+    let always_inspect_bm = matches!(style, PredicateStyle::SequentBindingMode);
+    compute_joint_rules(arenas, always_inspect_bm, left.ty_based, right.ty_based)
         .into_iter()
         .map(|joint_rule| {
             let (left, right) = joint_rule.left_and_right();

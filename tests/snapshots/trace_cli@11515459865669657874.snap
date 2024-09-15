@@ -25,8 +25,6 @@ Options are:
     How to handle a `mut x` binding on an inherited reference
 - simplify_deref_mut: false | true
     Whether to simplify `*&mut expr`, which removes some borrow errors
-- always_inspect_bm: false | true
-    Whether to always branch on the binding mode when computing rules. this is required for the `SequentBindingMode` style
 - predicate_style: Expression | Sequent | BindingMode | SequentBindingMode | Stateless
     the style of the typing predicate; not all rulesets can be expressed in all styles, only `Expression` is compatible with all rulesets
 
