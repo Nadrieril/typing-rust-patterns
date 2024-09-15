@@ -9,7 +9,7 @@ import init, {
 import SolverOptions from './SolverOptions.jsx';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import Col from 'react-bootstrap/Col';
@@ -67,6 +67,16 @@ const availableStyles = [
 ];
 
 export function MainNavBar({compare, setCompare, style, setStyle}) {
+        const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams();
+    function resetSearchParams() {
+        const keys = Array.from(searchParams.keys());
+        for (const key of keys) {
+            searchParams.delete(key);
+        }
+        setSearchParams(searchParams);
+        navigate(0); // Refresh
+    }
     const [mainNavShow, setMainNavShow] = useState(false);
 
     const currentStyle = style;
@@ -85,7 +95,9 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
 
     return <Navbar expand="md" className="bg-body-tertiary">
         <Container fluid>
-            <Navbar.Brand>{title}</Navbar.Brand>
+            <OverlayTrigger placement="bottom" overlay={<Tooltip>Reset all settings</Tooltip>}>
+                <Navbar.Brand onClick={resetSearchParams}>{title}</Navbar.Brand>
+            </OverlayTrigger>
             <Nav className="me-auto">
                 <Nav.Link href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">See on Github</Nav.Link>
             </Nav>
