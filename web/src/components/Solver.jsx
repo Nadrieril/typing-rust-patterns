@@ -287,8 +287,6 @@ export function CompareDisplay({optionsLeft, optionsRight}) {
     </Stack>
 }
 
-// TODO: tab the options container to support bm-based Solver
-// TODO: add offcanvas with predicate and rules explanations
 export default function Solver() {
     // Decoding function that simply checks that the value is in the given array.
     function validateIn(allowed) {

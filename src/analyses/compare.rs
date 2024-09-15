@@ -77,7 +77,7 @@ impl<'a> ComparisonState<'a> {
         while let Continue(pred) = state {
             *state = match ruleset {
                 RuleSet::BindingModeBased(conf) => {
-                    match analyze_with_formality(a, conf, current_req) {
+                    match typecheck_with_formality(a, conf, current_req) {
                         TypingResult::TypeError(TypeError::OverlyGeneral(deepening)) => {
                             return Some(deepening)
                         }
@@ -315,12 +315,6 @@ fn compare() {
                 c.rule3 = true;
                 c
             }),
-        ),
-        (
-            "rpjohnst",
-            TypeBased(RuleOptions::RPJOHNST),
-            Somewhat.expect(Equal).shallower().shallower(),
-            BindingModeBased(Conf::rpjohnst_2024()),
         ),
         (
             "ergo2024_nonbreaking_transition_bm_based",

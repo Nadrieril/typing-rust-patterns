@@ -71,7 +71,6 @@ pub struct RuleOptions {
     /// What happens with a `mut x` binding and an inherited reference.
     pub mut_binding_on_inherited: MutBindingOnInheritedBehavior,
     pub always_inspect_bm: bool,
-    // TODO: double_ref: Last | Min
 }
 
 impl RuleOptions {
@@ -412,12 +411,6 @@ impl RuleOptions {
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: false,
         ..Self::ERGO2024
-    };
-
-    pub const RPJOHNST: Self = RuleOptions {
-        // TODO: double_ref: Last | Min
-        allow_ref_pat_on_ref_mut: false,
-        ..Self::STATELESS
     };
 
     pub fn get_bundle_name(self) -> Option<&'static str> {

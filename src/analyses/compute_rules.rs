@@ -373,7 +373,6 @@ impl<'a> TypingRule<'a> {
         cstrs
     }
 
-    // TODO: deprecate `BindingMode` style
     fn make_renderable(
         &'a self,
         a: &'a Arenas<'a>,

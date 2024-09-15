@@ -123,7 +123,7 @@ pub fn trace_with_formality<'a>(conf: Conf, req: &TypingRequest<'a>) -> String {
     out
 }
 
-pub fn analyze_with_formality<'a>(
+pub fn typecheck_with_formality<'a>(
     a: &'a Arenas<'a>,
     conf: Conf,
     req: &TypingRequest<'a>,

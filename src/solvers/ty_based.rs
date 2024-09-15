@@ -120,8 +120,7 @@ pub fn trace_solver<'a>(
     trace
 }
 
-// TODO: rename, "analyze" isn't clear
-pub fn analyze_with_this_crate<'a>(
+pub fn typecheck_with_this_crate<'a>(
     a: &'a Arenas<'a>,
     options: RuleOptions,
     req: &TypingRequest<'a>,
