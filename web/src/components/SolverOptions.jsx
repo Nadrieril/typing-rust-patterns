@@ -1,4 +1,4 @@
-import init, { RuleOptions } from "../../typing_rust_patterns/typing_rust_patterns.js";
+import init, { RuleSetJs } from "../../typing_rust_patterns/typing_rust_patterns.js";
 
 import { useRef, useState, useEffect } from 'react';
 import Button from 'react-bootstrap/Button';
@@ -18,13 +18,6 @@ import Table from 'react-bootstrap/Table';
 import Tooltip from 'react-bootstrap/Tooltip';
 
 await init({});
-
-const optionsDoc =
-    RuleOptions
-        .options_doc()
-        .filter((opt) => opt.name != "simplify_deref_mut" && opt.name != "always_inspect_bm");
-
-const bundlesDoc = RuleOptions.bundles_doc();
 
 function InhRef() {
     return <span className="inherited-ref" title="inherited reference">&</span>
@@ -85,6 +78,7 @@ export function CalculateWidth({ contents, setWidth }) {
 }
 
 export function Preset({ options, setOptions }) {
+    const bundlesDoc = options.bundles_doc_js();
     const active_bundle_name = options.get_bundle_name_js();
     const active_bundle = bundlesDoc.filter(bundle => bundle.name == active_bundle_name).pop();
     const bundles = bundlesDoc.map(bundle => {
@@ -104,7 +98,7 @@ export function Preset({ options, setOptions }) {
             onChange={(e) => {
                 let bundle = e.target.value;
                 if (bundle != "custom") {
-                    setOptions(RuleOptions.from_bundle_name_js(bundle));
+                    setOptions(options.with_bundle_name(bundle));
                 }
             }}
         >
@@ -116,27 +110,32 @@ export function Preset({ options, setOptions }) {
 
 export function OptionElem({ option, options, setOptions, fullWidth }) {
     const setKey = (k, v) => setOptions(options.with_key(k, v));
-    const prettyOption = prettyOptions[option.name] || null;
+    const prettyOption = prettyOptions[option.name] || {};
     const disabled = options.irrelevant_options_js().includes(option.name);
 
     const current_val = options.get_key(option.name);
     const current_index = option.values.findIndex((v) => v.name == current_val);
     const current_val_doc = option.values[current_index].doc;
     const next_index = (current_index + 1) % option.values.length;
-    const next_value = option.values[(current_index + 1) % option.values.length];
+    const next_value = option.values[next_index];
 
     const variant =
         disabled ? "outline-light" :
-        current_val == "true" ? "outline-success" :
         (current_val == "false" || current_val == "Error") ? "outline-danger" :
-        "outline-light";
+        "outline-success";
+
+    function textForValue(value_name) {
+        return prettyOption[value_name]
+            || prettyOption.question
+            || ((value_name == "false" || value_name == "true") ? option.name : value_name)
+    }
 
     // Calculate width of all possible values to ensure width doesn't change when we click.
     const [optionsWidth, setOptionsWidth] = useState(0);
-    const hiddenOptionsForWidth = option.values.filter((v) => prettyOption[v.name]).map((v) => {
+    const hiddenOptionsForWidth = option.values.map((v) => {
         return <CalculateWidth
             key={v.name}
-            contents={prettyOption[v.name]}
+            contents={textForValue(v.name)}
             setWidth={(w) => setOptionsWidth((old_w) => Math.max(old_w, w))}
         />
     });
@@ -155,7 +154,7 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
         >
             {hiddenOptionsForWidth}
             <span style={style}>
-                {prettyOption[current_val] || prettyOption.question}
+                {textForValue(current_val)}
             </span>
         </Button>
     </OverlayTrigger>
@@ -163,7 +162,26 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
 
 export default function SolverOptions({ options, setOptions, title }) {
     const [navShow, setNavShow] = useState(false);
-    const option_elems = optionsDoc.map((option) =>
+
+    const select_solver = <OverlayTrigger
+        placement="bottom"
+        overlay={<Tooltip>{options.get_solver()
+            ? "Nadri's type-based solver"
+            : "TC's binding-mode-based solver"
+        }</Tooltip>}
+    >
+        <Button
+            variant="outline-light"
+            onClick={() => setOptions(options.with_solver(!options.get_solver()))}
+        >
+            {options.get_solver() ? "Ty" : "BM"}
+        </Button>
+    </OverlayTrigger>;
+
+    const option_elems = options
+        .options_doc()
+        .filter((opt) => opt.name != "simplify_deref_mut" && opt.name != "always_inspect_bm")
+        .map((option) =>
         <Nav.Item key={option.name}>
             <OptionElem {...{option, options, setOptions, fullWidth: navShow}}/>
         </Nav.Item>
@@ -171,8 +189,11 @@ export default function SolverOptions({ options, setOptions, title }) {
 
     return <Navbar expand="xl" className="bg-body-tertiary">
         <Container fluid>
-            <Navbar.Brand className="text-nowrap">{title}</Navbar.Brand>
-            <Preset {...{options, setOptions}}/>
+            <Stack direction="horizontal" gap={0}>
+                <Navbar.Brand className="text-nowrap">{title}</Navbar.Brand>
+                {select_solver}
+                <Preset {...{options, setOptions}}/>
+            </Stack>
             <Navbar.Toggle/>
             <Navbar.Offcanvas
                 placement="end"

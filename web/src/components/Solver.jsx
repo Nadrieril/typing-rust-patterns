@@ -1,5 +1,5 @@
 import init, {
-    RuleOptions,
+    RuleSetJs,
     style_from_name,
     explain_predicate_js,
     trace_solver_js,
@@ -99,6 +99,14 @@ export function Help({show, setShow, style}) {
                     <li>Displaying the rules used to typecheck;</li>
                     <li>Compare two rulesets exhaustively on all patterns and types under a given depth.</li>
                 </ul>
+                <p>
+                Two different solvers are available:&nbsp;
+                <a href="https://github.com/Nadrieril" target="_blank">Nadrieril</a>'s&nbsp;
+                <a href="https://github.com/Nadrieril/typing-rust-patterns" target="_blank">type-based solver</a>,
+                and&nbsp;
+                <a href="https://github.com/traviscross" target="_blank">TC</a>'s&nbsp;
+                <a href="https://github.com/traviscross/match-ergonomics-formality" target="_blank">binding-mode-based solver</a>.
+                </p>
             </Offcanvas.Body>
         </Offcanvas>
     </>
@@ -223,14 +231,14 @@ export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
 export function CompareDisplay({optionsLeft, optionsRight}) {
     const [patDepth, setPatDepth] = useStateInParams('pat_d', 3, parseInt);
     const [tyDepth, setTyDepth] = useStateInParams('ty_d', 4, parseInt);
-    const [output, setOutput] = useState([]);
+    const [output, setOutput] = useState(null);
 
     // Reset output if the options change.
     useEffect(() => {
-        setOutput([])
+        setOutput(null)
     }, [optionsLeft, optionsRight]);
 
-    const rows = output.map((diff, index) => {
+    const rows = (output || []).map((diff, index) => {
         return <tr key={index}>
             <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.req}}/></td>
             <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.left}}/></td>
@@ -263,8 +271,11 @@ export function CompareDisplay({optionsLeft, optionsRight}) {
                 </Button>
             </Stack>
         </Form>
-        {output.length ?
-            <Table bordered hover>
+        {output === null
+            ? null
+            : !output.length
+            ? <>No differences</>
+            : <Table bordered hover>
                 <thead><tr>
                     <td>Query</td>
                     <td>Left</td>
@@ -274,7 +285,6 @@ export function CompareDisplay({optionsLeft, optionsRight}) {
                     {rows}
                 </tbody>
             </Table>
-            : null
         }
     </Stack>
 }
@@ -289,8 +299,8 @@ export default function Solver() {
 
     const [compare, setCompare] = useStateInParams('compare', false, (x) => x == 'true');
     const [style, setStyle] = useStateInParams('style', 'Sequent', validateIn(['Sequent', 'SequentBindingMode', 'Expression']));
-    const [optionsLeft, setOptionsLeft] = useStateInParams('opts1', RuleOptions.from_bundle_name_js('nadri'), RuleOptions.decode, (o) => o.encode());
-    const [optionsRight, setOptionsRight] = useStateInParams('opts2', RuleOptions.from_bundle_name_js('rfc3627'), RuleOptions.decode, (o) => o.encode());
+    const [optionsLeft, setOptionsLeft] = useStateInParams('opts1', RuleSetJs.from_bundle_name_js('nadri', 'stable'), RuleSetJs.decode, (o) => o.encode());
+    const [optionsRight, setOptionsRight] = useStateInParams('opts2', RuleSetJs.from_bundle_name_js('rfc3627', 'rfc'), RuleSetJs.decode, (o) => o.encode());
     const [inputQuery, setInputQuery] = useStateInParams('q', "[&x]: &mut [&T]");
     const [mode, setMode] = useStateInParams('mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
 
@@ -298,17 +308,8 @@ export default function Solver() {
         <Container fluid>
             <div className="sticky-top">
                 <MainNavBar {...{compare, setCompare, style, setStyle}}/>
-
-                {/* Keep the options around and undisplayed to avoid flickering
-                    when we mount/unmount them and they have to update button
-                    widths after the first render. */}
-                <div style={{display: !compare ? 'none' : null}}>
-                    <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title=<>Left&nbsp;&nbsp;&nbsp;</>/>
-                    <SolverOptions options={optionsRight} setOptions={setOptionsRight} title="Right"/>
-                </div>
-                <div style={{display: compare ? 'none' : null}}>
-                    <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title="Options"/>
-                </div>
+                <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title={compare ? <>Left&nbsp;&nbsp;&nbsp;</> : "Options"}/>
+                {compare ? <SolverOptions options={optionsRight} setOptions={setOptionsRight} title="Right"/> : null}
             </div>
             <Row>
             <Tabs
@@ -343,7 +344,10 @@ export default function Solver() {
                     </Table>
                 </Tab>
                 <Tab eventKey="rules" title="Rules">
-                    {compare
+                    {
+                        !optionsLeft.get_solver() || !optionsRight.get_solver() ?
+                        <>The binding-mode-based solver does not support listing its rules</>
+                        : compare
                         ? <JointRulesDisplay {...{optionsLeft, optionsRight, style}}/>
                         : <RulesDisplay {...{options: optionsLeft, style}}/>
                     }

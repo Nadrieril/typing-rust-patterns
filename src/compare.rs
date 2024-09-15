@@ -1,10 +1,11 @@
+use std::fmt::Write;
 use std::{cmp::Ordering, mem, ops::ControlFlow};
 
 use crate::*;
 use match_ergonomics_formality::Conf;
 use printer::Style;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RuleSet {
     TypeBased(RuleOptions),
     BindingModeBased(Conf),
@@ -196,6 +197,26 @@ fn analyze_with_formality<'a>(
         Ok((_ident, ty)) => Success(convert::unconvert_type(a, &ty)),
         Err(e) => AnalysisResult::TypeError(TypeError::External(e)),
     }
+}
+
+pub fn trace_with_formality<'a>(conf: Conf, req: &TypingRequest<'a>) -> String {
+    use match_ergonomics_formality::*;
+    let stmt = convert::convert_request(req);
+    let mut r = Reduction::from_stmt(conf, stmt);
+    let mut out = String::new();
+    loop {
+        if r.last {
+            if !r.is_err() {
+                r.apply_dbm();
+                let _ = write!(&mut out, "{}", r);
+            }
+            break;
+        } else {
+            let _ = write!(&mut out, "{}", r);
+            r.step();
+        }
+    }
+    out
 }
 
 /// Holds the partial state of a comparison between two rulesets. We want to explore all patterns
@@ -401,7 +422,7 @@ pub fn compare_rulesets<'a>(
 
 #[test]
 /// Compare rulesets with the `ergo-formality` reference implementation.
-fn compare() -> anyhow::Result<()> {
+fn compare() {
     use std::fmt::Write;
     use Ordering::*;
     use RuleSet::*;
@@ -657,5 +678,4 @@ fn compare() -> anyhow::Result<()> {
             assert_eq!(settings.kind, Somewhat, "`{name}`: comparison did not hold");
         }
     }
-    Ok(())
 }
