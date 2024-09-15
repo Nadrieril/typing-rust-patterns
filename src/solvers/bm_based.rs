@@ -104,29 +104,11 @@ mod convert {
     }
 }
 
-pub fn trace_with_formality<'a>(conf: Conf, req: &TypingRequest<'a>) -> String {
-    let stmt = req.to_bm_based();
-    let mut r = Reduction::from_stmt(conf, stmt);
-    let mut out = String::new();
-    loop {
-        if r.last {
-            if !r.is_err() {
-                r.apply_dbm();
-                let _ = write!(&mut out, "{}", r);
-            }
-            break;
-        } else {
-            let _ = write!(&mut out, "{}", r);
-            r.step();
-        }
-    }
-    out
-}
-
-pub fn typecheck_with_formality<'a>(
+pub fn run_formality<'a>(
     a: &'a Arenas<'a>,
     conf: Conf,
     req: &TypingRequest<'a>,
+    mut callback: impl FnMut(&Reduction),
 ) -> TypingResult<'a> {
     if req.pat.contains_abstract() {
         return TypingResult::TypeError(TypeError::OverlyGeneral(DeepeningRequest::Pattern));
@@ -135,14 +117,41 @@ pub fn typecheck_with_formality<'a>(
     }
 
     let stmt = req.to_bm_based();
-    let r = Reduction::from_stmt(conf, stmt);
-    match r.to_type() {
-        Ok((ident, ty)) => {
+    let mut r = Reduction::from_stmt(conf, stmt);
+    while !r.last {
+        callback(&r);
+        r.step();
+    }
+
+    match r.node_step.error {
+        Some(e) => TypingResult::TypeError(TypeError::External(e)),
+        None => {
+            let (ident, ty) = r.as_type();
             let ty = Type::from_bm_based(a, &ty);
             let name = a.alloc_str(&ident.name);
             let bindings = BindingAssignments::new([(name, ty)]);
-            Success(bindings)
+            let out = Success(bindings);
+            // Just for printing, feels risky to do before `as_type`.
+            r.apply_dbm();
+            callback(&r);
+            out
         }
-        Err(e) => TypingResult::TypeError(TypeError::External(e)),
     }
+}
+
+pub fn trace_with_formality<'a>(conf: Conf, req: &TypingRequest<'a>) -> String {
+    let a = &Arenas::default();
+    let mut out = String::new();
+    run_formality(a, conf, req, |r| {
+        let _ = write!(&mut out, "{}", r);
+    });
+    out
+}
+
+pub fn typecheck_with_formality<'a>(
+    a: &'a Arenas<'a>,
+    conf: Conf,
+    req: &TypingRequest<'a>,
+) -> TypingResult<'a> {
+    run_formality(a, conf, req, |_| {})
 }

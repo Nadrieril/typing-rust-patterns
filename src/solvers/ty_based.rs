@@ -84,6 +84,53 @@ impl<'a> TypingSolver<'a> {
     }
 }
 
+pub enum SolverTraceEvent<'a, 'b> {
+    Start,
+    Step(Rule),
+    CantStep(&'b CantStep<'a>),
+}
+
+/// Run the solver on this request and return the result of typechecking.
+pub fn run_solver<'a>(
+    ctx: TypingCtx<'a>,
+    request: &TypingRequest<'a>,
+    mut callback: impl FnMut(&TypingSolver<'a>, SolverTraceEvent<'a, '_>),
+) -> TypingResult<'a> {
+    let mut solver = TypingSolver::new(*request);
+    callback(&solver, SolverTraceEvent::Start);
+    let e = loop {
+        match solver.step(ctx) {
+            Ok(rule) => callback(&solver, SolverTraceEvent::Step(rule)),
+            Err(e) => {
+                callback(&solver, SolverTraceEvent::CantStep(&e));
+                break e;
+            }
+        }
+    };
+
+    match e {
+        CantStep::Done => {
+            let bindings = BindingAssignments::new(solver.done_predicates.iter().map(|pred| {
+                let ty = *pred.expr.ty;
+                let Pattern::Binding(_, _, name) = pred.pat else {
+                    unreachable!()
+                };
+                (*name, ty)
+            }));
+            let borrow_check: Result<(), _> = solver
+                .done_predicates
+                .iter()
+                .map(|pred| pred.expr.simplify(ctx).borrow_check())
+                .collect();
+            match borrow_check {
+                Ok(()) => TypingResult::Success(bindings),
+                Err(err) => TypingResult::BorrowError(bindings, err),
+            }
+        }
+        CantStep::NoApplicableRule(_, err) => TypingResult::TypeError(err),
+    }
+}
+
 /// Run the solver on this request and returns the trace as a string.
 pub fn trace_solver<'a>(
     request: TypingRequest<'a>,
@@ -92,65 +139,35 @@ pub fn trace_solver<'a>(
 ) -> String {
     let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
-    let mut solver = TypingSolver::new(request);
     let mut trace = String::new();
-    let _ = write!(&mut trace, "{}\n", solver.display_state(style));
-    loop {
-        match solver.step(ctx) {
-            Ok(rule) => {
-                let line = format!("// Applying rule `{}`", rule.display(options));
-                let _ = write!(&mut trace, "{}\n", line.comment());
-                let _ = write!(&mut trace, "{}\n", solver.display_state(style));
-            }
-            Err(e) => {
-                match e {
-                    CantStep::Done => {
-                        let _ = write!(&mut trace, "\n// Final bindings (simplified):\n");
-                        let _ = write!(&mut trace, "{}\n", solver.display_final_state(ctx, style));
-                    }
-                    CantStep::NoApplicableRule(pred, err) => {
-                        let line = format!("// Type error for `{}`: {err:?}", pred.display(style));
-                        let _ = write!(&mut trace, "{}\n", line.red());
-                    }
-                }
-                break;
-            }
+    run_solver(ctx, &request, |solver, event| match event {
+        SolverTraceEvent::Start => {
+            let _ = write!(&mut trace, "{}\n", solver.display_state(style));
         }
-    }
+        SolverTraceEvent::Step(rule) => {
+            let line = format!("// Applying rule `{}`", rule.display(options));
+            let _ = write!(&mut trace, "{}\n", line.comment());
+            let _ = write!(&mut trace, "{}\n", solver.display_state(style));
+        }
+        SolverTraceEvent::CantStep(e) => match e {
+            CantStep::Done => {
+                let _ = write!(&mut trace, "\n// Final bindings (simplified):\n");
+                let _ = write!(&mut trace, "{}\n", solver.display_final_state(ctx, style));
+            }
+            CantStep::NoApplicableRule(pred, err) => {
+                let line = format!("// Type error for `{}`: {err:?}", pred.display(style));
+                let _ = write!(&mut trace, "{}\n", line.red());
+            }
+        },
+    });
     trace
 }
 
 pub fn typecheck_with_this_crate<'a>(
-    a: &'a Arenas<'a>,
+    arenas: &'a Arenas<'a>,
     options: RuleOptions,
     req: &TypingRequest<'a>,
 ) -> TypingResult<'a> {
-    let ctx = TypingCtx { arenas: a, options };
-    let mut solver = TypingSolver::new(*req);
-    // TODO: abstract over the repeated stepping of the solver
-    let e = loop {
-        match solver.step(ctx) {
-            Ok(_) => {}
-            Err(e) => break e,
-        }
-    };
-    match e {
-        CantStep::Done => {
-            assert_eq!(solver.done_predicates.len(), 1);
-            let pred = solver.done_predicates[0];
-            let ty = *pred.expr.ty;
-            let Pattern::Binding(_, _, name) = pred.pat else {
-                unreachable!()
-            };
-            let bindings = BindingAssignments::new([(*name, ty)]);
-            match pred.expr.simplify(ctx).borrow_check() {
-                // This error isn't handled by `match-ergo-formality` so we ignore it.
-                Ok(()) | Err(BorrowCheckError::CantCopyNestedRefMut) => {
-                    TypingResult::Success(bindings)
-                }
-                Err(err) => TypingResult::BorrowError(bindings, err),
-            }
-        }
-        CantStep::NoApplicableRule(_, err) => TypingResult::TypeError(err),
-    }
+    let ctx = TypingCtx { arenas, options };
+    run_solver(ctx, req, |_, _| {})
 }

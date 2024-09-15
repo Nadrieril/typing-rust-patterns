@@ -33,10 +33,14 @@ pub enum TypingResult<'a> {
 }
 
 impl RuleSet {
-    pub fn typecheck<'a>(&self, a: &'a Arenas<'a>, req: &TypingRequest<'a>) -> TypingResult<'a> {
+    pub fn typecheck<'a>(
+        &self,
+        arenas: &'a Arenas<'a>,
+        req: &TypingRequest<'a>,
+    ) -> TypingResult<'a> {
         match *self {
-            RuleSet::TypeBased(options) => typecheck_with_this_crate(a, options, req),
-            RuleSet::BindingModeBased(conf) => typecheck_with_formality(a, conf, req),
+            RuleSet::TypeBased(options) => typecheck_with_this_crate(arenas, options, req),
+            RuleSet::BindingModeBased(conf) => typecheck_with_formality(arenas, conf, req),
         }
     }
 
