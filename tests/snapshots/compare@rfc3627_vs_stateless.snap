@@ -1,5 +1,5 @@
 ---
-source: src/compare.rs
+source: src/analyses/compare.rs
 info: rfc3627_vs_stateless
 ---
 Difference on `[&ref x]: &[&T]`:

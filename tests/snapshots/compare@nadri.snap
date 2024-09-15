@@ -1,5 +1,5 @@
 ---
-source: src/compare.rs
+source: src/analyses/compare.rs
 info: nadri
 ---
 Difference on `[&ref x]: &mut [&CT]`:

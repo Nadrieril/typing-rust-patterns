@@ -1,5 +1,5 @@
 ---
-source: src/compare.rs
+source: src/analyses/compare.rs
 info: stateless_add_rule3
 ---
 Difference on `&[&mut ref x]: &&mut [T]`:

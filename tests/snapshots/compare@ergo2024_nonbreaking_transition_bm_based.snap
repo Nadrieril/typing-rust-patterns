@@ -1,5 +1,5 @@
 ---
-source: src/compare.rs
+source: src/analyses/compare.rs
 info: ergo2024_nonbreaking_transition_bm_based
 ---
 Difference on `[&x]: &mut [&&mut CT]`:

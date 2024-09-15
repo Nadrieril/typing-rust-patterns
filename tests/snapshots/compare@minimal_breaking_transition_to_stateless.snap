@@ -1,5 +1,5 @@
 ---
-source: src/compare.rs
+source: src/analyses/compare.rs
 info: minimal_breaking_transition_to_stateless
 ---
 Difference on `[&mut x]: &mut [&mut T]`:

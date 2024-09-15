@@ -1,5 +1,5 @@
 ---
-source: src/compare.rs
+source: src/analyses/compare.rs
 info: ergo2024_breaking_vs_stateless_with_rule3
 ---
 Difference on `[&&ref x]: &[&CT]`:

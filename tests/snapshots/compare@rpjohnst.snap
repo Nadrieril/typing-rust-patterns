@@ -1,5 +1,5 @@
 ---
-source: src/compare.rs
+source: src/analyses/compare.rs
 info: rpjohnst
 ---
 Difference on `[ref x]: &[CT]`:

@@ -1,5 +1,5 @@
 ---
-source: src/compute_rules.rs
+source: src/analyses/compute_rules.rs
 info:
   bundle_name: structural
   options:
