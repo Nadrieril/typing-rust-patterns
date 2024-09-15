@@ -116,11 +116,12 @@ export function Preset({ options, setOptions }) {
 
 export function OptionElem({ option, options, setOptions, fullWidth }) {
     const setKey = (k, v) => setOptions(options.with_key(k, v));
-    const current_val = options.get_key(option.name);
     const prettyOption = prettyOptions[option.name] || null;
     const disabled = options.irrelevant_options_js().includes(option.name);
 
-    const current_index = option.values.indexOf(current_val);
+    const current_val = options.get_key(option.name);
+    const current_index = option.values.findIndex((v) => v.name == current_val);
+    const current_val_doc = option.values[current_index].doc;
     const next_index = (current_index + 1) % option.values.length;
     const next_value = option.values[(current_index + 1) % option.values.length];
 
@@ -132,10 +133,10 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
 
     // Calculate width of all possible values to ensure width doesn't change when we click.
     const [optionsWidth, setOptionsWidth] = useState(0);
-    const hiddenOptionsForWidth = option.values.filter((v) => prettyOption[v]).map((v) => {
+    const hiddenOptionsForWidth = option.values.filter((v) => prettyOption[v.name]).map((v) => {
         return <CalculateWidth
-            key={v}
-            contents={prettyOption[v]}
+            key={v.name}
+            contents={prettyOption[v.name]}
             setWidth={(w) => setOptionsWidth((old_w) => Math.max(old_w, w))}
         />
     });
@@ -145,12 +146,12 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
         width: ((!fullWidth) && optionsWidth) || null
     };
 
-    return <OverlayTrigger placement="bottom" overlay={<Tooltip>{option.doc}</Tooltip>}>
+    return <OverlayTrigger placement="bottom" overlay={<Tooltip>{current_val_doc}</Tooltip>}>
         <Button
             variant={variant}
             className={"text-nowrap " + (fullWidth ? "w-100" : "")}
             disabled={disabled}
-            onClick={(e) => { setKey(option.name, next_value); return false; }}
+            onClick={(e) => { setKey(option.name, next_value.name); return false; }}
         >
             {hiddenOptionsForWidth}
             <span style={style}>

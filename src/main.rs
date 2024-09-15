@@ -73,8 +73,8 @@ impl inquire::Autocomplete for Autocomplete {
                 if let Some(val) = opt.strip_prefix(name) {
                     let val = val.trim();
                     for possible_value in values {
-                        if possible_value.to_lowercase().starts_with(val) {
-                            ret.push(format!("set {name} {possible_value}"));
+                        if possible_value.name.to_lowercase().starts_with(val) {
+                            ret.push(format!("set {name} {}", possible_value.name));
                         }
                     }
                 } else if name.starts_with(opt) {

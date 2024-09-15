@@ -41,11 +41,26 @@ impl CliState {
     pub const CLI_OPTIONS: &[OptionsDoc] = &[OptionsDoc {
         name: "predicate_style",
         values: &[
-            "Expression",
-            "Sequent",
-            "BindingMode",
-            "SequentBindingMode",
-            "Stateless",
+            OptionValue {
+                name: "Expression",
+                doc: "TODO",
+            },
+            OptionValue {
+                name: "Sequent",
+                doc: "TODO",
+            },
+            OptionValue {
+                name: "BindingMode",
+                doc: "TODO",
+            },
+            OptionValue {
+                name: "SequentBindingMode",
+                doc: "TODO",
+            },
+            OptionValue {
+                name: "Stateless",
+                doc: "TODO",
+            },
         ],
         doc: "the style of the typing predicate; not all rulesets can be expressed in all styles, \
         only `Expression` is compatible with all rulesets",
@@ -69,7 +84,7 @@ impl CliState {
 
     pub fn set_key(&mut self, key: &str, val: &str) -> anyhow::Result<()> {
         if let Some(opt) = Self::settings().find(|opt| opt.name == key) {
-            if opt.values.contains(&val) {
+            if opt.values.iter().any(|x| x.name == val) {
                 if RuleOptions::OPTIONS_DOC
                     .iter()
                     .find(|opt| opt.name == key)
@@ -85,7 +100,7 @@ impl CliState {
             } else {
                 bail!(
                     "unknown value `{val}` for option `{key}`; options are: {}",
-                    opt.values.iter().format(", ")
+                    opt.values.iter().map(|x| x.name).format(", ")
                 )
             }
         } else {
@@ -289,7 +304,10 @@ impl CliState {
                 Err(err) => {
                     let options = CliState::settings()
                         .map(|OptionsDoc { name, values, doc }| {
-                            format!("- {name}: {}\n    {doc}\n", values.iter().format(" | "))
+                            format!(
+                                "- {name}: {}\n    {doc}\n",
+                                values.iter().map(|x| x.name).format(" | ")
+                            )
                         })
                         .format("");
                     let bundles = RuleOptions::KNOWN_OPTION_BUNDLES

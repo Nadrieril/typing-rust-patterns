@@ -82,10 +82,19 @@ pub struct RuleOptions {
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
-pub struct OptionsDoc {
+pub struct OptionValue {
     pub name: &'static str,
-    pub values: &'static [&'static str],
     pub doc: &'static str,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct OptionsDoc {
+    /// Name of the option.
+    pub name: &'static str,
+    /// Description of the option.
+    pub doc: &'static str,
+    /// Names and descriptions of the possible values.
+    pub values: &'static [OptionValue],
 }
 
 impl RuleOptions {
@@ -93,64 +102,192 @@ impl RuleOptions {
     pub const OPTIONS_DOC: &[OptionsDoc] = &[
         OptionsDoc {
             name: "match_constructor_through_ref",
-            values: &["false", "true"],
             doc: "Whether `[p]` can match on `&[T]`; the heart of match ergonomics.",
+            values: &[
+                OptionValue {
+                    name: "false",
+                    doc: "Disable match ergonomics entirely",
+                },
+                OptionValue {
+                    name: "true",
+                    doc: "Allow `[p]` to match on `&[T]`; the heart of match ergonomics",
+                },
+            ],
         },
         OptionsDoc {
             name: "eat_inherited_ref_alone",
-            values: &["false", "true"],
             doc: "Whether `&p`/`&mut p` is allowed on an inherited reference \
                if the underlying type isn't also a reference type",
+            values: &[
+                OptionValue {
+                    name: "false",
+                    doc: "Disallow `&p`/`&mut p` on an inherited reference \
+                        if the underlying type isn't also a reference type",
+                },
+                OptionValue {
+                    name: "true",
+                    doc: "Allow `&p`/`&mut p` on an inherited reference \
+                        if the underlying type isn't also a reference type",
+                },
+            ],
         },
         OptionsDoc {
             name: "inherited_ref_on_ref",
-            values: &["EatOuter", "EatInner", "EatBoth"],
             doc: "How to handle a reference pattern on a \
                 double reference when the outer one is inherited",
+            values: &[
+                OptionValue {
+                    name: "EatOuter",
+                    doc: "When matching a reference pattern on a \
+                        double reference with the outer one being inherited, \
+                        match against the outer reference.",
+                },
+                OptionValue {
+                    name: "EatInner",
+                    doc: "When matching a reference pattern on a \
+                        double reference with the outer one being inherited, \
+                        match against the inner reference.",
+                },
+                OptionValue {
+                    name: "EatBoth",
+                    doc: "When matching a reference pattern on a \
+                        double reference with the outer one being inherited, \
+                        match against the inner reference and consume both references.",
+                },
+            ],
         },
         OptionsDoc {
             name: "fallback_to_outer",
-            values: &["false", "true"],
             doc: "Whether to try again in `EatOuter` mode when a `EatBoth` or `EatInner` \
                 case has a mutability mismatch",
+            values: &[
+                OptionValue {
+                    name: "false",
+                    doc: "Don't try matching on the outer reference if \
+                        matching on the inner reference caused a mutability mismatch",
+                },
+                OptionValue {
+                    name: "true",
+                    doc: "Try matching on the outer reference if \
+                        matching on the inner reference caused a mutability mismatch",
+                },
+            ],
         },
         OptionsDoc {
             name: "eat_mut_inside_shared",
-            values: &["false", "true"],
             doc: "In `EatInner` or `EatBoth`, `&mut p` can eat an inner `&mut T` \
                 from under a `&`",
+            values: &[
+                OptionValue {
+                    name: "false",
+                    doc: "Disallow matching a `&mut p` pattern against an inner reference, \
+                         if the outer reference type is shared",
+                },
+                OptionValue {
+                    name: "true",
+                    doc: "Allow matching a `&mut p` pattern against an inner reference, \
+                         even if the outer reference type is shared",
+                },
+            ],
         },
         OptionsDoc {
             name: "allow_ref_pat_on_ref_mut",
-            values: &["false", "true"],
             doc: "Whether to allow a shared ref pattern on a mutable ref type",
+            values: &[
+                OptionValue {
+                    name: "false",
+                    doc: "Disallow a shared ref pattern to match on a `&mut T` as if it was `&T`",
+                },
+                OptionValue {
+                    name: "true",
+                    doc: "Allow a shared ref pattern to match on a `&mut T` as if it was `&T`",
+                },
+            ],
         },
         OptionsDoc {
             name: "downgrade_mut_inside_shared",
-            values: &["false", "true"],
             doc: "RFC3627 rule 3: downgrade `&mut` inherited references \
                 to `&` inside a shared deref",
+            values: &[
+                OptionValue {
+                    name: "false",
+                    doc: "RFC3627 rule 3: don't downgrade `&mut` inherited references \
+                        to `&` inside a shared deref",
+                },
+                OptionValue {
+                    name: "true",
+                    doc: "RFC3627 rule 3: downgrade `&mut` inherited references \
+                        to `&` inside a shared deref",
+                },
+            ],
         },
         OptionsDoc {
             name: "ref_binding_on_inherited",
-            values: &["Error", "ResetBindingMode", "AllocTemporary"],
             doc: "How to handle a `ref x` binding on an inherited reference",
+            values: &[
+                OptionValue {
+                    name: "Error",
+                    doc: "Disallow a `ref x` binding on an inherited reference",
+                },
+                OptionValue {
+                    name: "ResetBindingMode",
+                    doc: "When a `ref x` binding matches on an inherited reference, \
+                        remove the inherited reference before assigning the binding",
+                },
+                OptionValue {
+                    name: "AllocTemporary",
+                    doc: "Allow a `ref x` binding on an inherited reference, \
+                        thereby creating a temporary place to borrow from",
+                },
+            ],
         },
         OptionsDoc {
             name: "mut_binding_on_inherited",
-            values: &["Error", "ResetBindingMode", "Keep"],
             doc: "How to handle a `mut x` binding on an inherited reference",
+            values: &[
+                OptionValue {
+                    name: "Error",
+                    doc: "Disallow a `mut x` binding on an inherited reference",
+                },
+                OptionValue {
+                    name: "ResetBindingMode",
+                    doc: "When a `mut x` binding matches on an inherited reference, \
+                        remove the inherited reference before assigning the binding",
+                },
+                OptionValue {
+                    name: "Keep",
+                    doc: "Allow a `mut x` binding on an inherited reference",
+                },
+            ],
         },
         OptionsDoc {
             name: "simplify_deref_mut",
-            values: &["false", "true"],
             doc: "Whether to simplify `*&mut expr`, which removes some borrow errors",
+            values: &[
+                OptionValue {
+                    name: "false",
+                    doc: "TODO",
+                },
+                OptionValue {
+                    name: "true",
+                    doc: "TODO",
+                },
+            ],
         },
         OptionsDoc {
             name: "always_inspect_bm",
-            values: &["false", "true"],
             doc: "Whether to always branch on the binding mode when computing rules. \
                 this is required for the `SequentBindingMode` style",
+            values: &[
+                OptionValue {
+                    name: "false",
+                    doc: "TODO",
+                },
+                OptionValue {
+                    name: "true",
+                    doc: "TODO",
+                },
+            ],
         },
     ];
 
