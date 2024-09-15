@@ -10,11 +10,13 @@ note that this RFC draft is outdated compared to the tool).
 
 ## Usage
 
-Run `cargo run` to run the tool. It provides an interactive CLI interface with instructions. Type
-`set` to see the various options.
+The tool is accessible with a web UI at https://nadrieril.github.io/typing-rust-patterns/.
 
-The ruleset in my [RFC draft][overhaul_rfc] is called `stateless` in the tool. This is capable of
-emulating stable rust behavior, RFC3627 behavior, as well as a number of alternative proposals.
+To use the cli tool, run `cargo run`. It provides an interactive CLI interface with instructions.
+Type `set` to see the various options.
+
+The ruleset in my [RFC draft][overhaul_rfc] is called `stateless` in the cli. Other rulesets include
+stable rust behavior, RFC3627 behavior, and some alternative proposals.
 
 ## Typing rules
 
