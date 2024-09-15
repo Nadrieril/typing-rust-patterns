@@ -1,7 +1,9 @@
 use std::collections::VecDeque;
 use std::fmt;
+use std::fmt::Write;
 
 use itertools::Itertools;
+use printer::Style;
 
 use crate::*;
 
@@ -97,7 +99,6 @@ pub fn trace_solver<'a>(
     options: RuleOptions,
     style: PredicateStyle,
 ) -> String {
-    use std::fmt::Write;
     let arenas = &Arenas::default();
     let ctx = TypingCtx { arenas, options };
     let mut solver = TypingSolver::new(request);
@@ -106,7 +107,8 @@ pub fn trace_solver<'a>(
     loop {
         match solver.step(ctx) {
             Ok(rule) => {
-                let _ = write!(&mut trace, "// Applying rule `{}`\n", rule.display(options));
+                let line = format!("// Applying rule `{}`", rule.display(options));
+                let _ = write!(&mut trace, "{}\n", line.comment());
                 let _ = write!(&mut trace, "{}\n", solver.display_state(style));
             }
             Err(e) => {
@@ -116,11 +118,8 @@ pub fn trace_solver<'a>(
                         let _ = write!(&mut trace, "{}\n", solver.display_final_state(ctx, style));
                     }
                     CantStep::NoApplicableRule(pred, err) => {
-                        let _ = write!(
-                            &mut trace,
-                            "// Type error for `{}`: {err:?}\n",
-                            pred.display(style)
-                        );
+                        let line = format!("// Type error for `{}`: {err:?}", pred.display(style));
+                        let _ = write!(&mut trace, "{}\n", line.red());
                     }
                 }
                 break;

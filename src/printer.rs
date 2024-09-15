@@ -7,6 +7,7 @@ pub trait Style {
     fn green(&self) -> String;
     fn red(&self) -> String;
     fn dimmed(&self) -> String;
+    fn comment(&self) -> String;
     fn tooltip(&self, text: &str) -> String;
     fn code(&self) -> String;
 }
@@ -31,6 +32,14 @@ impl Style for &str {
     fn dimmed(&self) -> String {
         if cfg!(target_arch = "wasm32") {
             format!("<span style=\"color: gray\">{self}</span>")
+        } else {
+            use colored::Colorize;
+            <Self as Colorize>::dimmed(self).to_string()
+        }
+    }
+    fn comment(&self) -> String {
+        if cfg!(target_arch = "wasm32") {
+            format!("<span style=\"color: dimgray\">{self}</span>")
         } else {
             use colored::Colorize;
             <Self as Colorize>::dimmed(self).to_string()
@@ -61,6 +70,9 @@ impl Style for String {
     }
     fn dimmed(&self) -> String {
         self.as_str().dimmed()
+    }
+    fn comment(&self) -> String {
+        self.as_str().comment()
     }
     fn tooltip(&self, text: &str) -> String {
         self.as_str().tooltip(text)
