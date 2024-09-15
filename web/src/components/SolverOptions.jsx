@@ -189,8 +189,8 @@ export default function SolverOptions({ options, setOptions, title }) {
 
     return <Navbar expand="xl" className="bg-body-tertiary">
         <Container fluid>
-            <Stack direction="horizontal" gap={0}>
-                {title ? <Navbar.Brand className="text-nowrap">{title}</Navbar.Brand> : null}
+            <Stack direction="horizontal" gap={1}>
+                {title ? <Navbar.Brand className="text-nowrap me-3">{title}</Navbar.Brand> : null}
                 {select_solver}
                 <Preset {...{options, setOptions}}/>
             </Stack>
