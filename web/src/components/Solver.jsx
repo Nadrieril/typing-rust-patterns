@@ -301,7 +301,7 @@ export default function Solver() {
     const [mode, setMode] = useStateInParams('mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
 
     return (
-        <Container fluid>
+        <>
             <div className="sticky-top">
                 <MainNavBar {...{compare, setCompare, style, setStyle}}/>
                 <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title={compare ? <>Left&nbsp;&nbsp;&nbsp;</> : null}/>
@@ -355,6 +355,6 @@ export default function Solver() {
                : null}
             </Tabs>
             </Row>
-        </Container>
+        </>
     );
 }
