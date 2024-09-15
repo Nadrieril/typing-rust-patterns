@@ -82,7 +82,7 @@ export function Help({show, setShow, style}) {
                 It is designed to experiment with possible rulesets and compare them.
                 </p>
                 <p>
-                We represent the internal state of the typechecker as a "predicate"
+                We represent the internal state of the typechecker as a predicate
                 that looks like&nbsp;
                 <span dangerouslySetInnerHTML={{__html: explain_predicate_js(style_from_name(style))}}/>
                 </p>
@@ -93,12 +93,12 @@ export function Help({show, setShow, style}) {
                 </p>
                 <p>
                 This tools has options for:
+                </p>
                 <ul>
                     <li>Typechecking a chosen pattern;</li>
                     <li>Displaying the rules used to typecheck;</li>
                     <li>Compare two rulesets exhaustively on all patterns and types under a given depth.</li>
                 </ul>
-                </p>
             </Offcanvas.Body>
         </Offcanvas>
     </>
@@ -328,10 +328,12 @@ export default function Solver() {
                         />
                     </InputGroup>
                     <Table style={{tableLayout: "fixed"}}>
-                        <thead><tr>
-                            <td>Left</td>
-                            <td>Right</td>
-                        </tr></thead>
+                        {compare ?
+                            <thead><tr>
+                                <td>Left</td>
+                                <td>Right</td>
+                            </tr></thead>
+                        : null}
                         <tbody>
                             <tr>
                                 <td><SolverSteps {...{inputQuery, options: optionsLeft, style}}/></td>
