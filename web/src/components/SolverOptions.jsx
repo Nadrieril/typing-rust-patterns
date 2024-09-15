@@ -78,8 +78,8 @@ export function CalculateWidth({ contents, setWidth }) {
 }
 
 export function Preset({ options, setOptions }) {
-    const bundlesDoc = options.bundles_doc_js();
-    const active_bundle_name = options.get_bundle_name_js();
+    const bundlesDoc = options.bundles_doc();
+    const active_bundle_name = options.get_bundle_name();
     const active_bundle = bundlesDoc.filter(bundle => bundle.name == active_bundle_name).pop();
     const bundles = bundlesDoc.map(bundle => {
         return <option
@@ -111,7 +111,7 @@ export function Preset({ options, setOptions }) {
 export function OptionElem({ option, options, setOptions, fullWidth }) {
     const setKey = (k, v) => setOptions(options.with_key(k, v));
     const prettyOption = prettyOptions[option.name] || {};
-    const disabled = options.irrelevant_options_js().includes(option.name);
+    const disabled = options.irrelevant_options().includes(option.name);
 
     const current_val = options.get_key(option.name);
     const current_index = option.values.findIndex((v) => v.name == current_val);

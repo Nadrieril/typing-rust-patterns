@@ -50,14 +50,14 @@ impl RuleSetJs {
         .collect()
     }
 
-    pub fn bundles_doc_js(&self) -> Vec<JsValue> {
+    pub fn bundles_doc(&self) -> Vec<JsValue> {
         RuleSet::known_rulesets()
             .filter(|b| self.this_solver == b.ruleset.is_ty_based())
             .map(|x| JsValue::from_serde(&x).unwrap())
             .collect()
     }
 
-    pub fn from_bundle_name_js(ty_name: &str, bm_name: &str) -> Option<RuleSetJs> {
+    pub fn from_bundle_name(ty_name: &str, bm_name: &str) -> Option<RuleSetJs> {
         Some(Self {
             this_solver: true,
             ty_based: RuleOptions::from_bundle_name(ty_name)?,
@@ -79,12 +79,12 @@ impl RuleSetJs {
         }
     }
 
-    pub fn get_bundle_name_js(&self) -> Option<String> {
+    pub fn get_bundle_name(&self) -> Option<String> {
         self.as_ruleset().get_bundle_name().map(str::to_owned)
     }
 
     /// List options that can be changed without affecting the current rules.
-    pub fn irrelevant_options_js(&self) -> Vec<String> {
+    pub fn irrelevant_options(&self) -> Vec<String> {
         self.as_ruleset()
             .irrelevant_options()
             .iter()
@@ -122,6 +122,25 @@ impl RuleSetJs {
         let bits = URL_SAFE.decode(x.as_string()?).ok()?;
         Some(bincode::decode_from_slice(&bits, config).ok()?.0)
     }
+
+    pub fn trace_solver(&self, request: &str, style: PredicateStyle) -> String {
+        let a = &Arenas::default();
+        let req = match TypingRequest::parse(a, request) {
+            Ok(req) => req,
+            Err(e) => return format!("parse error: {e}"),
+        };
+        self.as_ruleset().trace_solver(&req, style)
+    }
+
+    pub fn display_rules(&self, style: PredicateStyle) -> String {
+        assert!(self.this_solver);
+        let options = self.ty_based;
+        let options = RuleOptions {
+            always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
+            ..options
+        };
+        display_rules(style, options).unwrap()
+    }
 }
 
 #[wasm_bindgen]
@@ -141,27 +160,6 @@ pub fn explain_predicate_js(style: PredicateStyle) -> String {
     }
     let _ = writeln!(&mut out, "</ul>");
     out
-}
-
-#[wasm_bindgen]
-pub fn trace_solver_js(request: &str, ruleset: &RuleSetJs, style: PredicateStyle) -> String {
-    let a = &Arenas::default();
-    let req = match TypingRequest::parse(a, request) {
-        Ok(req) => req,
-        Err(e) => return format!("parse error: {e}"),
-    };
-    ruleset.as_ruleset().trace_solver(&req, style)
-}
-
-#[wasm_bindgen]
-pub fn display_rules_js(ruleset: &RuleSetJs, style: PredicateStyle) -> String {
-    assert!(ruleset.this_solver);
-    let options = ruleset.ty_based;
-    let options = RuleOptions {
-        always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
-        ..options
-    };
-    display_rules(style, options).unwrap()
 }
 
 #[wasm_bindgen]

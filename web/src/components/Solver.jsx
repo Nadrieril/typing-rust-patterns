@@ -2,8 +2,6 @@ import init, {
     RuleSetJs,
     style_from_name,
     explain_predicate_js,
-    trace_solver_js,
-    display_rules_js,
     display_joint_rules_js,
     compare_rulesets_js,
 } from "../../typing_rust_patterns/typing_rust_patterns.js";
@@ -190,7 +188,7 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
 
 export function SolverSteps({inputQuery, options, style}) {
     const solverSteps = useMemo(() => {
-        const __html = trace_solver_js(inputQuery, options, style_from_name(style));
+        const __html = options.trace_solver(inputQuery, style_from_name(style));
         return {__html}
     }, [inputQuery, options, style]);
 
@@ -199,7 +197,7 @@ export function SolverSteps({inputQuery, options, style}) {
 
 export function RulesDisplay({options, style}) {
     const rulesDisplay = useMemo(() => {
-        const __html = display_rules_js(options, style_from_name(style));
+        const __html = options.display_rules(style_from_name(style));
         return {__html}
     }, [options, style]);
 
@@ -299,8 +297,8 @@ export default function Solver() {
 
     const [compare, setCompare] = useStateInParams('compare', false, (x) => x == 'true');
     const [style, setStyle] = useStateInParams('style', 'Sequent', validateIn(['Sequent', 'SequentBindingMode', 'Expression']));
-    const [optionsLeft, setOptionsLeft] = useStateInParams('opts1', RuleSetJs.from_bundle_name_js('nadri', 'stable'), RuleSetJs.decode, (o) => o.encode());
-    const [optionsRight, setOptionsRight] = useStateInParams('opts2', RuleSetJs.from_bundle_name_js('rfc3627', 'rfc3627'), RuleSetJs.decode, (o) => o.encode());
+    const [optionsLeft, setOptionsLeft] = useStateInParams('opts1', RuleSetJs.from_bundle_name('nadri', 'stable'), RuleSetJs.decode, (o) => o.encode());
+    const [optionsRight, setOptionsRight] = useStateInParams('opts2', RuleSetJs.from_bundle_name('rfc3627', 'rfc3627'), RuleSetJs.decode, (o) => o.encode());
     const [inputQuery, setInputQuery] = useStateInParams('q', "[&x]: &mut [&T]");
     const [mode, setMode] = useStateInParams('mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
 
