@@ -258,7 +258,7 @@ impl<'a> Expression<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
+#[wasm_bindgen::prelude::wasm_bindgen]
 pub enum PredicateStyle {
     /// Draws the expression as-is.
     Expression,
@@ -425,26 +425,27 @@ impl<'a> TypingRule<'a> {
             preconditions_str = preconditions_str.replace("*q", "reset(q)");
         }
 
-        #[cfg(not(target_arch = "wasm32"))]
-        // Compute string length skipping ansi escape codes.
-        let display_len = ansi_width::ansi_width;
-        #[cfg(target_arch = "wasm32")]
-        // Compute string length skipping html tags.
-        let display_len = |s: &str| {
-            let mut in_tag = false;
-            s.chars()
-                .filter(|&c| {
-                    if c == '<' {
-                        in_tag = true;
-                        false
-                    } else if c == '>' {
-                        in_tag = false;
-                        false
-                    } else {
-                        !in_tag
-                    }
-                })
-                .count()
+        let display_len = if cfg!(target_arch = "wasm32") {
+            // Compute string length skipping html tags.
+            |s: &str| {
+                let mut in_tag = false;
+                s.chars()
+                    .filter(|&c| {
+                        if c == '<' {
+                            in_tag = true;
+                            false
+                        } else if c == '>' {
+                            in_tag = false;
+                            false
+                        } else {
+                            !in_tag
+                        }
+                    })
+                    .count()
+            }
+        } else {
+            // Compute string length skipping ansi escape codes.
+            ansi_width::ansi_width
         };
 
         let len = max(

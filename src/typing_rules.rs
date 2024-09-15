@@ -10,7 +10,7 @@ use Mutability::*;
 /// What to do to a `ref x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Encode, Decode)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
+#[wasm_bindgen::prelude::wasm_bindgen]
 pub enum RefBindingOnInheritedBehavior {
     /// Stable rust behavior: skip the borrow in the expression and re-borrow the inner.
     ResetBindingMode,
@@ -23,7 +23,7 @@ pub enum RefBindingOnInheritedBehavior {
 /// What to do to a `mut x` binding to an `&p` or `&mut p` expression (as opposed to an inner place
 /// of the scrutinee).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Encode, Decode)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
+#[wasm_bindgen::prelude::wasm_bindgen]
 pub enum MutBindingOnInheritedBehavior {
     /// Stable rust behavior: reset the binding mode.
     ResetBindingMode,
@@ -38,7 +38,7 @@ pub enum MutBindingOnInheritedBehavior {
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Encode, Decode,
 )]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
+#[wasm_bindgen::prelude::wasm_bindgen]
 pub enum InheritedRefOnRefBehavior {
     /// Eat only the outer one.
     EatOuter,
@@ -50,7 +50,7 @@ pub enum InheritedRefOnRefBehavior {
 
 /// Choice of typing rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Encode, Decode)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
+#[wasm_bindgen::prelude::wasm_bindgen]
 pub struct RuleOptions {
     /// Whether `[p]` can match on `&[T]`. The heart of match ergonomics.
     pub match_constructor_through_ref: bool,

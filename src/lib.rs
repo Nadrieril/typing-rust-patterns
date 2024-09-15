@@ -19,7 +19,6 @@ mod parser;
 mod printer;
 mod solver;
 mod typing_rules;
-#[cfg(target_arch = "wasm32")]
 mod wasm;
 
 pub use analysis::*;
@@ -30,5 +29,4 @@ pub use compute_rules::*;
 pub use explore::*;
 pub use solver::*;
 pub use typing_rules::*;
-#[cfg(target_arch = "wasm32")]
 pub use wasm::*;
