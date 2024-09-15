@@ -345,7 +345,7 @@ export default function Solver() {
                 </Tab>
                 <Tab eventKey="rules" title="Rules">
                     {
-                        !optionsLeft.get_solver() || !optionsRight.get_solver() ?
+                        !optionsLeft.get_solver() || (compare && !optionsRight.get_solver()) ?
                         <>The binding-mode-based solver does not support listing its rules</>
                         : compare
                         ? <JointRulesDisplay {...{optionsLeft, optionsRight, style}}/>
