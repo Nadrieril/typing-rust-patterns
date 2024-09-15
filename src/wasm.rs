@@ -132,14 +132,19 @@ impl RuleSetJs {
         self.as_ruleset().trace_solver(&req, style)
     }
 
-    pub fn display_rules(&self, style: PredicateStyle) -> String {
+    pub fn display_rules(&self, style: PredicateStyle) -> Vec<String> {
         assert!(self.this_solver);
+        let arenas = &Arenas::default();
         let options = self.ty_based;
         let options = RuleOptions {
             always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
             ..options
         };
-        display_rules(style, options).unwrap()
+        let ctx = TypingCtx { arenas, options };
+        compute_rules(ctx)
+            .into_iter()
+            .map(|rule| rule.display(style).unwrap())
+            .collect()
     }
 }
 

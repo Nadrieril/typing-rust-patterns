@@ -197,11 +197,20 @@ export function SolverSteps({inputQuery, options, style}) {
 
 export function RulesDisplay({options, style}) {
     const rulesDisplay = useMemo(() => {
-        const __html = options.display_rules(style_from_name(style));
-        return {__html}
+        return options.display_rules(style_from_name(style));
     }, [options, style]);
 
-    return <div className="monospace" dangerouslySetInnerHTML={rulesDisplay}/>
+    const rows = rulesDisplay.map((rule, index) => {
+        return <tr key={index}>
+            <td><div className="monospace" dangerouslySetInnerHTML={{__html: rule}}/></td>
+        </tr>
+    });
+
+    return <Table>
+        <tbody>
+            {rows}
+        </tbody>
+    </Table>
 }
 
 export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
