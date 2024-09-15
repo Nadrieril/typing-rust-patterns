@@ -3,6 +3,7 @@ use gloo_utils::format::JsValueSerdeExt;
 use printer::Style;
 use serde::Serialize;
 use std::cmp::Ordering;
+use std::fmt::Write;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -88,6 +89,19 @@ impl RuleOptions {
 // `wasm_bindgen` doesn't support methods on enums: https://github.com/rustwasm/wasm-bindgen/issues/1715
 pub fn style_from_name(name: &str) -> PredicateStyle {
     serde_yaml::from_str(name).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn explain_predicate_js(style: PredicateStyle) -> String {
+    let explanation = style.explain_predicate();
+    let mut out = String::new();
+    let _ = writeln!(&mut out, "{}, where:", explanation.pred.code());
+    let _ = writeln!(&mut out, "<ul>");
+    for component in explanation.components {
+        let _ = writeln!(&mut out, "<li>{}</li>", component);
+    }
+    let _ = writeln!(&mut out, "</ul>");
+    out
 }
 
 #[wasm_bindgen]

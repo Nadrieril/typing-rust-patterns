@@ -1,6 +1,7 @@
 import init, {
     RuleOptions,
     style_from_name,
+    explain_predicate_js,
     trace_solver_js,
     display_rules_js,
     display_joint_rules_js,
@@ -66,8 +67,45 @@ const availableStyles = [
     },
 ];
 
+export function Help({show, setShow, style}) {
+    return <>
+        <Offcanvas placement="end" scroll show={show} onHide={() => setShow(false)}>
+            <Offcanvas.Header closeButton>
+                <Offcanvas.Title>Help</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+                <p>
+                Welcome to the interactive rust pattern typer!
+                </p>
+                <p>
+                This website shows how a rust pattern may be typechecked, step by step.
+                It is designed to experiment with possible rulesets and compare them.
+                </p>
+                <p>
+                We represent the internal state of the typechecker as a "predicate"
+                that looks like&nbsp;
+                <span dangerouslySetInnerHTML={{__html: explain_predicate_js(style_from_name(style))}}/>
+                </p>
+                <p>
+                Starting with the predicate that corresponds to your query, we
+                update it step-by-step until we reach a success state (when the
+                pattern is a binding).
+                </p>
+                <p>
+                This tools has options for:
+                <ul>
+                    <li>Typechecking a chosen pattern;</li>
+                    <li>Displaying the rules used to typecheck;</li>
+                    <li>Compare two rulesets exhaustively on all patterns and types under a given depth.</li>
+                </ul>
+                </p>
+            </Offcanvas.Body>
+        </Offcanvas>
+    </>
+}
+
 export function MainNavBar({compare, setCompare, style, setStyle}) {
-        const navigate = useNavigate()
+    const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams();
     function resetSearchParams() {
         const keys = Array.from(searchParams.keys());
@@ -77,7 +115,9 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
         setSearchParams(searchParams);
         navigate(0); // Refresh
     }
+
     const [mainNavShow, setMainNavShow] = useState(false);
+    const [helpShow, setHelpShow] = useState(false);
 
     const currentStyle = style;
     const styles = availableStyles.map(style => {
@@ -93,7 +133,8 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
 
     let title = <span id="title"><span>T</span>yping <span>Ru</span>st <span>P</span>atterns</span>;
 
-    return <Navbar expand="md" className="bg-body-tertiary">
+    return <>
+    <Navbar expand="md" className="bg-body-tertiary">
         <Container fluid>
             <OverlayTrigger placement="bottom" overlay={<Tooltip>Reset all settings</Tooltip>}>
                 <Navbar.Brand onClick={resetSearchParams}>{title}</Navbar.Brand>
@@ -114,6 +155,11 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
                     <Offcanvas.Title>General options</Offcanvas.Title>
                 </Offcanvas.Header>
                 <Offcanvas.Body>
+                    <Nav className="me-auto">
+                        <Nav.Link
+                             onClick={() => setHelpShow(true)}
+                        >Help</Nav.Link>
+                    </Nav>
                     <Nav className="ms-auto">
                         <Stack direction={mainNavShow ? "vertical" : "horizontal"} gap={1}>
                             <OverlayTrigger placement="bottom" overlay={<Tooltip>Compare two rulesets</Tooltip>}>
@@ -129,6 +175,9 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
             </Navbar.Offcanvas>
         </Container>
     </Navbar>
+    {/* Put the help outside the offcanvas because they can't be nested. */}
+    <Help {...{show: helpShow, setShow: setHelpShow, style}}/>
+    </>
 }
 
 export function SolverSteps({inputQuery, options, style}) {
@@ -261,13 +310,6 @@ export default function Solver() {
                     <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title="Options"/>
                 </div>
             </div>
-            <Row>
-                <p id="foo">
-                    Welcome to the interactive pattern typer!<br/>
-                    Write <span className="monospace">`pattern: type`</span> in the input box to see it get typechecked.<br/>
-                    Example: <span className="monospace">`&[ref x]: &[T]`</span>
-                </p>
-            </Row>
             <Row>
             <Tabs
                 activeKey={mode}

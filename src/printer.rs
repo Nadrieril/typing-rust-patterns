@@ -8,6 +8,7 @@ pub trait Style {
     fn red(&self) -> String;
     fn dimmed(&self) -> String;
     fn tooltip(&self, text: &str) -> String;
+    fn code(&self) -> String;
 }
 
 impl Style for &str {
@@ -42,6 +43,13 @@ impl Style for &str {
             self.to_string()
         }
     }
+    fn code(&self) -> String {
+        if cfg!(target_arch = "wasm32") {
+            format!("<code>{self}</code>")
+        } else {
+            format!("`{self}`")
+        }
+    }
 }
 
 impl Style for String {
@@ -56,6 +64,9 @@ impl Style for String {
     }
     fn tooltip(&self, text: &str) -> String {
         self.as_str().tooltip(text)
+    }
+    fn code(&self) -> String {
+        self.as_str().code()
     }
 }
 

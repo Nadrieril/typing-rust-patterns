@@ -6,6 +6,7 @@ use std::fmt::Write;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::*;
+use printer::Style;
 use BindingMode::*;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -269,6 +270,62 @@ pub enum PredicateStyle {
     SequentBindingMode,
     /// Doesn't draw the expression.
     Stateless,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PredicateExplanation {
+    pub pred: String,
+    pub components: Vec<String>,
+}
+
+impl PredicateStyle {
+    pub fn explain_predicate(self) -> PredicateExplanation {
+        let pred = TypingPredicate::ABSTRACT.display(self);
+
+        let mut components = vec![];
+        match self {
+            PredicateStyle::Expression | PredicateStyle::BindingMode => {
+                components.push(format!("{} is an expression", "e".code()));
+            }
+            PredicateStyle::Sequent => {
+                components.push(format!(
+                    "{} is {} or {} and indicates whether \
+                        the outermost reference type (if any) is inherited or not;",
+                    "r".code(),
+                    "inh".code(),
+                    "real".code()
+                ));
+            }
+            PredicateStyle::SequentBindingMode => {
+                components.push(format!(
+                    "{} is {}, {} or {} and indicates the binding mode;",
+                    "bm".code(),
+                    "move".code(),
+                    "ref".code(),
+                    "ref mut".code(),
+                ));
+            }
+            PredicateStyle::Stateless => {}
+        }
+        match self {
+            PredicateStyle::Sequent | PredicateStyle::SequentBindingMode => {
+                components.push(format!(
+                    "{} is {} or {} and indicates whether \
+                        we have mutable or read-only access to the original scrutinee;",
+                    "m".code(),
+                    "rw".code(),
+                    "ro".code(),
+                ));
+            }
+            PredicateStyle::Expression
+            | PredicateStyle::BindingMode
+            | PredicateStyle::Stateless => {}
+        }
+        components.push(format!("{} is a pattern;", "p".code()));
+        components.push(format!("{} is a type.", "T".code()));
+
+        PredicateExplanation { pred, components }
+    }
 }
 
 #[derive(Debug)]

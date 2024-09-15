@@ -379,34 +379,16 @@ fn display_options_diff(old_options: RuleOptions, new_options: RuleOptions) {
 }
 
 pub fn explain_predicate(style: PredicateStyle) -> String {
+    let explanation = style.explain_predicate();
     let mut out = String::new();
     let _ = writeln!(
         &mut out,
         "The typing predicate looks like `{}`, where",
-        TypingPredicate::ABSTRACT.display(style),
+        explanation.pred,
     );
-    match style {
-        PredicateStyle::Expression | PredicateStyle::BindingMode => {
-            let _ = writeln!(&mut out, "- `e` is an expression",);
-        }
-        PredicateStyle::Sequent => {
-            let _ = writeln!(
-                &mut out,
-                "- `r` is `inh` or `real` and indicates whether the outermost reference type (if any) is inherited or not;",
-            );
-            let _ = writeln!(&mut out, "- `m` is `rw` or `ro` and indicates whether we have mutable or read-only access to the original scrutinee;",);
-        }
-        PredicateStyle::SequentBindingMode => {
-            let _ = writeln!(
-                &mut out,
-                "- `bm` is `move`, `ref` or `ref mut` and indicates the binding mode;",
-            );
-            let _ = writeln!(&mut out, "- `m` is `rw` or `ro` and indicates whether we have mutable or read-only access to the original scrutinee;",);
-        }
-        PredicateStyle::Stateless => {}
+    for component in explanation.components {
+        let _ = writeln!(&mut out, "- {}", component);
     }
-    let _ = writeln!(&mut out, "- `p` is a pattern;");
-    let _ = writeln!(&mut out, "- `T` is a type.");
     out
 }
 
