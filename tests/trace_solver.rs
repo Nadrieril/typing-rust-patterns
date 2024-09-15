@@ -47,6 +47,7 @@ fn trace_solver(test_case: TestCase<'_>) -> anyhow::Result<()> {
 
 #[test]
 fn test_solver_traces() -> anyhow::Result<()> {
+    colored::control::set_override(false);
     let base = RuleOptions::STATELESS;
     let test_cases: &[(RuleOptions, &[_])] = &[
         (

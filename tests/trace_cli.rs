@@ -4,6 +4,7 @@ use std::hash::{Hash, Hasher};
 
 #[test]
 fn trace_cli() -> anyhow::Result<()> {
+    colored::control::set_override(false);
     let test_cases = &[
         "quit",
         "help",
