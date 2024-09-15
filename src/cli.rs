@@ -76,7 +76,7 @@ impl CliState {
     }
 
     pub fn settings() -> impl Iterator<Item = OptionsDoc> {
-        RuleOptions::OPTIONS_DOC
+        TY_BASED_OPTIONS_DOC
             .into_iter()
             .chain(Self::CLI_OPTIONS)
             .copied()
@@ -85,7 +85,7 @@ impl CliState {
     pub fn set_key(&mut self, key: &str, val: &str) -> anyhow::Result<()> {
         if let Some(opt) = Self::settings().find(|opt| opt.name == key) {
             if opt.values.iter().any(|x| x.name == val) {
-                if RuleOptions::OPTIONS_DOC
+                if TY_BASED_OPTIONS_DOC
                     .iter()
                     .find(|opt| opt.name == key)
                     .is_some()
@@ -310,7 +310,7 @@ impl CliState {
                             )
                         })
                         .format("");
-                    let bundles = RuleOptions::KNOWN_OPTION_BUNDLES
+                    let bundles = KNOWN_TY_BASED_BUNDLES
                         .iter()
                         .map(|b| format!("- {}: {}", b.name, b.doc))
                         .format("\n");

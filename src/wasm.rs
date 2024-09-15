@@ -1,168 +1,10 @@
 use crate::*;
 use bincode::{Decode, Encode};
 use gloo_utils::format::JsValueSerdeExt;
-use match_ergonomics_formality::Conf;
-use printer::Style;
 use serde::Serialize;
 use std::cmp::Ordering;
 use std::fmt::Write;
 use wasm_bindgen::prelude::*;
-
-const ERGO_FORMALITY_OPTIONS_DOC: &[OptionsDoc] = &[
-    OptionsDoc {
-        name: "no_me",
-        doc: "TODO",
-        values: &[
-            OptionValue {
-                name: "false",
-                doc: "Disable match ergonomics entirely",
-            },
-            OptionValue {
-                name: "true",
-                doc: "Disable match ergonomics entirely",
-            },
-        ],
-    },
-    OptionsDoc {
-        name: "rule1",
-        doc: "TODO",
-        values: &[
-            OptionValue {
-                name: "false",
-                doc: "When the default binding mode is not `move`, writing `mut` on a \
-                    binding is an error",
-            },
-            OptionValue {
-                name: "true",
-                doc: "When the default binding mode is not `move`, writing `mut` on a \
-                    binding is an error",
-            },
-        ],
-    },
-    OptionsDoc {
-        name: "rule2",
-        doc: "TODO",
-        values: &[
-            OptionValue {
-                name: "false",
-                doc: "When a reference pattern matches against a reference, do not \
-                    update the default binding mode",
-            },
-            OptionValue {
-                name: "true",
-                doc: "When a reference pattern matches against a reference, do not \
-                    update the default binding mode",
-            },
-        ],
-    },
-    OptionsDoc {
-        name: "rule3",
-        doc: "TODO",
-        values: &[
-            OptionValue {
-                name: "false",
-                doc: "Keep track of whether we have matched either a reference pattern \
-                    or a non-reference pattern against a shared reference, and if \
-                    so, set the DBM to `ref` when we would otherwise set it to `ref \
-                    mut`",
-            },
-            OptionValue {
-                name: "rule3",
-                doc: "Keep track of whether we have matched either a reference pattern \
-                    or a non-reference pattern against a shared reference, and if \
-                    so, set the DBM to `ref` when we would otherwise set it to `ref \
-                    mut`",
-            },
-            OptionValue {
-                name: "rule3_ext1",
-                doc: "If we've previously matched against a shared reference in the \
-                    scrutinee (or against a `ref` DBM under Rule 4, or against a \
-                    mutable reference treated as a shared one or a `ref mut` DB \
-                    treated as a `ref` one under Rule 5), if we've reached a binding \
-                    and the scrutinee is a mutable reference, coerce it to a shared \
-                    reference",
-            },
-            OptionValue {
-                name: "rule3_lazy",
-                doc: "Rule 3, but lazily applied",
-            },
-        ],
-    },
-    OptionsDoc {
-        name: "rule4",
-        doc: "TODO",
-        values: &[
-            OptionValue {
-                name: "false",
-                doc: "If a reference pattern is being matched against a non-reference \
-                    type and if the DBM is `ref` or `ref mut`, match the pattern \
-                    against the DBM as though it were a type",
-            },
-            OptionValue {
-                name: "rule4",
-                doc: "If a reference pattern is being matched against a non-reference \
-                    type and if the DBM is `ref` or `ref mut`, match the pattern \
-                    against the DBM as though it were a type",
-            },
-            OptionValue {
-                name: "rule4_ext",
-                doc: "If an `&` pattern is being matched against a non-reference type \
-                    or an `&mut` pattern is being matched against a shared reference \
-                    type or a non-reference type, and if the DBM is `ref` or `ref \
-                    mut`, match the pattern against the DBM as though it were a \
-                    type",
-            },
-            OptionValue {
-                name: "rule4_ext2",
-                doc: "If an `&` pattern is being matched against a mutable reference \
-                    type or a non-reference type, or if an `&mut` pattern is being \
-                    matched against a shared reference type or a non-reference type, \
-                    and if the DBM is `ref` or `ref mut`, match the pattern against \
-                    the DBM as though it were a type",
-            },
-            OptionValue {
-                name: "rule4_early",
-                doc: "If the DBM is `ref` or `ref mut`, match a reference pattern \
-                    against it as though it were a type *before* considering the \
-                    scrutinee.",
-            },
-        ],
-    },
-    OptionsDoc {
-        name: "rule5",
-        doc: "TODO",
-        values: &[
-            OptionValue {
-                name: "false",
-                doc: "If a `&` pattern is being matched against a type of mutable \
-                    reference (or against a `ref mut` DBM under *Rule 4*), act as \
-                    though the type were a shared reference instead (or that a `ref \
-                    mut` DBM is a `ref` DBM instead)",
-            },
-            OptionValue {
-                name: "true",
-                doc: "If a `&` pattern is being matched against a type of mutable \
-                    reference (or against a `ref mut` DBM under *Rule 4*), act as \
-                    though the type were a shared reference instead (or that a `ref \
-                    mut` DBM is a `ref` DBM instead)",
-            },
-        ],
-    },
-    OptionsDoc {
-        name: "spin",
-        doc: "TODO",
-        values: &[
-            OptionValue {
-                name: "false",
-                doc: "Spin rule",
-            },
-            OptionValue {
-                name: "true",
-                doc: "Spin rule",
-            },
-        ],
-    },
-];
 
 /// Like `RuleSet` but remembers the ruleset of the other solver to avoid losing state in the
 /// frontend.
@@ -174,71 +16,12 @@ pub struct RuleSetJs {
     bm_based: Conf,
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct BundleDocJs {
-    pub name: &'static str,
-    #[serde(skip)]
-    pub ruleset: RuleSet,
-    pub doc: &'static str,
-}
-
 impl RuleSetJs {
     pub fn as_ruleset(&self) -> RuleSet {
         if self.this_solver {
             RuleSet::TypeBased(self.ty_based)
         } else {
             RuleSet::BindingModeBased(self.bm_based)
-        }
-    }
-
-    pub fn bundles_doc(&self) -> Vec<BundleDocJs> {
-        if self.this_solver {
-            RuleOptions::KNOWN_OPTION_BUNDLES
-                .iter()
-                .map(|bundle| BundleDocJs {
-                    name: bundle.name,
-                    ruleset: RuleSet::TypeBased(bundle.options),
-                    doc: bundle.doc,
-                })
-                .collect()
-        } else {
-            vec![
-                BundleDocJs {
-                    name: "pre_rfc2005",
-                    doc: "Disable match ergonomics",
-                    ruleset: RuleSet::BindingModeBased(Conf::pre_rfc2005()),
-                },
-                BundleDocJs {
-                    name: "stable",
-                    doc: "Stable rust behavior",
-                    ruleset: RuleSet::BindingModeBased(Conf::rfc2005()),
-                },
-                BundleDocJs {
-                    name: "rfc3627",
-                    doc: "RFC3627 behavior on edition 2024",
-                    ruleset: RuleSet::BindingModeBased(Conf::rfc3627_2024()),
-                },
-                BundleDocJs {
-                    name: "rfc3627_2021",
-                    doc: "RFC3627 behavior on edition 2021",
-                    ruleset: RuleSet::BindingModeBased(Conf::rfc3627_2021()),
-                },
-                BundleDocJs {
-                    name: "rfc3627_2024_min",
-                    doc: "Initial breaking changes to do over the edition for RFC3627",
-                    ruleset: RuleSet::BindingModeBased(Conf::rfc_3627_2024_min()),
-                },
-                BundleDocJs {
-                    name: "waffle",
-                    doc: "A proposal by @WaffleLapkin",
-                    ruleset: RuleSet::BindingModeBased(Conf::waffle_2024()),
-                },
-                BundleDocJs {
-                    name: "rpjohnst",
-                    doc: "A proposal by @rpjohnst",
-                    ruleset: RuleSet::BindingModeBased(Conf::rpjohnst_2024()),
-                },
-            ]
         }
     }
 }
@@ -258,9 +41,9 @@ impl RuleSetJs {
 
     pub fn options_doc(&self) -> Vec<JsValue> {
         if self.this_solver {
-            RuleOptions::OPTIONS_DOC
+            TY_BASED_OPTIONS_DOC
         } else {
-            ERGO_FORMALITY_OPTIONS_DOC
+            BM_BASED_OPTIONS_DOC
         }
         .iter()
         .map(|x| JsValue::from_serde(x).unwrap())
@@ -268,8 +51,8 @@ impl RuleSetJs {
     }
 
     pub fn bundles_doc_js(&self) -> Vec<JsValue> {
-        self.bundles_doc()
-            .into_iter()
+        RuleSet::known_rulesets()
+            .filter(|b| self.this_solver == b.ruleset.is_ty_based())
             .map(|x| JsValue::from_serde(&x).unwrap())
             .collect()
     }
@@ -278,105 +61,40 @@ impl RuleSetJs {
         Some(Self {
             this_solver: true,
             ty_based: RuleOptions::from_bundle_name(ty_name)?,
-            bm_based: {
-                let mut conf = Conf::default();
-                conf.set(bm_name).unwrap();
-                conf
-            },
+            bm_based: bm_based_from_bundle_name(bm_name)?,
         })
     }
 
     pub fn with_bundle_name(&self, name: &str) -> RuleSetJs {
         if self.this_solver {
             Self {
-                ty_based: RuleOptions::from_bundle_name(name).unwrap(),
+                ty_based: RuleOptions::from_bundle_name(name).unwrap_or(self.ty_based),
                 ..*self
             }
         } else {
-            match self.bundles_doc().into_iter().find(|b| b.name == name) {
-                Some(b) => match b.ruleset {
-                    RuleSet::BindingModeBased(bm_based) => Self { bm_based, ..*self },
-                    RuleSet::TypeBased(_) => unreachable!(),
-                },
-                None => *self,
+            Self {
+                bm_based: bm_based_from_bundle_name(name).unwrap_or(self.bm_based),
+                ..*self
             }
         }
     }
 
     pub fn get_bundle_name_js(&self) -> Option<String> {
-        let this_ruleset = self.as_ruleset();
-        self.bundles_doc()
-            .into_iter()
-            .find(|b| b.ruleset == this_ruleset)
-            .map(|b| b.name.to_owned())
+        self.as_ruleset().get_bundle_name().map(str::to_owned)
     }
 
     /// List options that can be changed without affecting the current rules.
     pub fn irrelevant_options_js(&self) -> Vec<String> {
-        if self.this_solver {
-            self.ty_based.irrelevant_options()
-        } else if self.bm_based.no_me {
-            &["rule1", "rule2", "rule3", "rule4", "rule5", "spin"] as &[_]
-        } else {
-            &[]
-        }
-        .iter()
-        .copied()
-        .map(str::to_owned)
-        .collect()
+        self.as_ruleset()
+            .irrelevant_options()
+            .iter()
+            .copied()
+            .map(str::to_owned)
+            .collect()
     }
 
     pub fn get_key(&self, key: &str) -> String {
-        if self.this_solver {
-            serde_yaml::to_string(&self.ty_based.to_map()[key])
-                .unwrap()
-                .trim()
-                .to_string()
-        } else {
-            // Mutable copy to reuse upstream `get_mut`.
-            let mut conf = self.bm_based;
-            match key {
-                "no_me" | "rule1" | "rule2" | "rule5" | "spin" => {
-                    if *conf.get_mut(key).unwrap() {
-                        "true"
-                    } else {
-                        "false"
-                    }
-                }
-                "rule3" => {
-                    if self.bm_based.rule3_lazy {
-                        "rule3_lazy"
-                    } else if self.bm_based.rule3 {
-                        if self.bm_based.rule3_ext1 {
-                            "rule3_ext1"
-                        } else {
-                            "rule3"
-                        }
-                    } else {
-                        "false"
-                    }
-                }
-                "rule4" => {
-                    if self.bm_based.rule4_early {
-                        "rule4_early"
-                    } else if self.bm_based.rule4 {
-                        if self.bm_based.rule4_ext {
-                            "rule4_ext"
-                        } else if self.bm_based.rule4_ext2 {
-                            "rule4_ext2"
-                        } else {
-                            "rule4"
-                        }
-                    } else {
-                        "false"
-                    }
-                }
-                _ => {
-                    panic!("Unknown option: {key}")
-                }
-            }
-            .to_owned()
-        }
+        self.as_ruleset().get_key(key)
     }
 
     pub fn with_key(&self, key: &str, val: &str) -> Self {
@@ -384,54 +102,7 @@ impl RuleSetJs {
         if self.this_solver {
             out.ty_based.set_key(key, val);
         } else {
-            match key {
-                "no_me" | "rule1" | "rule2" | "rule5" | "spin" => {
-                    *out.bm_based.get_mut(key).unwrap() = val == "true";
-                }
-                "rule3" => {
-                    // Reset all variants before setting the one we want to avoid inconsistencies.
-                    out.bm_based.rule3 = false;
-                    out.bm_based.rule3_ext1 = false;
-                    out.bm_based.rule3_lazy = false;
-                    match val {
-                        "false" => {}
-                        "rule3" => out.bm_based.rule3 = true,
-                        "rule3_ext1" => {
-                            out.bm_based.rule3 = true;
-                            out.bm_based.rule3_ext1 = true;
-                        }
-                        "rule3_lazy" => {
-                            out.bm_based.rule3_lazy = true;
-                        }
-                        _ => panic!("Unknown option: {key}"),
-                    }
-                }
-                "rule4" => {
-                    // Reset all variants before setting the one we want to avoid inconsistencies.
-                    out.bm_based.rule4 = false;
-                    out.bm_based.rule4_ext = false;
-                    out.bm_based.rule4_ext2 = false;
-                    out.bm_based.rule4_early = false;
-                    match val {
-                        "false" => {}
-                        "rule4" => out.bm_based.rule4 = true,
-                        "rule4_ext" => {
-                            out.bm_based.rule4 = true;
-                            out.bm_based.rule4_ext = true;
-                        }
-                        "rule4_ext2" => {
-                            out.bm_based.rule4 = true;
-                            out.bm_based.rule4_ext2 = true;
-                        }
-                        "rule4_early" => {
-                            out.bm_based.rule4_early = true;
-                        }
-                        _ => panic!("Unknown option: {key}"),
-                    }
-                }
-                _ => panic!("Unknown option: {key}"),
-            }
-            .to_owned()
+            bm_based_set_key(&mut out.bm_based, key, val);
         }
         out
     }
@@ -479,16 +150,7 @@ pub fn trace_solver_js(request: &str, ruleset: &RuleSetJs, style: PredicateStyle
         Ok(req) => req,
         Err(e) => return format!("parse error: {e}"),
     };
-    match ruleset.as_ruleset() {
-        RuleSet::TypeBased(options) => {
-            let options = RuleOptions {
-                always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
-                ..options
-            };
-            trace_solver(req, options, style)
-        }
-        RuleSet::BindingModeBased(conf) => trace_with_formality(conf, &req),
-    }
+    ruleset.as_ruleset().trace_solver(&req, style)
 }
 
 #[wasm_bindgen]

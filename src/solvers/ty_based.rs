@@ -3,7 +3,6 @@ use std::fmt;
 use std::fmt::Write;
 
 use itertools::Itertools;
-use printer::Style;
 
 use crate::*;
 
@@ -11,14 +10,6 @@ use crate::*;
 pub struct TypingCtx<'a> {
     pub options: RuleOptions,
     pub arenas: &'a Arenas<'a>,
-}
-
-/// The inner state of our solver: the typing of `let pat: type = expr`. We write it `pat @ expr :
-/// type`.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TypingPredicate<'a> {
-    pub pat: &'a Pattern<'a>,
-    pub expr: Expression<'a>,
 }
 
 pub enum CantStep<'a> {
@@ -127,4 +118,34 @@ pub fn trace_solver<'a>(
         }
     }
     trace
+}
+
+// TODO: rename, "analyze" isn't clear
+pub fn analyze_with_this_crate<'a>(
+    a: &'a Arenas<'a>,
+    options: RuleOptions,
+    req: &TypingRequest<'a>,
+) -> TypingResult<'a> {
+    let ctx = TypingCtx { arenas: a, options };
+    let mut solver = TypingSolver::new(*req);
+    // TODO: abstract over the repeated stepping of the solver
+    let e = loop {
+        match solver.step(ctx) {
+            Ok(_) => {}
+            Err(e) => break e,
+        }
+    };
+    match e {
+        CantStep::Done => {
+            assert_eq!(solver.done_predicates.len(), 1);
+            let pred = solver.done_predicates[0];
+            let ty = *pred.expr.ty;
+            match pred.expr.simplify(ctx).borrow_check() {
+                // This error isn't handled by `match-ergo-formality` so we ignore it.
+                Ok(()) | Err(BorrowCheckError::CantCopyNestedRefMut) => TypingResult::Success(ty),
+                Err(err) => TypingResult::BorrowError(ty, err),
+            }
+        }
+        CantStep::NoApplicableRule(_, err) => TypingResult::TypeError(err),
+    }
 }

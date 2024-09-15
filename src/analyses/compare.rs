@@ -1,223 +1,9 @@
-use std::fmt::Write;
 use std::{cmp::Ordering, mem, ops::ControlFlow};
 
 use crate::*;
-use match_ergonomics_formality::Conf;
-use printer::Style;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RuleSet {
-    TypeBased(RuleOptions),
-    BindingModeBased(Conf),
-}
+use TypingResult::{BorrowError, Success};
 
 pub type ParseError = String;
-
-mod convert {
-    use crate::Mutability::*;
-    use match_ergonomics_formality::*;
-
-    fn convert_pattern(pat: &crate::Pattern<'_>) -> Pattern {
-        let span = Span::nop();
-        match pat {
-            crate::Pattern::Abstract(_) => {
-                panic!("cannot convert abstract pattern to match_ergonomics_formality")
-            }
-            crate::Pattern::Tuple(pats) => {
-                assert_eq!(
-                    pats.len(),
-                    1,
-                    "only length-1 tuples are supported by match_ergonomics_formality"
-                );
-                let pat = convert_pattern(&pats[0]);
-                Pattern::Slice(SlicePat::new(pat, span, span))
-            }
-            crate::Pattern::Ref(mtbl, pat) => {
-                let pat = convert_pattern(pat);
-                match mtbl {
-                    Shared => Pattern::Ref(RefPat::new(pat, span, span)),
-                    Mutable => Pattern::RefMut(RefMutPat::new(pat, span, span)),
-                }
-            }
-            crate::Pattern::Binding(mtbl, bm, name) => Pattern::Binding(BindingPat {
-                ident: Ident::new(name.to_string(), span),
-                mode: match bm {
-                    crate::BindingMode::ByMove => BindingMode::Move,
-                    crate::BindingMode::ByRef(Shared) => BindingMode::Ref,
-                    crate::BindingMode::ByRef(Mutable) => BindingMode::RefMut,
-                },
-                is_mut: matches!(mtbl, Mutable),
-                span,
-            }),
-        }
-    }
-
-    fn convert_type(ty: &crate::Type<'_>) -> Expr {
-        let span = Span::nop();
-        match ty {
-            crate::Type::Abstract(_) | crate::Type::AbstractNonRef(_) => {
-                panic!("cannot convert abstract type to match_ergonomics_formality")
-            }
-            crate::Type::Tuple(tys) => {
-                assert_eq!(
-                    tys.len(),
-                    1,
-                    "only length-1 tuples are supported by match_ergonomics_formality"
-                );
-                let ty = convert_type(&tys[0]);
-                Expr::Slice(SliceExpr::new(ty, span, span))
-            }
-            crate::Type::Ref(mtbl, ty) => {
-                let ty = convert_type(ty);
-                match mtbl {
-                    Shared => Expr::Ref(RefExpr::new(ty, span, span)),
-                    Mutable => Expr::RefMut(RefMutExpr::new(ty, span, span)),
-                }
-            }
-            crate::Type::OtherNonRef(name) => Expr::Type(TypeExpr {
-                name: Ident::new(name.to_string(), span),
-                span,
-            }),
-        }
-    }
-
-    pub(super) fn unconvert_type<'a>(a: &'a crate::Arenas<'a>, ty: &Expr) -> crate::Type<'a> {
-        match ty {
-            Expr::Type(ty) => crate::Type::OtherNonRef(a.bump.alloc_str(&ty.name.name)),
-            Expr::RefMut(ty) => crate::Type::Ref(Mutable, unconvert_type(a, &ty.expr).alloc(a)),
-            Expr::Ref(ty) => crate::Type::Ref(Shared, unconvert_type(a, &ty.expr).alloc(a)),
-            Expr::Slice(ty) => {
-                crate::Type::Tuple(std::slice::from_ref(unconvert_type(a, &ty.expr).alloc(a)))
-            }
-            Expr::Paren(ty) => unconvert_type(a, &ty.expr),
-        }
-    }
-
-    pub(super) fn convert_request(req: &crate::TypingRequest<'_>) -> LetStmt {
-        let span = Span::nop();
-        let pat = convert_pattern(req.pat);
-        let ty = convert_type(req.ty);
-        LetStmt::new(pat, ty, span, span)
-    }
-}
-
-use AnalysisResult::{BorrowError, Success};
-#[derive(Debug, Clone, Copy)]
-pub enum AnalysisResult<'a> {
-    Success(Type<'a>),
-    BorrowError(Type<'a>, BorrowCheckError),
-    TypeError(TypeError),
-}
-
-impl<'a> AnalysisResult<'a> {
-    /// Replace the abstract types (if any) with the given type.
-    pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
-        match *self {
-            Success(ty) => Success(ty.subst(a, replace)),
-            BorrowError(ty, e) => BorrowError(ty.subst(a, replace), e),
-            AnalysisResult::TypeError(_) => *self,
-        }
-    }
-}
-
-impl std::fmt::Display for AnalysisResult<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let out = match self {
-            Success(ty) => format!("Success({ty})").green(),
-            BorrowError(ty, s) => format!("BorrowError({ty:?}, \"{s:?}\")").red(),
-            AnalysisResult::TypeError(TypeError::External(e)) => {
-                format!("TypeError(\"{e}\")").red()
-            }
-            AnalysisResult::TypeError(e) => format!("TypeError(\"{e:?}\")").red(),
-        };
-        write!(f, "{}", out)
-    }
-}
-
-impl RuleSet {
-    pub fn is_type_based(&self) -> bool {
-        matches!(self, Self::TypeBased(..))
-    }
-
-    pub fn is_binding_mode_based(&self) -> bool {
-        matches!(self, Self::BindingModeBased(..))
-    }
-
-    pub fn analyze<'a>(&self, a: &'a Arenas<'a>, req: &TypingRequest<'a>) -> AnalysisResult<'a> {
-        match *self {
-            RuleSet::TypeBased(options) => analyze_with_this_crate(a, options, req),
-            RuleSet::BindingModeBased(conf) => analyze_with_formality(a, conf, req),
-        }
-    }
-}
-
-fn analyze_with_this_crate<'a>(
-    a: &'a Arenas<'a>,
-    options: RuleOptions,
-    req: &TypingRequest<'a>,
-) -> AnalysisResult<'a> {
-    let ctx = TypingCtx { arenas: a, options };
-    let mut solver = TypingSolver::new(*req);
-    let e = loop {
-        match solver.step(ctx) {
-            Ok(_) => {}
-            Err(e) => break e,
-        }
-    };
-    match e {
-        CantStep::Done => {
-            assert_eq!(solver.done_predicates.len(), 1);
-            let pred = solver.done_predicates[0];
-            let ty = *pred.expr.ty;
-            match pred.expr.simplify(ctx).borrow_check() {
-                // This error isn't handled by `match-ergo-formality` so we ignore it.
-                Ok(()) | Err(BorrowCheckError::CantCopyNestedRefMut) => Success(ty),
-                Err(err) => BorrowError(ty, err),
-            }
-        }
-        CantStep::NoApplicableRule(_, err) => AnalysisResult::TypeError(err),
-    }
-}
-
-fn analyze_with_formality<'a>(
-    a: &'a Arenas<'a>,
-    conf: Conf,
-    req: &TypingRequest<'a>,
-) -> AnalysisResult<'a> {
-    use match_ergonomics_formality::*;
-    if req.pat.contains_abstract() {
-        return AnalysisResult::TypeError(TypeError::OverlyGeneral(DeepeningRequest::Pattern));
-    } else if req.ty.contains_abstract() {
-        return AnalysisResult::TypeError(TypeError::OverlyGeneral(DeepeningRequest::Type));
-    }
-
-    let stmt = convert::convert_request(req);
-    let r = Reduction::from_stmt(conf, stmt);
-    match r.to_type() {
-        Ok((_ident, ty)) => Success(convert::unconvert_type(a, &ty)),
-        Err(e) => AnalysisResult::TypeError(TypeError::External(e)),
-    }
-}
-
-pub fn trace_with_formality<'a>(conf: Conf, req: &TypingRequest<'a>) -> String {
-    use match_ergonomics_formality::*;
-    let stmt = convert::convert_request(req);
-    let mut r = Reduction::from_stmt(conf, stmt);
-    let mut out = String::new();
-    loop {
-        if r.last {
-            if !r.is_err() {
-                r.apply_dbm();
-                let _ = write!(&mut out, "{}", r);
-            }
-            break;
-        } else {
-            let _ = write!(&mut out, "{}", r);
-            r.step();
-        }
-    }
-    out
-}
 
 /// Holds the partial state of a comparison between two rulesets. We want to explore all patterns
 /// and types up to a given depth. The idea is to iteratively deepen predicates so as to avoid
@@ -232,9 +18,9 @@ struct ComparisonState<'a> {
     req: TypingRequest<'a>,
     /// Tracks where we got to starting from `req` and stepping with the left ruleset until we
     /// can't.
-    left_state: ControlFlow<AnalysisResult<'a>, TypingPredicate<'a>>,
+    left_state: ControlFlow<TypingResult<'a>, TypingPredicate<'a>>,
     /// Same with the right ruleset.
-    right_state: ControlFlow<AnalysisResult<'a>, TypingPredicate<'a>>,
+    right_state: ControlFlow<TypingResult<'a>, TypingPredicate<'a>>,
 }
 
 impl<'a> ComparisonState<'a> {
@@ -285,14 +71,14 @@ impl<'a> ComparisonState<'a> {
         a: &'a Arenas<'a>,
         ruleset: RuleSet,
         current_req: &TypingRequest<'a>,
-        state: &mut ControlFlow<AnalysisResult<'a>, TypingPredicate<'a>>,
+        state: &mut ControlFlow<TypingResult<'a>, TypingPredicate<'a>>,
     ) -> Option<DeepeningRequest> {
         use ControlFlow::*;
         while let Continue(pred) = state {
             *state = match ruleset {
                 RuleSet::BindingModeBased(conf) => {
                     match analyze_with_formality(a, conf, current_req) {
-                        AnalysisResult::TypeError(TypeError::OverlyGeneral(deepening)) => {
+                        TypingResult::TypeError(TypeError::OverlyGeneral(deepening)) => {
                             return Some(deepening)
                         }
                         res => Break(res),
@@ -320,7 +106,7 @@ impl<'a> ComparisonState<'a> {
                             if let TypeError::OverlyGeneral(deepening) = err {
                                 return Some(deepening);
                             } else {
-                                Break(AnalysisResult::TypeError(err))
+                                Break(TypingResult::TypeError(err))
                             }
                         }
                     }
@@ -352,10 +138,10 @@ pub fn compare_rulesets<'a>(
     left_ruleset: RuleSet,
     expected_order: Ordering,
     right_ruleset: RuleSet,
-) -> Vec<(TypingRequest<'a>, AnalysisResult<'a>, AnalysisResult<'a>)> {
-    use AnalysisResult::*;
+) -> Vec<(TypingRequest<'a>, TypingResult<'a>, TypingResult<'a>)> {
     use ControlFlow::*;
     use Ordering::*;
+    use TypingResult::*;
 
     // Start with an abstract pattern and type, and a concrete expression.
     let req = TypingRequest::ABSTRACT;
@@ -396,12 +182,12 @@ pub fn compare_rulesets<'a>(
                         // more accurate than the other. Hence if both agree on types we ignore the
                         // borrowck error.
                         (BorrowError(lty, _), Success(rty))
-                            if right_ruleset.is_binding_mode_based() && lty == rty =>
+                            if right_ruleset.is_bm_based() && lty == rty =>
                         {
                             continue
                         }
                         (Success(lty), BorrowError(rty, _))
-                            if left_ruleset.is_binding_mode_based() && lty == rty =>
+                            if left_ruleset.is_bm_based() && lty == rty =>
                         {
                             continue
                         }
@@ -666,7 +452,7 @@ fn compare() {
             }
 
             insta::with_settings!({
-                snapshot_path => "../tests/snapshots",
+                snapshot_path => "../../tests/snapshots",
                 snapshot_suffix => format!("{name}"),
                 prepend_module_to_snapshot => false,
                 omit_expression => true,

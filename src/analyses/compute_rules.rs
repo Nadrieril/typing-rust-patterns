@@ -6,7 +6,6 @@ use std::fmt::Write;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::*;
-use printer::Style;
 use BindingMode::*;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -339,6 +338,8 @@ impl<'a> TypingRule<'a> {
         cstrs
     }
 
+    // TODO: deprecate `BindingMode` style
+    // TODO: output intermediate representation before printing
     pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
         use PredicateStyle::*;
         let abstract_expr = ExprKind::ABSTRACT;
@@ -474,9 +475,9 @@ fn bundle_rules() -> anyhow::Result<()> {
 
     let arenas = &Arenas::default();
 
-    // Try both styles
-    let bundles = RuleOptions::KNOWN_OPTION_BUNDLES
-        .into_iter()
+    // Try all styles
+    let bundles = KNOWN_TY_BASED_BUNDLES
+        .iter()
         .copied()
         .cartesian_product([
             PredicateStyle::Expression,
@@ -485,7 +486,7 @@ fn bundle_rules() -> anyhow::Result<()> {
             PredicateStyle::BindingMode,
             PredicateStyle::Stateless,
         ])
-        .map(|(b, style)| (b.name, b.options, style));
+        .map(|(b, style)| (b.name, b.ruleset, style));
 
     for (name, options, style) in bundles {
         let mut ctx = TypingCtx { arenas, options };
@@ -507,7 +508,7 @@ fn bundle_rules() -> anyhow::Result<()> {
                 options,
             };
             insta::with_settings!({
-                snapshot_path => "../tests/snapshots",
+                snapshot_path => "../../tests/snapshots",
                 snapshot_suffix => format!("{name}-{:?}", style),
                 prepend_module_to_snapshot => false,
                 omit_expression => true,

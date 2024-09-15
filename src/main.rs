@@ -81,7 +81,7 @@ impl inquire::Autocomplete for Autocomplete {
                     ret.push(format!("set {name}"));
                 }
             }
-            for b in RuleOptions::KNOWN_OPTION_BUNDLES {
+            for b in KNOWN_TY_BASED_BUNDLES.iter() {
                 if b.name.starts_with(opt) {
                     ret.push(format!("set {}", b.name))
                 }

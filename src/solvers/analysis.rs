@@ -1,53 +1,10 @@
 use std::cmp::min;
 
 use crate::*;
-use itertools::Itertools;
 use BindingMode::*;
 use Mutability::*;
 
-impl<'a> Pattern<'a> {
-    pub fn depth(&self) -> usize {
-        match self {
-            Pattern::Abstract(_) => 0,
-            Pattern::Binding(..) => 0,
-            Pattern::Tuple(pats) => pats.iter().map(|pat| pat.depth() + 1).max().unwrap_or(0),
-            Pattern::Ref(_, pat) => 1 + pat.depth(),
-        }
-    }
-
-    /// Whether the pattern contains an abstract subpattern.
-    pub fn contains_abstract(&self) -> bool {
-        match *self {
-            Pattern::Tuple(pats) => pats.iter().any(|pat| pat.contains_abstract()),
-            Pattern::Ref(_, pat) => pat.contains_abstract(),
-            Pattern::Binding(..) => false,
-            Pattern::Abstract(_) => true,
-        }
-    }
-
-    /// Replace the abstract patterns (if any) with the given one.
-    pub fn subst(&self, a: &'a Arenas<'a>, replace: Self) -> Self {
-        match *self {
-            Pattern::Tuple(pats) => {
-                let pats = pats.iter().map(|pat| pat.subst(a, replace)).collect_vec();
-                Pattern::Tuple(a.bump.alloc_slice_fill_iter(pats))
-            }
-            Pattern::Ref(mtbl, pat) => Pattern::Ref(mtbl, pat.subst(a, replace).alloc(a)),
-            Pattern::Binding(..) => *self,
-            Pattern::Abstract(_) => replace,
-        }
-    }
-}
-
 impl<'a> Type<'a> {
-    pub fn depth(&self) -> usize {
-        match self {
-            Type::Abstract(_) | Type::AbstractNonRef(_) | Type::OtherNonRef(_) => 0,
-            Type::Tuple(tys) => tys.iter().map(|ty| ty.depth() + 1).max().unwrap_or(0),
-            Type::Ref(_, ty) => 1 + ty.depth(),
-        }
-    }
-
     /// Whether the type implements `Copy`.
     pub fn is_copy(&self) -> Result<bool, DeepeningRequest> {
         Ok(match *self {
@@ -80,30 +37,6 @@ impl<'a> Type<'a> {
             Type::Ref(_, ty) => ty.visit(f),
         }
     }
-
-    /// Whether the type contains an abstract subtype.
-    pub fn contains_abstract(&self) -> bool {
-        match *self {
-            Type::Tuple(tys) => tys.iter().any(|ty| ty.contains_abstract()),
-            Type::Ref(_, ty) => ty.contains_abstract(),
-            Type::OtherNonRef(..) => false,
-            Type::AbstractNonRef(..) | Type::Abstract(_) => true,
-        }
-    }
-
-    /// Replace the abstract types (if any) with the given type.
-    pub fn subst(&self, a: &'a Arenas<'a>, replace: Self) -> Self {
-        match *self {
-            Type::Tuple(tys) => {
-                let tys = tys.iter().map(|ty| ty.subst(a, replace)).collect_vec();
-                Type::Tuple(a.bump.alloc_slice_fill_iter(tys))
-            }
-            Type::Ref(mtbl, ty) => Type::Ref(mtbl, ty.subst(a, replace).alloc(a)),
-            Type::OtherNonRef(_) => *self,
-            Type::AbstractNonRef(_) => panic!("trying to substitute into `AbstractNonRef`"),
-            Type::Abstract(_) => replace,
-        }
-    }
 }
 
 impl<'a> Expression<'a> {
@@ -115,62 +48,6 @@ impl<'a> Expression<'a> {
             ExprKind::Ref(_, e) => e.visit(f),
             ExprKind::Deref(e) => e.visit(f),
             ExprKind::Field(e, _) => e.visit(f),
-        }
-    }
-
-    /// Replace the abstract types (if any) with the given type.
-    pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
-        match self.kind {
-            ExprKind::Scrutinee | ExprKind::ABSTRACT => Expression {
-                ty: self.ty.subst(a, replace).alloc(a),
-                kind: self.kind,
-            },
-            ExprKind::Abstract { .. } => {
-                panic!("Can't substitute the type of a partially-abstract expression")
-            }
-            ExprKind::Ref(mtbl, e) => e.subst_ty(a, replace).borrow(a, mtbl),
-            ExprKind::Deref(e) => e.subst_ty(a, replace).deref(a),
-            ExprKind::Field(e, n) => e.subst_ty(a, replace).field(a, n),
-        }
-    }
-}
-
-impl<'a> TypingRequest<'a> {
-    pub fn depth(&self) -> usize {
-        std::cmp::max(self.pat.depth(), self.ty.depth())
-    }
-
-    /// Replace the abstract patterns (if any) with the given type.
-    pub fn subst_pat(&self, a: &'a Arenas<'a>, replace: Pattern<'a>) -> Self {
-        Self {
-            pat: self.pat.subst(a, replace).alloc(a),
-            ty: self.ty,
-        }
-    }
-
-    /// Replace the abstract types (if any) with the given type.
-    pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
-        Self {
-            pat: self.pat,
-            ty: self.ty.subst(a, replace).alloc(a),
-        }
-    }
-}
-
-impl<'a> TypingPredicate<'a> {
-    /// Replace the abstract patterns (if any) with the given type.
-    pub fn subst_pat(&self, a: &'a Arenas<'a>, replace: Pattern<'a>) -> Self {
-        Self {
-            pat: self.pat.subst(a, replace).alloc(a),
-            expr: self.expr,
-        }
-    }
-
-    /// Replace the abstract types (if any) with the given type.
-    pub fn subst_ty(&self, a: &'a Arenas<'a>, replace: Type<'a>) -> Self {
-        Self {
-            pat: self.pat,
-            expr: self.expr.subst_ty(a, replace),
         }
     }
 }

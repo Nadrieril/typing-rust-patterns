@@ -297,6 +297,18 @@ impl Display for PredicateStyle {
     }
 }
 
+impl std::fmt::Display for TypingResult<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let out = match self {
+            TypingResult::Success(ty) => format!("Success({ty})").green(),
+            TypingResult::BorrowError(ty, s) => format!("BorrowError({ty:?}, \"{s:?}\")").red(),
+            TypingResult::TypeError(TypeError::External(e)) => format!("TypeError(\"{e}\")").red(),
+            TypingResult::TypeError(e) => format!("TypeError(\"{e:?}\")").red(),
+        };
+        write!(f, "{}", out)
+    }
+}
+
 impl Debug for Mutability {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{self}")

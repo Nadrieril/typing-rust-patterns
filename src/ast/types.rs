@@ -4,7 +4,6 @@
 
 use std::marker::PhantomData;
 
-use crate::*;
 use BindingMode::*;
 use Mutability::*;
 
@@ -191,4 +190,24 @@ impl<'a> Expression<'a> {
 pub struct TypingRequest<'a> {
     pub pat: &'a Pattern<'a>,
     pub ty: &'a Type<'a>,
+}
+
+/// The inner state of our solver: the typing of `let pat: type = expr`. We write it `pat @ expr :
+/// type`.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TypingPredicate<'a> {
+    pub pat: &'a Pattern<'a>,
+    pub expr: Expression<'a>,
+}
+
+impl<'a> TypingPredicate<'a> {
+    pub fn new(req: TypingRequest<'a>) -> Self {
+        TypingPredicate {
+            pat: req.pat,
+            expr: Expression {
+                kind: ExprKind::Scrutinee,
+                ty: req.ty,
+            },
+        }
+    }
 }
