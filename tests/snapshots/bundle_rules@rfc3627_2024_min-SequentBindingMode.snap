@@ -1,7 +1,7 @@
 ---
 source: src/compute_rules.rs
 info:
-  bundle_name: rfc3627_breaking_only
+  bundle_name: rfc3627_2024_min
   options:
     match_constructor_through_ref: true
     eat_inherited_ref_alone: false

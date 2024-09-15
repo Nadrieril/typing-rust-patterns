@@ -135,7 +135,7 @@ impl RuleOptions {
             doc: "The accepted RFC3627 behavior under edition 2021",
         },
         BundleDoc {
-            name: "rfc3627_breaking_only",
+            name: "rfc3627_2024_min",
             options: Self::ERGO2024_BREAKING_ONLY,
             doc: "The breaking changes for edition 2024 planned in RFC3627",
         },
