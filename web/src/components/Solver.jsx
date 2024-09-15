@@ -308,7 +308,7 @@ export default function Solver() {
         <Container fluid>
             <div className="sticky-top">
                 <MainNavBar {...{compare, setCompare, style, setStyle}}/>
-                <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title={compare ? <>Left&nbsp;&nbsp;&nbsp;</> : "Options"}/>
+                <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title={compare ? <>Left&nbsp;&nbsp;&nbsp;</> : null}/>
                 {compare ? <SolverOptions options={optionsRight} setOptions={setOptionsRight} title="Right"/> : null}
             </div>
             <Row>
