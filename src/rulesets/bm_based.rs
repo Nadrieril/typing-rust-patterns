@@ -118,7 +118,7 @@ pub const BM_BASED_OPTIONS_DOC: &[OptionsDoc] = &[
                 name: "rule4_early",
                 doc: "If the DBM is `ref` or `ref mut`, match a reference pattern \
                     against it as though it were a type *before* considering the \
-                    scrutinee.",
+                    scrutinee. WARNING: the implementation has bugs",
             },
         ],
     },
