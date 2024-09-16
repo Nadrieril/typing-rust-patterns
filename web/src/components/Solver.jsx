@@ -235,7 +235,7 @@ export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
     </Table>
 }
 
-export function CompareDisplay({optionsLeft, optionsRight}) {
+export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMode}) {
     const [patDepth, setPatDepth] = useStateInParams('pat_d', 3, parseInt);
     const [tyDepth, setTyDepth] = useStateInParams('ty_d', 4, parseInt);
     const [output, setOutput] = useState(null);
@@ -247,7 +247,14 @@ export function CompareDisplay({optionsLeft, optionsRight}) {
 
     const rows = (output || []).map((diff, index) => {
         return <tr key={index}>
-            <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.req}}/></td>
+            <td><div
+                className="monospace"
+                dangerouslySetInnerHTML={{__html: diff.req}}
+                onClick={() => {
+                    setMode('typechecker');
+                    setInputQuery(diff.req);
+                }}
+            /></td>
             <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.left}}/></td>
             <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.right}}/></td>
         </tr>
@@ -359,7 +366,7 @@ export default function Solver() {
                 </Tab>
                {compare ?
                    <Tab eventKey="compare" title="Compare">
-                       <CompareDisplay {...{optionsLeft, optionsRight}}/>
+                       <CompareDisplay {...{optionsLeft, optionsRight, setInputQuery, setMode}}/>
                    </Tab>
                : null}
             </Tabs>
