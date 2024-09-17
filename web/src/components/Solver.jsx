@@ -269,6 +269,10 @@ export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMod
         } else {
             setShowCompare(false);
         }
+        return () => {
+            setShowCompare(false);
+            setMode('typechecker');
+        };
     }, [optionsLeft, optionsRight, patDepth, tyDepth]);
 
     function doCompare() {
