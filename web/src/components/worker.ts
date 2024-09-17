@@ -9,8 +9,8 @@ addEventListener("message", async (event) => {
     switch (data.type) {
         case "compare":
             const output = compare_rulesets_js(
-                RuleSetJs.decode(data.optionsLeft),
-                RuleSetJs.decode(data.optionsRight),
+                RuleSetJs.decode(data.optionsLeft)!,
+                RuleSetJs.decode(data.optionsRight)!,
                 data.patDepth,
                 data.tyDepth,
             );
