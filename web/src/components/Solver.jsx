@@ -29,8 +29,7 @@ import Tooltip from 'react-bootstrap/Tooltip';
 await init({});
 
 // Like `useState`, but mirror the value in the search parameters.
-function useStateInParams(key, def, read = (x) => x, write = (x) => x) {
-    const [searchParams, setSearchParams] = useSearchParams();
+function useStateInParams({searchParams, setSearchParams}, key, def, read = (x) => x, write = (x) => x) {
     function setSearchParam(k, v) {
         setSearchParams((params) => {
             params.set(k, v);
@@ -38,9 +37,7 @@ function useStateInParams(key, def, read = (x) => x, write = (x) => x) {
         });
     }
 
-    let start_val = read(searchParams.get(key)) || def;
-
-    const [val, setVal] = useState(start_val);
+    const [val, setVal] = useState(() => read(searchParams.get(key)) || def);
     const setValAndParams = (v) => {
         setVal(v);
         setSearchParam(key, write(v));
@@ -235,10 +232,10 @@ export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
     </Table>
 }
 
-export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMode}) {
-    const [patDepth, setPatDepth] = useStateInParams('pat_d', 3, parseInt);
-    const [tyDepth, setTyDepth] = useStateInParams('ty_d', 4, parseInt);
-    const [showCompare, setShowCompare] = useStateInParams('do_cmp', false, (x) => x == 'true');
+export function CompareDisplay({sp, optionsLeft, optionsRight, setInputQuery, setMode}) {
+    const [patDepth, setPatDepth] = useStateInParams(sp, 'pat_d', 3, parseInt);
+    const [tyDepth, setTyDepth] = useStateInParams(sp, 'ty_d', 4, parseInt);
+    const [showCompare, setShowCompare] = useStateInParams(sp, 'do_cmp', false, x == 'true');
     // The input used in the last computation.
     const [compareInput, setCompareInput] = useState(null);
     // The output of the last computation.
@@ -269,7 +266,6 @@ export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMod
             worker.terminate();
             // When going out of compare mode, set to false to avoid surprises.
             setShowCompare(false);
-            setMode('typechecker');
         };
     }, []);
 
@@ -288,16 +284,17 @@ export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMod
 
     // Reset output if the options change.
     useEffect(() => {
-        if (compareInput
-            && optionsLeft.eq(compareInput.optionsLeft)
-            && optionsRight.eq(compareInput.optionsRight)
-            && patDepth == compareInput.patDepth
-            && tyDepth == compareInput.tyDepth) {
-            setShowCompare(true);
-        } else {
-            setShowCompare(false);
+        if (compareInput) {
+            if (optionsLeft.eq(compareInput.optionsLeft)
+                && optionsRight.eq(compareInput.optionsRight)
+                && patDepth == compareInput.patDepth
+                && tyDepth == compareInput.tyDepth) {
+                setShowCompare(true);
+            } else {
+                setShowCompare(false);
+            }
         }
-    }, [optionsLeft, optionsRight, patDepth, tyDepth]);
+    }, [optionsLeft, optionsRight, patDepth, tyDepth, compareInput]);
 
     const rows = (output || []).map((diff, index) => {
         return <tr
@@ -361,12 +358,14 @@ export default function Solver() {
         return (v) => allowed.includes(v) ? v : null;
     }
 
-    const [compare, setCompare] = useStateInParams('compare', false, (x) => x == 'true');
-    const [style, setStyle] = useStateInParams('style', 'Sequent', validateIn(['Sequent', 'SequentBindingMode', 'Expression']));
-    const [optionsLeft, setOptionsLeft] = useStateInParams('opts1', RuleSetJs.from_bundle_name('nadri', 'stable'), RuleSetJs.decode, (o) => o.encode());
-    const [optionsRight, setOptionsRight] = useStateInParams('opts2', RuleSetJs.from_bundle_name('rfc3627', 'rfc3627'), RuleSetJs.decode, (o) => o.encode());
-    const [inputQuery, setInputQuery] = useStateInParams('q', "[&x]: &mut [&T]");
-    const [mode, setMode] = useStateInParams('mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
+    const [searchParams, setSearchParams] = useSearchParams();
+    const sp = {searchParams, setSearchParams};
+    const [compare, setCompare] = useStateInParams(sp, 'compare', false, (x) => x == 'true');
+    const [style, setStyle] = useStateInParams(sp, 'style', 'Sequent', validateIn(['Sequent', 'SequentBindingMode', 'Expression']));
+    const [optionsLeft, setOptionsLeft] = useStateInParams(sp, 'opts1', RuleSetJs.from_bundle_name('nadri', 'stable'), RuleSetJs.decode, (o) => o.encode());
+    const [optionsRight, setOptionsRight] = useStateInParams(sp, 'opts2', RuleSetJs.from_bundle_name('rfc3627', 'rfc3627'), RuleSetJs.decode, (o) => o.encode());
+    const [inputQuery, setInputQuery] = useStateInParams(sp, 'q', "[&x]: &mut [&T]");
+    const [mode, setMode] = useStateInParams(sp, 'mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
 
     return (
         <>
@@ -377,7 +376,7 @@ export default function Solver() {
             </div>
             <Row>
             <Tabs
-                activeKey={mode}
+                activeKey={(!compare && mode =='compare') ? 'typechecker' : mode}
                 onSelect={(k) => setMode(k)}
                 transition={false}
                 className="mb-3"
@@ -418,7 +417,7 @@ export default function Solver() {
                 </Tab>
                {compare ?
                    <Tab eventKey="compare" title="Compare">
-                       <CompareDisplay {...{optionsLeft, optionsRight, setInputQuery, setMode}}/>
+                       <CompareDisplay {...{sp, optionsLeft, optionsRight, setInputQuery, setMode}}/>
                    </Tab>
                : null}
             </Tabs>
