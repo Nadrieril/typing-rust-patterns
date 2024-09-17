@@ -238,12 +238,30 @@ export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
 export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMode}) {
     const [patDepth, setPatDepth] = useStateInParams('pat_d', 3, parseInt);
     const [tyDepth, setTyDepth] = useStateInParams('ty_d', 4, parseInt);
+    const [showCompare, setShowCompare] = useState(false);
+    // The input used in the last computation.
+    const [compareInput, setCompareInput] = useState(null);
+    // The output of the last computation.
     const [output, setOutput] = useState(null);
 
     // Reset output if the options change.
     useEffect(() => {
-        setOutput(null)
-    }, [optionsLeft, optionsRight]);
+        if (compareInput
+            && optionsLeft.eq(compareInput.optionsLeft)
+            && optionsRight.eq(compareInput.optionsRight)
+            && patDepth == compareInput.patDepth
+            && tyDepth == compareInput.tyDepth) {
+            setShowCompare(true);
+        } else {
+            setShowCompare(false);
+        }
+    }, [optionsLeft, optionsRight, patDepth, tyDepth]);
+
+    function doCompare() {
+        setShowCompare(true);
+        setCompareInput({ optionsLeft, optionsRight, patDepth, tyDepth });
+        setOutput(compare_rulesets_js(optionsLeft, optionsRight, patDepth, tyDepth));
+    }
 
     const rows = (output || []).map((diff, index) => {
         return <tr
@@ -278,14 +296,10 @@ export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMod
                         onChange={(e) => setTyDepth(e.target.value)}
                     />
                 </InputGroup>
-                <Button
-                    onClick={() => setOutput(compare_rulesets_js(optionsLeft, optionsRight, patDepth, tyDepth))}
-                >
-                    Compare
-                </Button>
+                <Button onClick={doCompare}>Compare</Button>
             </Stack>
         </Form>
-        {output === null
+        {!showCompare
             ? null
             : !output.length
             ? <>No differences</>

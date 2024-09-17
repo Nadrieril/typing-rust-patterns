@@ -39,6 +39,10 @@ impl RuleSetJs {
         }
     }
 
+    pub fn eq(&self, other: &RuleSetJs) -> bool {
+        self.as_ruleset() == other.as_ruleset()
+    }
+
     pub fn options_doc(&self) -> Vec<JsValue> {
         if self.this_solver {
             TY_BASED_OPTIONS_DOC
