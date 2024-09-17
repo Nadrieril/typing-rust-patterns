@@ -238,11 +238,25 @@ export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
 export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMode}) {
     const [patDepth, setPatDepth] = useStateInParams('pat_d', 3, parseInt);
     const [tyDepth, setTyDepth] = useStateInParams('ty_d', 4, parseInt);
-    const [showCompare, setShowCompare] = useState(false);
+    const [showCompare, setShowCompare] = useStateInParams('do_cmp', false, (x) => x == 'true');
     // The input used in the last computation.
-    const [compareInput, setCompareInput] = useState(null);
+    const [compareInput, setCompareInput] = useState(() => {
+        if (showCompare) {
+            // If `showCompare` is true on init, this comes from the url so we should compare the input.
+            return { optionsLeft, optionsRight, patDepth, tyDepth }
+        } else {
+            return null
+        }
+    });
     // The output of the last computation.
-    const [output, setOutput] = useState(null);
+    const [output, setOutput] = useState(() => {
+        if (showCompare) {
+            // If `showCompare` is true on init, this comes from the url so we should compare the input.
+            return compare_rulesets_js(optionsLeft, optionsRight, patDepth, tyDepth)
+        } else {
+            return null
+        }
+    });
 
     // Reset output if the options change.
     useEffect(() => {
