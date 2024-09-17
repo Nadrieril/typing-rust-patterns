@@ -240,23 +240,51 @@ export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMod
     const [tyDepth, setTyDepth] = useStateInParams('ty_d', 4, parseInt);
     const [showCompare, setShowCompare] = useStateInParams('do_cmp', false, (x) => x == 'true');
     // The input used in the last computation.
-    const [compareInput, setCompareInput] = useState(() => {
-        if (showCompare) {
-            // If `showCompare` is true on init, this comes from the url so we should compare the input.
-            return { optionsLeft, optionsRight, patDepth, tyDepth }
-        } else {
-            return null
-        }
-    });
+    const [compareInput, setCompareInput] = useState(null);
     // The output of the last computation.
-    const [output, setOutput] = useState(() => {
-        if (showCompare) {
-            // If `showCompare` is true on init, this comes from the url so we should compare the input.
-            return compare_rulesets_js(optionsLeft, optionsRight, patDepth, tyDepth)
-        } else {
-            return null
-        }
-    });
+    const [output, setOutput] = useState(null);
+
+    // Set up the worker.
+    const [worker, setWorker] = useState(null);
+    useEffect(() => {
+        const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
+        worker.onmessage = function (event) {
+            switch (event.data.type) {
+                case "compare":
+                    setOutput(event.data.output);
+                    break;
+                case "loaded":
+                    if (showCompare) {
+                        // If `showCompare` is true on init, this comes from the url so we
+                        // should compute and show the output.
+                        doCompare(worker);
+                    }
+                    break;
+            }
+        };
+        setWorker(worker);
+
+        // Clean up the worker when the component unmounts
+        return () => {
+            worker.terminate();
+            // When going out of compare mode, set to false to avoid surprises.
+            setShowCompare(false);
+            setMode('typechecker');
+        };
+    }, []);
+
+    function doCompare(worker) {
+        setShowCompare(true);
+        setCompareInput({ optionsLeft, optionsRight, patDepth, tyDepth });
+        setOutput(null);
+        worker.postMessage({
+            type: 'compare',
+            optionsLeft: optionsLeft.encode(),
+            optionsRight: optionsRight.encode(),
+            patDepth,
+            tyDepth,
+        });
+    }
 
     // Reset output if the options change.
     useEffect(() => {
@@ -269,17 +297,7 @@ export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMod
         } else {
             setShowCompare(false);
         }
-        return () => {
-            setShowCompare(false);
-            setMode('typechecker');
-        };
     }, [optionsLeft, optionsRight, patDepth, tyDepth]);
-
-    function doCompare() {
-        setShowCompare(true);
-        setCompareInput({ optionsLeft, optionsRight, patDepth, tyDepth });
-        setOutput(compare_rulesets_js(optionsLeft, optionsRight, patDepth, tyDepth));
-    }
 
     const rows = (output || []).map((diff, index) => {
         return <tr
@@ -314,11 +332,13 @@ export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMod
                         onChange={(e) => setTyDepth(e.target.value)}
                     />
                 </InputGroup>
-                <Button onClick={doCompare}>Compare</Button>
+                <Button onClick={() => doCompare(worker)}>Compare</Button>
             </Stack>
         </Form>
         {!showCompare
             ? null
+            : !output
+            ? <>Working...</>
             : !output.length
             ? <>No differences</>
             : <Table bordered hover>
