@@ -127,13 +127,16 @@ impl RuleSetJs {
         Some(bincode::decode_from_slice(&bits, config).ok()?.0)
     }
 
-    pub fn trace_solver(&self, request: &str, style: PredicateStyle) -> String {
+    /// Runs the solver on this input. Returns the trace of the solver steps and the result of
+    /// typechecking.
+    pub fn trace_solver(&self, request: &str, style: PredicateStyle) -> Vec<String> {
         let a = &Arenas::default();
         let req = match TypingRequest::parse(a, request) {
             Ok(req) => req,
-            Err(e) => return format!("parse error: {e}"),
+            Err(e) => return vec![format!("parse error: {e}"), String::new()],
         };
-        self.as_ruleset().trace_solver(&req, style)
+        let (trace, res) = self.as_ruleset().trace_solver(a, &req, style);
+        vec![trace, res.to_string()]
     }
 
     pub fn display_rules(&self, style: PredicateStyle) -> Vec<String> {

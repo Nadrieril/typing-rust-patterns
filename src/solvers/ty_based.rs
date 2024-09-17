@@ -136,18 +136,18 @@ pub fn run_solver<'a>(
 
 /// Run the solver on this request and returns the trace as a string.
 pub fn trace_solver<'a>(
+    arenas: &'a Arenas<'a>,
     request: TypingRequest<'a>,
     options: RuleOptions,
     style: PredicateStyle,
-) -> String {
-    let arenas = &Arenas::default();
+) -> (String, TypingResult<'a>) {
     let ctx = TypingCtx {
         arenas,
         options,
         always_inspect_bm: false,
     };
     let mut trace = String::new();
-    run_solver(ctx, &request, |solver, event| match event {
+    let res = run_solver(ctx, &request, |solver, event| match event {
         SolverTraceEvent::Start => {
             let _ = write!(&mut trace, "{}\n", solver.display_state(style));
         }
@@ -167,7 +167,7 @@ pub fn trace_solver<'a>(
             }
         },
     });
-    trace
+    (trace, res)
 }
 
 pub fn typecheck_with_this_crate<'a>(

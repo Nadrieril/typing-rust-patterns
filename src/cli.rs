@@ -338,15 +338,16 @@ impl CliState {
                 Ok(request) => request,
             };
 
+            let a = &Arenas::default();
             if let Some(saved) = self.saved {
                 println!("Comparing against the saved ruleset. Use `unsave` to forget the saved ruleset.");
                 println!("The current ruleset is on the left, and the saved one on the right.");
-                let left = trace_solver(request, self.options, self.predicate_style);
-                let right = trace_solver(request, saved, self.predicate_style);
+                let (left, _) = trace_solver(a, request, self.options, self.predicate_style);
+                let (right, _) = trace_solver(a, request, saved, self.predicate_style);
                 let traces = DiffState::side_by_side(&left, &right);
                 println!("{traces}")
             } else {
-                let trace = trace_solver(request, self.options, self.predicate_style);
+                let (trace, _) = trace_solver(a, request, self.options, self.predicate_style);
                 println!("{trace}")
             }
         }

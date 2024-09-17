@@ -183,13 +183,43 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
     </>
 }
 
-export function SolverSteps({inputQuery, options, style}) {
-    const solverSteps = useMemo(() => {
-        const __html = options.trace_solver(inputQuery, style_from_name(style));
-        return {__html}
-    }, [inputQuery, options, style]);
+export function SolverSteps({inputQuery, optionsLeft, optionsRight, compare, style}) {
+    const [stepsLeft, resultLeft] = useMemo(() => {
+        return optionsLeft.trace_solver(inputQuery, style_from_name(style));
+    }, [inputQuery, optionsLeft, style]);
+    const [stepsRight, resultRight] = useMemo(() => {
+        return optionsRight.trace_solver(inputQuery, style_from_name(style));
+    }, [inputQuery, optionsRight, style]);
 
-    return <div className="monospace" dangerouslySetInnerHTML={solverSteps}/>
+    const resultStyle = {position: 'sticky', bottom: 0, fontWeight: 'normal'};
+
+    return <Table style={{tableLayout: "fixed"}}>
+        {compare ?
+            <thead><tr>
+                <td>Left</td>
+                <td>Right</td>
+            </tr></thead>
+        : null}
+        <tbody>
+            <tr>
+                <td><div className="monospace" dangerouslySetInnerHTML={{__html: stepsLeft}}/></td>
+                {compare ? <td><div className="monospace" dangerouslySetInnerHTML={{__html: stepsRight}}/></td> : null}
+            </tr>
+            <tr>
+                <th style={resultStyle} className="bg-body-tertiary">
+                    Result:&nbsp;&nbsp;
+                    <span className="monospace" dangerouslySetInnerHTML={{__html: resultLeft}}/>
+                </th>
+                {compare ?
+                    <th style={resultStyle} className="bg-body-tertiary">
+                        Result:&nbsp;&nbsp;
+                        <span className="monospace" dangerouslySetInnerHTML={{__html: resultRight}}/>
+                    </th>
+                    : null
+                }
+            </tr>
+        </tbody>
+    </Table>
 }
 
 export function RulesDisplay({options, style}) {
@@ -391,20 +421,7 @@ export default function Solver() {
                             onChange={(e) => setInputQuery(e.target.value)}
                         />
                     </InputGroup>
-                    <Table style={{tableLayout: "fixed"}}>
-                        {compare ?
-                            <thead><tr>
-                                <td>Left</td>
-                                <td>Right</td>
-                            </tr></thead>
-                        : null}
-                        <tbody>
-                            <tr>
-                                <td><SolverSteps {...{inputQuery, options: optionsLeft, style}}/></td>
-                                {compare ? <td><SolverSteps {...{inputQuery, options: optionsRight, style}}/></td> : null}
-                            </tr>
-                        </tbody>
-                    </Table>
+                    <SolverSteps {...{inputQuery, optionsLeft, optionsRight, compare, style}}/>
                 </Tab>
                 <Tab eventKey="rules" title="Rules">
                     {

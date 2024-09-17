@@ -139,13 +139,16 @@ pub fn run_formality<'a>(
     }
 }
 
-pub fn trace_with_formality<'a>(conf: Conf, req: &TypingRequest<'a>) -> String {
-    let a = &Arenas::default();
+pub fn trace_with_formality<'a>(
+    a: &'a Arenas<'a>,
+    conf: Conf,
+    req: &TypingRequest<'a>,
+) -> (String, TypingResult<'a>) {
     let mut out = String::new();
-    run_formality(a, conf, req, |r| {
+    let res = run_formality(a, conf, req, |r| {
         let _ = write!(&mut out, "{}", r);
     });
-    out
+    (out, res)
 }
 
 pub fn typecheck_with_formality<'a>(
