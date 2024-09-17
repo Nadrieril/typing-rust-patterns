@@ -235,7 +235,7 @@ export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
 export function CompareDisplay({sp, optionsLeft, optionsRight, setInputQuery, setMode}) {
     const [patDepth, setPatDepth] = useStateInParams(sp, 'pat_d', 3, parseInt);
     const [tyDepth, setTyDepth] = useStateInParams(sp, 'ty_d', 4, parseInt);
-    const [showCompare, setShowCompare] = useStateInParams(sp, 'do_cmp', false, x == 'true');
+    const [showCompare, setShowCompare] = useStateInParams(sp, 'do_cmp', false, (x) => x == 'true');
     // The input used in the last computation.
     const [compareInput, setCompareInput] = useState(null);
     // The output of the last computation.
