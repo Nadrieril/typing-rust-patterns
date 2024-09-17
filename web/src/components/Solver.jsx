@@ -246,15 +246,15 @@ export function CompareDisplay({optionsLeft, optionsRight, setInputQuery, setMod
     }, [optionsLeft, optionsRight]);
 
     const rows = (output || []).map((diff, index) => {
-        return <tr key={index}>
-            <td><div
-                className="monospace"
-                dangerouslySetInnerHTML={{__html: diff.req}}
-                onClick={() => {
-                    setMode('typechecker');
-                    setInputQuery(diff.req);
-                }}
-            /></td>
+        return <tr
+            key={index}
+            title="click to view this query in the typechecker"
+            onClick={() => {
+                setMode('typechecker');
+                setInputQuery(diff.req);
+            }}
+        >
+            <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.req}}/></td>
             <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.left}}/></td>
             <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.right}}/></td>
         </tr>
