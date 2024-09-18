@@ -13,6 +13,8 @@ import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
+import Dropdown from 'react-bootstrap/Dropdown';
+import FloatingLabel from 'react-bootstrap/FloatingLabel';
 import Form from 'react-bootstrap/Form';
 import InputGroup from 'react-bootstrap/InputGroup';
 import Navbar from 'react-bootstrap/Navbar';
@@ -266,6 +268,7 @@ export function CompareDisplay({sp, optionsLeft, optionsRight, setInputQuery, se
     const [patDepth, setPatDepth] = useStateInParams(sp, 'pat_d', 3, parseInt);
     const [tyDepth, setTyDepth] = useStateInParams(sp, 'ty_d', 4, parseInt);
     const [showCompare, setShowCompare] = useStateInParams(sp, 'do_cmp', false, (x) => x == 'true');
+    const [compareDirection, setCompareDirection] = useStateInParams(sp, 'cmp_dir', 0, parseInt);
     // The input used in the last computation.
     const [compareInput, setCompareInput] = useState(null);
     // The output of the last computation.
@@ -301,7 +304,7 @@ export function CompareDisplay({sp, optionsLeft, optionsRight, setInputQuery, se
 
     function doCompare(worker) {
         setShowCompare(true);
-        setCompareInput({ optionsLeft, optionsRight, patDepth, tyDepth });
+        setCompareInput({ optionsLeft, optionsRight, patDepth, tyDepth, compareDirection });
         setOutput(null);
         worker.postMessage({
             type: 'compare',
@@ -309,6 +312,7 @@ export function CompareDisplay({sp, optionsLeft, optionsRight, setInputQuery, se
             optionsRight: optionsRight.encode(),
             patDepth,
             tyDepth,
+            compareDirection,
         });
     }
 
@@ -318,13 +322,14 @@ export function CompareDisplay({sp, optionsLeft, optionsRight, setInputQuery, se
             if (optionsLeft.eq(compareInput.optionsLeft)
                 && optionsRight.eq(compareInput.optionsRight)
                 && patDepth == compareInput.patDepth
-                && tyDepth == compareInput.tyDepth) {
+                && tyDepth == compareInput.tyDepth
+                && compareDirection == compareInput.compareDirection) {
                 setShowCompare(true);
             } else {
                 setShowCompare(false);
             }
         }
-    }, [optionsLeft, optionsRight, patDepth, tyDepth, compareInput]);
+    }, [optionsLeft, optionsRight, patDepth, tyDepth, compareDirection, compareInput]);
 
     const rows = (output || []).map((diff, index) => {
         return <tr
@@ -340,25 +345,35 @@ export function CompareDisplay({sp, optionsLeft, optionsRight, setInputQuery, se
             <td><div className="monospace" dangerouslySetInnerHTML={{__html: diff.right}}/></td>
         </tr>
     });
+
     return <Stack gap={2}>
         <Form className="mb-3">
-            <Stack direction="horizontal" gap={2} className="col-md-4">
-                <InputGroup>
-                    <InputGroup.Text>Pattern depth</InputGroup.Text>
+            <Stack direction="horizontal" gap={2} className="col-md-6">
+                <FloatingLabel label="Pattern depth">
                     <Form.Control
                         type="number"
                         value={patDepth}
                         onChange={(e) => setPatDepth(e.target.value)}
                     />
-                </InputGroup>
-                <InputGroup>
-                    <InputGroup.Text>Type depth</InputGroup.Text>
+                </FloatingLabel>
+                <FloatingLabel label="Type depth">
                     <Form.Control
                         type="number"
                         value={tyDepth}
                         onChange={(e) => setTyDepth(e.target.value)}
                     />
-                </InputGroup>
+                </FloatingLabel>
+                <FloatingLabel label="Compare for">
+                    <Form.Select
+                        className="w-auto"
+                        value={compareDirection}
+                        onChange={(e) => setCompareDirection(e.target.value)}
+                    >
+                        <option value={0}>Equality</option>
+                        <option value={-1}>Left-to-right compatibility</option>
+                        <option value={1}>Right-to-left compatibility</option>
+                    </Form.Select>
+                </FloatingLabel>
                 <Button onClick={() => doCompare(worker)}>Compare</Button>
             </Stack>
         </Form>
@@ -367,7 +382,12 @@ export function CompareDisplay({sp, optionsLeft, optionsRight, setInputQuery, se
             : !output
             ? <>Working...</>
             : !output.length
-            ? <>No differences</>
+            ? (compareDirection == 0
+                ? <>No differences</>
+                : compareDirection < 0
+                ? <>Left appears forward-compatible with Right</>
+                : <>Right appears forward-compatible with Left</>
+            )
             : <Table bordered hover>
                 <thead><tr>
                     <td>Query</td>

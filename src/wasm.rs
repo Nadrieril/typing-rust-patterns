@@ -212,6 +212,7 @@ pub fn compare_rulesets_js(
     right_ruleset: &RuleSetJs,
     pat_depth: usize,
     ty_depth: usize,
+    direction: i8,
 ) -> Vec<JsValue> {
     #[derive(Debug, Clone, Serialize)]
     pub struct CompareOutput {
@@ -220,13 +221,16 @@ pub fn compare_rulesets_js(
         right: String,
     }
 
+    assert!(direction.abs() <= 1);
+    let direction: Ordering = unsafe { std::mem::transmute(direction) };
+
     let a = &Arenas::default();
     compare_rulesets(
         a,
         pat_depth,
         ty_depth,
         left_ruleset.as_ruleset(),
-        Ordering::Equal,
+        direction,
         right_ruleset.as_ruleset(),
     )
     .into_iter()

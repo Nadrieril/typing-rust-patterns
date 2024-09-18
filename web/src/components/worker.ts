@@ -14,6 +14,7 @@ import init, { RuleSetJs, compare_rulesets_js } from "../../typing_rust_patterns
                     RuleSetJs.decode(data.optionsRight)!,
                     data.patDepth,
                     data.tyDepth,
+                    data.compareDirection
                 );
                 if (output.length > truncateAt) {
                     const diff = output.length - truncateAt;
