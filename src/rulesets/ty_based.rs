@@ -89,7 +89,7 @@ impl RuleOptions {
             ]
         } else if matches!(
             self.inherited_ref_on_ref,
-            InheritedRefOnRefBehavior::EatOuter
+            InheritedRefOnRefBehavior::EatOuter | InheritedRefOnRefBehavior::Error
         ) {
             &["fallback_to_outer", "eat_mut_inside_shared"]
         } else {
@@ -369,11 +369,17 @@ impl RuleOptions {
         match_constructor_through_ref: false,
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
-        fallback_to_outer: false,
+        inherited_ref_on_ref: InheritedRefOnRefBehavior::Error,
         allow_ref_pat_on_ref_mut: false,
         eat_inherited_ref_alone: false,
         eat_mut_inside_shared: false,
         ..Self::STATELESS
+    };
+
+    /// The minimal amout of match ergonomics that's forward-compatible with most proposals.
+    pub const MIN_ERGONOMICS: Self = RuleOptions {
+        match_constructor_through_ref: true,
+        ..Self::STRUCTURAL
     };
 
     pub const RFC3627_2021: Self = RuleOptions {
@@ -446,6 +452,11 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
         name: "rfc3627_2024_min",
         ruleset: RuleOptions::ERGO2024_BREAKING_ONLY,
         doc: "The breaking changes for edition 2024 planned in RFC3627",
+    },
+    BundleDoc {
+        name: "min_ergonomics",
+        ruleset: RuleOptions::MIN_ERGONOMICS,
+        doc: "The minimal amout of match ergonomics that's forward-compatible with most proposals",
     },
     BundleDoc {
         name: "structural",
