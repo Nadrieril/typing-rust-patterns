@@ -55,6 +55,25 @@ At the end, you get either a type error or an assignment for all the bindings. T
 assigned a type as well as an expression such as `&(*s).0`, where `s` represents the value that was
 matched on.
 
+## Solver design
+
+The heart of the solver is a step function with type roughly `fn step(RuleSet, Predicate) ->
+Result<(Rule, Vec<Predicate>), StepError>`. It is called repeatedly until success (no predicates
+left) or error.
+
+The clever part is that predicates can be partially abstract: we represent an arbitrary pattern `p`
+as `Pattern::Abstract`. The `step` function raises `TooAbstract` if it ever needs to inspect a part
+of the predicate that is abstract. If it succeeds, we know that the step that was performed is valid
+for any predicate with that shape: this is how we can confidently derive general typing rules from
+just that step function.
+
+To derive general typing rules, we start with a fully abstract predicate, and call the step function
+on it. As long as it returns `TooAbstract`, we make the predicate a little bit more precise by
+trying all possibilities (e.g. if the pattern is too abstract, we try `[p]`, `&p`, `&mut p` and
+various bindings). Because the stepping function is careful to only inspect predicates up to a fixed
+depth, we eventually get a list of abstract predicates on which the stepping function succeeds, and
+which fully describes the behavior of the current ruleset.
+
 [overhaul_rfc]: https://hackmd.io/eJdp4f0iQASg5BEPVkCD8g
 [typing_rules]: https://hackmd.io/aL5FRz-QTc6K0qtUzPoU9A?view=#Typing-rules
 [ergo2024]: https://github.com/rust-lang/rfcs/pull/3627
