@@ -29,7 +29,7 @@ fn generate_design_doc() -> anyhow::Result<()> {
     let a = &Arenas::default();
     for (example, comment) in examples {
         let req = TypingRequest::parse(a, &example).unwrap();
-        let trace = trace_solver(req, options, PredicateStyle::Expression);
+        let (trace, _) = trace_solver(a, req, options, PredicateStyle::Expression);
         writeln!(&mut doc, "- `{example}` => {comment}")?;
         writeln!(&mut doc, "```rust")?;
         writeln!(&mut doc, "{trace}```")?;
