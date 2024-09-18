@@ -74,6 +74,10 @@ various bindings). Because the stepping function is careful to only inspect pred
 depth, we eventually get a list of abstract predicates on which the stepping function succeeds, and
 which fully describes the behavior of the current ruleset.
 
+We also use this property to speed up comparisons between rulesets: given an abstract predicate, we
+can make progress on it before needing to split into sub-cases. This means for example that we can
+prune type errors early.
+
 [overhaul_rfc]: https://hackmd.io/eJdp4f0iQASg5BEPVkCD8g
 [typing_rules]: https://hackmd.io/aL5FRz-QTc6K0qtUzPoU9A?view=#Typing-rules
 [ergo2024]: https://github.com/rust-lang/rfcs/pull/3627
