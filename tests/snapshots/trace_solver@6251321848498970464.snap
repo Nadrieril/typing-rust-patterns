@@ -18,4 +18,4 @@ info:
 [mut x] @ s: &[T]
 // Applying rule `ConstructorRef`
 mut x @ &(*s).0: &T
-// Type error for `mut x @ &(*s).0: &T`: MutOnRef
+// Type error for `mut x @ &(*s).0: &T`: MutBindingOnInhRef

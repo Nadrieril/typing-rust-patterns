@@ -3,16 +3,16 @@ source: src/analyses/compare.rs
 info: rfc3627_vs_stateless
 ---
 Difference on `[&ref x]: &[&T]`:
-   left returned: TypeError("RefOnRef")
+   left returned: TypeError("RefBindingOnInhRef")
   right returned: Success(x: &&T)
 Difference on `[&ref x]: &[&mut T]`:
-   left returned: TypeError("RefOnRef")
+   left returned: TypeError("RefBindingOnInhRef")
   right returned: Success(x: &&mut T)
 Difference on `[&ref x]: &mut [&T]`:
-   left returned: TypeError("RefOnRef")
+   left returned: TypeError("RefBindingOnInhRef")
   right returned: Success(x: &&T)
 Difference on `[&ref x]: &mut [&mut T]`:
-   left returned: TypeError("RefOnRef")
+   left returned: TypeError("RefBindingOnInhRef")
   right returned: Success(x: &&mut T)
 Difference on `[&x]: &[&mut T]`:
    left returned: Success(x: &T)
@@ -21,16 +21,16 @@ Difference on `[&x]: &mut [&mut T]`:
    left returned: Success(x: &T)
   right returned: BorrowError(x: &mut T, "CantCopyRefMut")
 Difference on `[&(mut x)]: &[&T]`:
-   left returned: TypeError("MutOnRef")
+   left returned: TypeError("MutBindingOnInhRef")
   right returned: Success(x: &T)
 Difference on `[&(mut x)]: &mut [&T]`:
-   left returned: TypeError("MutOnRef")
+   left returned: TypeError("MutBindingOnInhRef")
   right returned: Success(x: &T)
 Difference on `[&mut ref x]: &mut [&mut T]`:
-   left returned: TypeError("RefOnRef")
+   left returned: TypeError("RefBindingOnInhRef")
   right returned: Success(x: &&mut T)
 Difference on `[&mut ref mut x]: &mut [&mut T]`:
-   left returned: TypeError("RefOnRef")
+   left returned: TypeError("RefBindingOnInhRef")
   right returned: Success(x: &mut &mut T)
 Difference on `[&mut x]: &mut [&mut T]`:
    left returned: Success(x: &mut T)
