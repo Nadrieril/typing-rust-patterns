@@ -40,6 +40,7 @@ const prettyOptions = {
         EatOuter: <>&p: <span style={{textDecoration: "underline"}} title="reference to consider"><InhRef/></span>&T</>,
         EatInner: <>&p: <InhRef/><span style={{textDecoration: "underline"}} title="reference to consider">&</span>T</>,
         EatBoth: <>&p: <span style={{textDecoration: "underline"}} title="reference to consider"><InhRef/>&</span>T</>,
+        Error: <>&p: <InhRef/>&T</>,
     },
     ref_binding_on_inherited: {
         ResetBindingMode: <>ref x: <InhRef/>T -&gt; x: &T</>,

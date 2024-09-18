@@ -37,6 +37,7 @@ pub enum TypeError {
     TypeMismatch,
     MutabilityMismatch,
     InheritedRefIsAlone,
+    InhRefOnDoubleRef,
     RefOnRef,
     MutOnRef,
     OverlyGeneral(DeepeningRequest),
@@ -135,7 +136,9 @@ impl<'a> TypingPredicate<'a> {
                 // We only inspect the binding mode if there are options that need it.
                 let must_inspect_bm = matches!(
                     o.inherited_ref_on_ref,
-                    InheritedRefOnRefBehavior::EatInner | InheritedRefOnRefBehavior::EatBoth
+                    InheritedRefOnRefBehavior::EatInner
+                        | InheritedRefOnRefBehavior::EatBoth
+                        | InheritedRefOnRefBehavior::Error
                 ) || (!o.eat_inherited_ref_alone
                     && o.match_constructor_through_ref);
                 // Construct the dereferenced expression.
@@ -199,6 +202,9 @@ impl<'a> TypingPredicate<'a> {
                                     } else {
                                         return Err(TypeError::MutabilityMismatch);
                                     }
+                                }
+                                InheritedRefOnRefBehavior::Error => {
+                                    return Err(TypeError::InhRefOnDoubleRef);
                                 }
                             }
                         }

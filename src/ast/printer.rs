@@ -180,7 +180,7 @@ impl Rule {
         let mut extras = vec![];
         if let Deref(x, _, _) | DerefMutWithShared(x) = *self {
             match options.inherited_ref_on_ref {
-                EatOuter => {}
+                EatOuter | Error => {}
                 EatBoth | EatInner => extras.push(format!("{x:?}")),
             }
         }

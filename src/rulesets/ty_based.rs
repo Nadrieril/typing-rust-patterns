@@ -40,6 +40,8 @@ pub enum InheritedRefOnRefBehavior {
     EatBoth,
     /// Eat the inner one if possible, keeping the outer one (aka binding mode). This is RFC3627 rule 2.
     EatInner,
+    /// Error.
+    Error,
 }
 
 /// Choice of typing rules.
@@ -183,6 +185,12 @@ pub const TY_BASED_OPTIONS_DOC: &[OptionsDoc] = &[
                 doc: "When matching a reference pattern on a \
                         double reference with the outer one being inherited, \
                         match against the inner reference and consume both references.",
+            },
+            OptionValue {
+                name: "Error",
+                doc: "When matching a reference pattern on a \
+                        double reference with the outer one being inherited, \
+                        raise an error.",
             },
         ],
     },
