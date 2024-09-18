@@ -86,7 +86,7 @@ impl<'a> ComparisonState<'a> {
             *state = match ruleset {
                 RuleSet::BindingModeBased(conf) => {
                     match typecheck_with_formality(a, conf, current_req) {
-                        TypingResult::TypeError(TypeError::OverlyGeneral(deepening)) => {
+                        TypingResult::TypeError(TypeError::TooAbstract(deepening)) => {
                             return Some(deepening)
                         }
                         res => Break(res),
@@ -119,7 +119,7 @@ impl<'a> ComparisonState<'a> {
                             }
                         }
                         Err(err) => {
-                            if let TypeError::OverlyGeneral(deepening) = err {
+                            if let TypeError::TooAbstract(deepening) = err {
                                 return Some(deepening);
                             } else {
                                 Break(TypingResult::TypeError(err))

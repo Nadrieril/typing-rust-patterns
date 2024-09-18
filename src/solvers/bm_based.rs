@@ -111,9 +111,9 @@ pub fn run_formality<'a>(
     mut callback: impl FnMut(&Reduction),
 ) -> TypingResult<'a> {
     if req.pat.contains_abstract() {
-        return TypingResult::TypeError(TypeError::OverlyGeneral(DeepeningRequest::Pattern));
+        return TypingResult::TypeError(TypeError::TooAbstract(DeepeningRequest::Pattern));
     } else if req.ty.contains_abstract() {
-        return TypingResult::TypeError(TypeError::OverlyGeneral(DeepeningRequest::Type));
+        return TypingResult::TypeError(TypeError::TooAbstract(DeepeningRequest::Type));
     }
 
     let stmt = req.to_bm_based();

@@ -139,4 +139,4 @@ simplify_deref_mut: true
 real, rw ⊢ [&x]: &[AT]
 // Applying rule `ConstructorRef`
 inh, ro ⊢ &x: &AT
-// Type error for `inh, ro ⊢ &x: &AT`: OverlyGeneral(Type)
+// Type error for `inh, ro ⊢ &x: &AT`: TooAbstract(Type)

@@ -243,7 +243,7 @@ impl<'a> TypingPredicate<'a> {
 
 impl From<DeepeningRequest> for TypeError {
     fn from(value: DeepeningRequest) -> Self {
-        TypeError::OverlyGeneral(value)
+        TypeError::TooAbstract(value)
     }
 }
 

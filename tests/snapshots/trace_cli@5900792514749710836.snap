@@ -5,4 +5,4 @@ info: "&ap: &T"
 real, rw ⊢ &ap: &T
 // Applying rule `Deref`
 _, ro ⊢ ap: T
-// Type error for `_, ro ⊢ ap: T`: OverlyGeneral(Pattern)
+// Type error for `_, ro ⊢ ap: T`: TooAbstract(Pattern)

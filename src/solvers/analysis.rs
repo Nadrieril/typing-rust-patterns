@@ -76,7 +76,7 @@ impl<'a> Expression<'a> {
             } => match self.ty {
                 Type::OtherNonRef(_) | Type::AbstractNonRef(..) | Type::Tuple(..) => ByMove,
                 Type::Abstract(_) | Type::Ref(..) => {
-                    return Err(TypeError::OverlyGeneral(DeepeningRequest::BindingMode))
+                    return Err(TypeError::TooAbstract(DeepeningRequest::BindingMode))
                 }
             },
             ExprKind::Ref(mtbl, _) => ByRef(mtbl),
@@ -94,7 +94,7 @@ impl<'a> Expression<'a> {
             } => Ok(*self),
             ExprKind::Abstract {
                 not_a_ref: false, ..
-            } => Err(TypeError::OverlyGeneral(DeepeningRequest::BindingMode)),
+            } => Err(TypeError::TooAbstract(DeepeningRequest::BindingMode)),
             ExprKind::Ref(_, e) => Ok(*e),
         }
     }

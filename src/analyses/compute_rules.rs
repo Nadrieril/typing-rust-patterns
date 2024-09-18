@@ -53,7 +53,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
                 }
                 rules.push(rule);
             }
-            Err(TypeError::OverlyGeneral(req)) => {
+            Err(TypeError::TooAbstract(req)) => {
                 let new_preds = pred.deepen(a, req, true);
                 if TRACE {
                     print!(
@@ -103,7 +103,7 @@ pub fn compute_joint_rules<'a>(
     while let Some(pred) = predicates.pop() {
         match (pred.typing_rule(left), pred.typing_rule(right)) {
             (Ok(left), Ok(right)) => rules.push(Both(left, right)),
-            (Err(TypeError::OverlyGeneral(req)), _) | (_, Err(TypeError::OverlyGeneral(req))) => {
+            (Err(TypeError::TooAbstract(req)), _) | (_, Err(TypeError::TooAbstract(req))) => {
                 predicates.extend(pred.deepen(a, req, true))
             }
             (Ok(left), Err(_)) => rules.push(Left(left)),
