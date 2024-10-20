@@ -59,7 +59,7 @@ const prettyOptions = {
         question: <>&mut p: <InhRef/>&mut T</>,
     },
     downgrade_mut_inside_shared: {
-        question: <><InhRef/>...&mut T -&gt; <InhRef/>...&T</>,
+        question: <>&...<InhMutRef/> T -&gt; &...<InhRef/>T</>,
     },
     allow_ref_pat_on_ref_mut: {
         question: <>&p: &mut T</>,
