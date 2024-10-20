@@ -36,5 +36,6 @@ There also exist some predefined option-bundles. Activate one with `set <bundle>
 - rfc3627: The accepted RFC3627 behavior
 - rfc3627_2021: The accepted RFC3627 behavior under edition 2021
 - rfc3627_2024_min: The breaking changes for edition 2024 planned in RFC3627
+- min_ergonomics: The minimal amout of match ergonomics that's forward-compatible with most proposals
 - structural: Purely structural matching, with no match ergonomics
 - waffle: A proposal by @WaffleLapkin (excluding the proposed rule3 extension)

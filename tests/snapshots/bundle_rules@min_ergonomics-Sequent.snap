@@ -1,9 +1,9 @@
 ---
 source: src/analyses/compute_rules.rs
 info:
-  bundle_name: structural
+  bundle_name: min_ergonomics
   options:
-    match_constructor_through_ref: false
+    match_constructor_through_ref: true
     eat_inherited_ref_alone: false
     inherited_ref_on_ref: Error
     fallback_to_outer: false
@@ -17,6 +17,30 @@ info:
 real, m ⊢ p0: T0,  real, m ⊢ p1: T1
 ----------------------------------- "Constructor"
 _, m ⊢ [p0, p1]: [T0, T1]
+
+inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+------------------------------------- "ConstructorRef"
+r, m ⊢ [p0, p1]: &[T0, T1]
+
+inh, m ⊢ p0: &mut T0,  inh, m ⊢ p1: &mut T1
+------------------------------------------- "ConstructorRef"
+r, m ⊢ [p0, p1]: &mut [T0, T1]
+
+inh, ro ⊢ [p0, p1]: &T
+---------------------- "ConstructorMultiRef"
+r, m ⊢ [p0, p1]: &&T
+
+inh, ro ⊢ [p0, p1]: &T
+------------------------ "ConstructorMultiRef"
+r, m ⊢ [p0, p1]: &&mut T
+
+inh, ro ⊢ [p0, p1]: &T
+------------------------ "ConstructorMultiRef"
+r, m ⊢ [p0, p1]: &mut &T
+
+inh, m ⊢ [p0, p1]: &mut T
+---------------------------- "ConstructorMultiRef"
+r, m ⊢ [p0, p1]: &mut &mut T
 
 real, ro ⊢ p: T
 ---------------- "Deref"
