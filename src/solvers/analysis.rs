@@ -60,6 +60,17 @@ pub enum BorrowCheckError {
     OverlyGeneral(DeepeningRequest),
 }
 
+impl BindingMode {
+    /// Returns the binding mode with least access to the scrutinee: ref < ref mut < move.
+    fn least_access(self, other: Self) -> Self {
+        match (self, other) {
+            (ByRef(s), ByRef(o)) => ByRef(min(s, o)),
+            (_, ByMove) => self,
+            (ByMove, _) => other,
+        }
+    }
+}
+
 impl<'a> Expression<'a> {
     /// An expression is either a place or a reference to a place. This corresponds to the "default
     /// binding mode" of RFC2005 aka "match ergonomics".
@@ -137,14 +148,14 @@ impl<'a> Expression<'a> {
     pub fn scrutinee_access_mode(&self) -> Result<BindingMode, DeepeningRequest> {
         Ok(match self.kind {
             ExprKind::Scrutinee => ByMove,
-            ExprKind::Ref(mtbl, e) => min(ByRef(mtbl), e.scrutinee_access_mode()?),
+            ExprKind::Ref(mtbl, e) => ByRef(mtbl).least_access(e.scrutinee_access_mode()?),
             ExprKind::Deref(e) => {
                 let bm = if let Type::Ref(mtbl, _) = *e.ty {
                     ByRef(mtbl)
                 } else {
                     ByMove
                 };
-                min(bm, e.scrutinee_access_mode()?)
+                bm.least_access(e.scrutinee_access_mode()?)
             }
             ExprKind::Field(e, _) => e.scrutinee_access_mode()?,
             ExprKind::Abstract {

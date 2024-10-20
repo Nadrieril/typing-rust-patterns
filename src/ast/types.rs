@@ -8,6 +8,7 @@ use BindingMode::*;
 use Mutability::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+// Warning: the `Ord` impl is relied on for correctness.
 pub enum Mutability {
     Shared,
     Mutable,
