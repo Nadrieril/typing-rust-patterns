@@ -249,7 +249,7 @@ pub const TY_BASED_OPTIONS_DOC: &[OptionsDoc] = &[
         values: &[
             OptionValue {
                 name: "false",
-                doc: "RFC3627 rule 3: don't downgrade `&mut` inherited references \
+                doc: "not (RFC3627 rule 3): don't downgrade `&mut` inherited references \
                         to `&` inside a shared deref",
             },
             OptionValue {
