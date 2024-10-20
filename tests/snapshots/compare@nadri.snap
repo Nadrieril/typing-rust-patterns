@@ -2,14 +2,14 @@
 source: src/analyses/compare.rs
 info: nadri
 ---
+Difference on `[&x]: &mut [&CT]`:
+   left returned: Success(x: &CT)
+  right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&CT]`:
    left returned: Success(x: &&CT)
   right returned: TypeError("mismatched types")
 Difference on `[&ref x]: &mut [&mut CT]`:
    left returned: Success(x: &&mut CT)
-  right returned: TypeError("mismatched types")
-Difference on `[&x]: &mut [&CT]`:
-   left returned: Success(x: &CT)
   right returned: TypeError("mismatched types")
 Difference on `[&(mut x)]: &mut [&CT]`:
    left returned: Success(x: &CT)

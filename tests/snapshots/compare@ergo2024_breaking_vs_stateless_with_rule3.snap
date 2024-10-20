@@ -2,67 +2,238 @@
 source: src/analyses/compare.rs
 info: ergo2024_breaking_vs_stateless_with_rule3
 ---
-Difference on `[&&ref x]: &[&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &CT)
-Difference on `[&&x]: &[&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&&(mut x)]: &[&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&&mut ref x]: &[&mut T]`:
+Difference on `&&[x]: &&&mut [T]`:
+   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+  right returned: Success(x: &T)
+Difference on `&&mut [x]: &&mut &mut [T]`:
+   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+  right returned: Success(x: &T)
+Difference on `&[x]: &&mut [T]`:
+   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+  right returned: Success(x: &T)
+Difference on `&[x]: &&mut &mut [T]`:
+   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+  right returned: Success(x: &T)
+Difference on `&[&x]: &&mut [&T]`:
+   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+  right returned: Success(x: &T)
+Difference on `&[&ref x]: &&[&T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&T)
+Difference on `&[&ref x]: &&[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &&mut T)
+Difference on `&[&ref x]: &&mut [&T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&T)
+Difference on `&[&ref x]: &&mut [&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &&mut T)
+Difference on `&[&(mut x)]: &&[&T]`:
+   left returned: TypeError("MutBindingOnInhRef")
+  right returned: Success(x: &T)
+Difference on `&[&(mut x)]: &&mut [&T]`:
+   left returned: TypeError("MutBindingOnInhRef")
+  right returned: Success(x: &T)
+Difference on `&[&mut x]: &&[&mut T]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `&[[x]]: &[&mut [T]]`:
+   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+  right returned: Success(x: &T)
+Difference on `&[[x]]: &&mut [[T]]`:
+   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+  right returned: Success(x: &T)
+Difference on `&mut &[x]: &mut &&mut [T]`:
+   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+  right returned: Success(x: &T)
+Difference on `&mut [&ref x]: &mut &[&T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&T)
+Difference on `&mut [&ref x]: &mut &[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &&mut T)
+Difference on `&mut [&(mut x)]: &mut &[&T]`:
+   left returned: TypeError("MutBindingOnInhRef")
+  right returned: Success(x: &T)
+Difference on `&mut [&mut x]: &mut &[&mut T]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `&mut [&mut x]: &mut &mut [&T]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(x: &T)
-Difference on `[&&mut x]: &[&mut CT]`:
+Difference on `&mut [&mut x]: &mut &mut [&mut T]`:
+   left returned: Success(x: &mut T)
+  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
+Difference on `&mut [&mut ref x]: &mut &mut [&T]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
-Difference on `[&&mut mut x]: &[&mut CT]`:
+  right returned: Success(x: &&T)
+Difference on `&mut [&mut ref x]: &mut &mut [&mut T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&mut T)
+Difference on `&mut [&mut ref mut x]: &mut &mut [&T]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
+  right returned: Success(x: &mut &T)
+Difference on `&mut [&mut ref mut x]: &mut &mut [&mut T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &mut &mut T)
+Difference on `&mut [&mut mut x]: &mut &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
 Difference on `[&ref x]: &[&T]`:
    left returned: TypeError("RefBindingOnInhRef")
   right returned: Success(x: &&T)
 Difference on `[&ref x]: &[&mut T]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(x: &&mut T)
+Difference on `[&ref x]: &&[&T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&T)
+Difference on `[&ref x]: &&[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &&mut T)
+Difference on `[&ref x]: &&mut [&T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&T)
+Difference on `[&ref x]: &&mut [&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &&mut T)
+Difference on `[&ref x]: &mut &[&T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&T)
+Difference on `[&ref x]: &mut &[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &&mut T)
 Difference on `[&(mut x)]: &[&T]`:
    left returned: TypeError("MutBindingOnInhRef")
   right returned: Success(x: &T)
-Difference on `[&mut &ref x]: &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
+Difference on `[&(mut x)]: &&[&T]`:
+   left returned: TypeError("MutBindingOnInhRef")
   right returned: Success(x: &T)
-Difference on `[&mut &x]: &mut [&CT]`:
-   left returned: TypeError("MutabilityMismatch")
+Difference on `[&(mut x)]: &&mut [&T]`:
+   left returned: TypeError("MutBindingOnInhRef")
+  right returned: Success(x: &T)
+Difference on `[&(mut x)]: &mut &[&T]`:
+   left returned: TypeError("MutBindingOnInhRef")
+  right returned: Success(x: &T)
+Difference on `[&&x]: &[&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
   right returned: Success(x: CT)
-Difference on `[&mut &(mut x)]: &mut [&CT]`:
-   left returned: TypeError("MutabilityMismatch")
+Difference on `[&&x]: &[&[CT]]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: [CT])
+Difference on `[&&x]: &&[&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
   right returned: Success(x: CT)
-Difference on `[&mut &mut ref x]: &mut [&mut CT]`:
+Difference on `[&&x]: &&mut [&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&&x]: &mut &[&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&&ref x]: &[&CT]`:
    left returned: TypeError("InheritedRefIsAlone")
   right returned: Success(x: &CT)
-Difference on `[&mut &mut ref mut x]: &mut [&mut CT]`:
+Difference on `[&&ref x]: &[&[T]]`:
    left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &mut CT)
-Difference on `[&mut &mut x]: &mut [&mut CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&mut &mut mut x]: &mut [&mut CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&mut ref x]: &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &[T])
+Difference on `[&&ref x]: &[&&T]`:
+   left returned: TypeError("RefBindingOnInhRef")
   right returned: Success(x: &&T)
-Difference on `[&mut ref x]: &mut [&mut T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&mut T)
-Difference on `[&mut ref mut x]: &mut [&T]`:
+Difference on `[&&ref x]: &[&&mut T]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &mut &T)
-Difference on `[&mut ref mut x]: &mut [&mut T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &mut &mut T)
+  right returned: Success(x: &&mut T)
+Difference on `[&&ref x]: &&[&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: &CT)
+Difference on `[&&ref x]: &&mut [&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: &CT)
+Difference on `[&&ref x]: &mut &[&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: &CT)
+Difference on `[&&(mut x)]: &[&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&&(mut x)]: &[&[CT]]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: [CT])
+Difference on `[&&(mut x)]: &[&&T]`:
+   left returned: TypeError("MutBindingOnInhRef")
+  right returned: Success(x: &T)
+Difference on `[&&(mut x)]: &&[&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&&(mut x)]: &&mut [&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&&(mut x)]: &mut &[&CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&&mut x]: &[&&mut T]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&&mut x]: &[&mut CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&&mut x]: &[&mut [CT]]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: [CT])
+Difference on `[&&mut x]: &[&mut &T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&&mut x]: &&[&mut CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&&mut x]: &&mut [&mut CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&&mut x]: &mut &[&mut CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&&mut ref x]: &[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&&mut ref x]: &&[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&&mut ref x]: &&mut [&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&&mut ref x]: &mut &[&mut T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&&mut mut x]: &[&mut CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&&mut mut x]: &[&mut [CT]]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: [CT])
+Difference on `[&&mut mut x]: &[&mut &T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&&mut mut x]: &&[&mut CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&&mut mut x]: &&mut [&mut CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&&mut mut x]: &mut &[&mut CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&[x]]: [&&mut [T]]`:
+   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+  right returned: Success(x: &T)
+Difference on `[&[x]]: &[&mut [T]]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
 Difference on `[&mut x]: &[&mut T]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &&[&mut T]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &&mut [&mut T]`:
    left returned: Success(x: &T)
   right returned: TypeError("MutabilityMismatch")
 Difference on `[&mut x]: &mut [&T]`:
@@ -71,11 +242,143 @@ Difference on `[&mut x]: &mut [&T]`:
 Difference on `[&mut x]: &mut [&mut T]`:
    left returned: Success(x: &mut T)
   right returned: BorrowError(x: &mut T, "CantCopyRefMut")
+Difference on `[&mut x]: &mut &[&mut T]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut x]: &mut &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&mut x]: &mut &mut [&mut T]`:
+   left returned: Success(x: &mut T)
+  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
+Difference on `[&mut ref x]: &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &&T)
+Difference on `[&mut ref x]: &mut [&mut T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&mut T)
+Difference on `[&mut ref x]: &mut &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &&T)
+Difference on `[&mut ref x]: &mut &mut [&mut T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&mut T)
+Difference on `[&mut ref mut x]: &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &mut &T)
+Difference on `[&mut ref mut x]: &mut [&mut T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &mut &mut T)
+Difference on `[&mut ref mut x]: &mut &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &mut &T)
+Difference on `[&mut ref mut x]: &mut &mut [&mut T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &mut &mut T)
 Difference on `[&mut mut x]: &mut [&T]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(x: &T)
-Difference on `&[x]: &&mut [T]`:
-   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
+Difference on `[&mut mut x]: &mut &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&mut &x]: &[&mut &T]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut &x]: &mut [&CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&mut &x]: &mut [&[CT]]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: [CT])
+Difference on `[&mut &x]: &mut [&&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&mut &x]: &mut &mut [&CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&mut &ref x]: &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&mut &ref x]: &mut &mut [&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&mut &(mut x)]: &mut [&CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&mut &(mut x)]: &mut [&[CT]]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: [CT])
+Difference on `[&mut &(mut x)]: &mut [&&T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&mut &(mut x)]: &mut &mut [&CT]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: CT)
+Difference on `[&mut &mut x]: &[&mut &mut T]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut &mut x]: &mut [&mut CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&mut &mut x]: &mut [&mut [CT]]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: [CT])
+Difference on `[&mut &mut x]: &mut [&mut &T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&mut &mut x]: &mut [&mut &mut T]`:
+   left returned: Success(x: &mut T)
+  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
+Difference on `[&mut &mut x]: &mut &mut [&mut CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&mut &mut ref x]: &mut [&mut CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: &CT)
+Difference on `[&mut &mut ref x]: &mut [&mut [T]]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: &[T])
+Difference on `[&mut &mut ref x]: &mut [&mut &T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &&T)
+Difference on `[&mut &mut ref x]: &mut [&mut &mut T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &&mut T)
+Difference on `[&mut &mut ref x]: &mut &mut [&mut CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: &CT)
+Difference on `[&mut &mut ref mut x]: &mut [&mut CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: &mut CT)
+Difference on `[&mut &mut ref mut x]: &mut [&mut [T]]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: &mut [T])
+Difference on `[&mut &mut ref mut x]: &mut [&mut &T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &mut &T)
+Difference on `[&mut &mut ref mut x]: &mut [&mut &mut T]`:
+   left returned: TypeError("RefBindingOnInhRef")
+  right returned: Success(x: &mut &mut T)
+Difference on `[&mut &mut ref mut x]: &mut &mut [&mut CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: &mut CT)
+Difference on `[&mut &mut mut x]: &mut [&mut CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&mut &mut mut x]: &mut [&mut [CT]]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: [CT])
+Difference on `[&mut &mut mut x]: &mut [&mut &T]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[&mut &mut mut x]: &mut &mut [&mut CT]`:
+   left returned: TypeError("InheritedRefIsAlone")
+  right returned: Success(x: CT)
+Difference on `[&mut [x]]: &[&mut [T]]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[&mut [x]]: &mut [&[T]]`:
+   left returned: TypeError("MutabilityMismatch")
   right returned: Success(x: &T)
 Difference on `[[&ref x]]: [&[&T]]`:
    left returned: TypeError("RefBindingOnInhRef")
@@ -95,6 +398,24 @@ Difference on `[[&(mut x)]]: [&[&T]]`:
 Difference on `[[&(mut x)]]: &[[&T]]`:
    left returned: TypeError("MutBindingOnInhRef")
   right returned: Success(x: &T)
+Difference on `[[&mut x]]: [&[&mut T]]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[[&mut x]]: [&mut [&T]]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[[&mut x]]: [&mut [&mut T]]`:
+   left returned: Success(x: &mut T)
+  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
+Difference on `[[&mut x]]: &[[&mut T]]`:
+   left returned: Success(x: &T)
+  right returned: TypeError("MutabilityMismatch")
+Difference on `[[&mut x]]: &mut [[&T]]`:
+   left returned: TypeError("MutabilityMismatch")
+  right returned: Success(x: &T)
+Difference on `[[&mut x]]: &mut [[&mut T]]`:
+   left returned: Success(x: &mut T)
+  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
 Difference on `[[&mut ref x]]: [&mut [&T]]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(x: &&T)
@@ -119,330 +440,9 @@ Difference on `[[&mut ref mut x]]: &mut [[&T]]`:
 Difference on `[[&mut ref mut x]]: &mut [[&mut T]]`:
    left returned: TypeError("RefBindingOnInhRef")
   right returned: Success(x: &mut &mut T)
-Difference on `[[&mut x]]: [&[&mut T]]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[[&mut x]]: [&mut [&T]]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[[&mut x]]: [&mut [&mut T]]`:
-   left returned: Success(x: &mut T)
-  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
-Difference on `[[&mut x]]: &[[&mut T]]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[[&mut x]]: &mut [[&T]]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[[&mut x]]: &mut [[&mut T]]`:
-   left returned: Success(x: &mut T)
-  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
 Difference on `[[&mut mut x]]: [&mut [&T]]`:
    left returned: TypeError("MutabilityMismatch")
   right returned: Success(x: &T)
 Difference on `[[&mut mut x]]: &mut [[&T]]`:
    left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&[x]]: [&&mut [T]]`:
-   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
-  right returned: Success(x: &T)
-Difference on `[&[x]]: &[&mut [T]]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&&ref x]: &[&[T]]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &[T])
-Difference on `[&&ref x]: &[&&T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&T)
-Difference on `[&&ref x]: &[&&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&mut T)
-Difference on `[&&ref x]: &&[&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &CT)
-Difference on `[&&ref x]: &&mut [&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &CT)
-Difference on `[&&ref x]: &mut &[&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &CT)
-Difference on `[&&x]: &[&[CT]]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: [CT])
-Difference on `[&&x]: &&[&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&&x]: &&mut [&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&&x]: &mut &[&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&&(mut x)]: &[&[CT]]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: [CT])
-Difference on `[&&(mut x)]: &[&&T]`:
-   left returned: TypeError("MutBindingOnInhRef")
-  right returned: Success(x: &T)
-Difference on `[&&(mut x)]: &&[&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&&(mut x)]: &&mut [&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&&(mut x)]: &mut &[&CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&&mut ref x]: &&[&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&&mut ref x]: &&mut [&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&&mut ref x]: &mut &[&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&&mut x]: &[&&mut T]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[&&mut x]: &[&mut [CT]]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: [CT])
-Difference on `[&&mut x]: &[&mut &T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&&mut x]: &&[&mut CT]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
-Difference on `[&&mut x]: &&mut [&mut CT]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
-Difference on `[&&mut x]: &mut &[&mut CT]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
-Difference on `[&&mut mut x]: &[&mut [CT]]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: [CT])
-Difference on `[&&mut mut x]: &[&mut &T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&&mut mut x]: &&[&mut CT]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
-Difference on `[&&mut mut x]: &&mut [&mut CT]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
-Difference on `[&&mut mut x]: &mut &[&mut CT]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
-Difference on `[&ref x]: &&[&T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&T)
-Difference on `[&ref x]: &&[&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&mut T)
-Difference on `[&ref x]: &&mut [&T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&T)
-Difference on `[&ref x]: &&mut [&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&mut T)
-Difference on `[&ref x]: &mut &[&T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&T)
-Difference on `[&ref x]: &mut &[&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&mut T)
-Difference on `[&(mut x)]: &&[&T]`:
-   left returned: TypeError("MutBindingOnInhRef")
-  right returned: Success(x: &T)
-Difference on `[&(mut x)]: &&mut [&T]`:
-   left returned: TypeError("MutBindingOnInhRef")
-  right returned: Success(x: &T)
-Difference on `[&(mut x)]: &mut &[&T]`:
-   left returned: TypeError("MutBindingOnInhRef")
-  right returned: Success(x: &T)
-Difference on `[&mut [x]]: &[&mut [T]]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[&mut [x]]: &mut [&[T]]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&mut &ref x]: &mut &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&mut &x]: &[&mut &T]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[&mut &x]: &mut [&[CT]]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: [CT])
-Difference on `[&mut &x]: &mut [&&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&mut &x]: &mut &mut [&CT]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
-Difference on `[&mut &(mut x)]: &mut [&[CT]]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: [CT])
-Difference on `[&mut &(mut x)]: &mut [&&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&mut &(mut x)]: &mut &mut [&CT]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: CT)
-Difference on `[&mut &mut ref x]: &mut [&mut [T]]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &[T])
-Difference on `[&mut &mut ref x]: &mut [&mut &T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&T)
-Difference on `[&mut &mut ref x]: &mut [&mut &mut T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&mut T)
-Difference on `[&mut &mut ref x]: &mut &mut [&mut CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &CT)
-Difference on `[&mut &mut ref mut x]: &mut [&mut [T]]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &mut [T])
-Difference on `[&mut &mut ref mut x]: &mut [&mut &T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &mut &T)
-Difference on `[&mut &mut ref mut x]: &mut [&mut &mut T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &mut &mut T)
-Difference on `[&mut &mut ref mut x]: &mut &mut [&mut CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: &mut CT)
-Difference on `[&mut &mut x]: &[&mut &mut T]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[&mut &mut x]: &mut [&mut [CT]]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: [CT])
-Difference on `[&mut &mut x]: &mut [&mut &T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&mut &mut x]: &mut [&mut &mut T]`:
-   left returned: Success(x: &mut T)
-  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
-Difference on `[&mut &mut x]: &mut &mut [&mut CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&mut &mut mut x]: &mut [&mut [CT]]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: [CT])
-Difference on `[&mut &mut mut x]: &mut [&mut &T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&mut &mut mut x]: &mut &mut [&mut CT]`:
-   left returned: TypeError("InheritedRefIsAlone")
-  right returned: Success(x: CT)
-Difference on `[&mut ref x]: &mut &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&T)
-Difference on `[&mut ref x]: &mut &mut [&mut T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&mut T)
-Difference on `[&mut ref mut x]: &mut &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &mut &T)
-Difference on `[&mut ref mut x]: &mut &mut [&mut T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &mut &mut T)
-Difference on `[&mut x]: &&[&mut T]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[&mut x]: &&mut [&mut T]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[&mut x]: &mut &[&mut T]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `[&mut x]: &mut &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `[&mut x]: &mut &mut [&mut T]`:
-   left returned: Success(x: &mut T)
-  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
-Difference on `[&mut mut x]: &mut &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `&[[x]]: &[&mut [T]]`:
-   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
-  right returned: Success(x: &T)
-Difference on `&[[x]]: &&mut [[T]]`:
-   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
-  right returned: Success(x: &T)
-Difference on `&[&ref x]: &&[&T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&T)
-Difference on `&[&ref x]: &&[&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&mut T)
-Difference on `&[&ref x]: &&mut [&T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&T)
-Difference on `&[&ref x]: &&mut [&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&mut T)
-Difference on `&[&x]: &&mut [&T]`:
-   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
-  right returned: Success(x: &T)
-Difference on `&[&(mut x)]: &&[&T]`:
-   left returned: TypeError("MutBindingOnInhRef")
-  right returned: Success(x: &T)
-Difference on `&[&(mut x)]: &&mut [&T]`:
-   left returned: TypeError("MutBindingOnInhRef")
-  right returned: Success(x: &T)
-Difference on `&[&mut x]: &&[&mut T]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `&[x]: &&mut &mut [T]`:
-   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
-  right returned: Success(x: &T)
-Difference on `&&[x]: &&&mut [T]`:
-   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
-  right returned: Success(x: &T)
-Difference on `&&mut [x]: &&mut &mut [T]`:
-   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
-  right returned: Success(x: &T)
-Difference on `&mut [&ref x]: &mut &[&T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&T)
-Difference on `&mut [&ref x]: &mut &[&mut T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&mut T)
-Difference on `&mut [&(mut x)]: &mut &[&T]`:
-   left returned: TypeError("MutBindingOnInhRef")
-  right returned: Success(x: &T)
-Difference on `&mut [&mut ref x]: &mut &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &&T)
-Difference on `&mut [&mut ref x]: &mut &mut [&mut T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &&mut T)
-Difference on `&mut [&mut ref mut x]: &mut &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &mut &T)
-Difference on `&mut [&mut ref mut x]: &mut &mut [&mut T]`:
-   left returned: TypeError("RefBindingOnInhRef")
-  right returned: Success(x: &mut &mut T)
-Difference on `&mut [&mut x]: &mut &[&mut T]`:
-   left returned: Success(x: &T)
-  right returned: TypeError("MutabilityMismatch")
-Difference on `&mut [&mut x]: &mut &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `&mut [&mut x]: &mut &mut [&mut T]`:
-   left returned: Success(x: &mut T)
-  right returned: BorrowError(x: &mut T, "CantCopyRefMut")
-Difference on `&mut [&mut mut x]: &mut &mut [&T]`:
-   left returned: TypeError("MutabilityMismatch")
-  right returned: Success(x: &T)
-Difference on `&mut &[x]: &mut &&mut [T]`:
-   left returned: BorrowError(x: &mut T, "MutBorrowBehindSharedBorrow")
   right returned: Success(x: &T)

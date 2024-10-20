@@ -218,7 +218,7 @@ pub fn compare_rulesets<'a>(
         }
     }
 
-    complete.sort_by_key(|(req, _, _)| (req.depth(), *req));
+    complete.sort_by_key(|(req, _, _)| *req);
     complete
 }
 

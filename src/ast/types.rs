@@ -20,8 +20,8 @@ impl Mutability {
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BindingMode {
-    ByRef(Mutability),
     ByMove,
+    ByRef(Mutability),
 }
 
 impl BindingMode {
@@ -31,17 +31,17 @@ impl BindingMode {
 /// A pattern.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Pattern<'a> {
-    /// The constructor for a type. Our only type is the tuple, represented as `[T, U]`, with its
-    /// constructor `[p, q]`.
-    Tuple(&'a [Self]),
-    /// `&p` or `&mut p`.
-    Ref(Mutability, &'a Self),
-    /// Bindings: `mut x`, `ref mut x`, etc. We allow things like `mut ref mut x` that aren't
-    /// representable in today's rust.
-    Binding(Mutability, BindingMode, &'a str),
     /// An abstract pattern, meant as a placeholder for some unknown pattern. Used only when
     /// exploring possible rules.
     Abstract(&'a str),
+    /// Bindings: `mut x`, `ref mut x`, etc. We allow things like `mut ref mut x` that aren't
+    /// representable in today's rust.
+    Binding(Mutability, BindingMode, &'a str),
+    /// `&p` or `&mut p`.
+    Ref(Mutability, &'a Self),
+    /// The constructor for a type. Our only type is the tuple, represented as `[T, U]`, with its
+    /// constructor `[p, q]`.
+    Tuple(&'a [Self]),
 }
 
 /// A type.
