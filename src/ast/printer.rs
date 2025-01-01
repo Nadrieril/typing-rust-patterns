@@ -107,7 +107,7 @@ impl<'a> TypingPredicate<'a> {
     }
 
     pub fn display(&self, style: PredicateStyle) -> String {
-        if let PredicateStyle::Expression | PredicateStyle::BindingMode = style {
+        if let PredicateStyle::Expression = style {
             return format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty);
         }
 
@@ -180,7 +180,7 @@ impl<'a> TypingPredicate<'a> {
                     _ => unreachable!(),
                 },
             },
-            PredicateStyle::Expression | PredicateStyle::BindingMode => {
+            PredicateStyle::Expression => {
                 unreachable!()
             }
         };

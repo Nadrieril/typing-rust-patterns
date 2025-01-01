@@ -184,79 +184,6 @@ impl<'a> Expression<'a> {
             _ => Err(IncompatibleStyle),
         }
     }
-
-    /// Changes the abstract variable to have the provided bm. Assumes that the expression was
-    /// obtained from applying rules to an expression hwere the abstract variable already had that
-    /// binding mode.
-    fn set_abstract_bm(&self, a: &'a Arenas<'a>, bm: Option<BindingMode>) -> Self {
-        match (self.kind, bm) {
-            (ExprKind::Scrutinee, _) => *self,
-            (
-                ExprKind::Abstract {
-                    not_a_ref: false, ..
-                },
-                None,
-            ) => *self,
-            (
-                ExprKind::Abstract {
-                    not_a_ref: false, ..
-                },
-                Some(ByMove),
-            ) => unreachable!(),
-            (
-                ExprKind::Abstract {
-                    not_a_ref: false, ..
-                },
-                Some(ByRef(mtbl)),
-            ) => Expression {
-                ty: Type::Ref(mtbl, self.ty).alloc(a),
-                kind: self.kind,
-            }
-            .deref(a),
-            (
-                ExprKind::Abstract {
-                    not_a_ref: true,
-                    scrutinee_mutability,
-                },
-                Some(ByMove),
-            ) => Expression {
-                ty: self.ty,
-                kind: ExprKind::Abstract {
-                    not_a_ref: false,
-                    scrutinee_mutability,
-                },
-            },
-            (
-                ExprKind::Abstract {
-                    not_a_ref: true, ..
-                },
-                _,
-            ) => unreachable!(),
-            (
-                ExprKind::Ref(
-                    mtbl,
-                    &Expression {
-                        kind:
-                            ExprKind::Abstract {
-                                not_a_ref: false,
-                                scrutinee_mutability,
-                            },
-                        ..
-                    },
-                ),
-                Some(ByRef(bm_mtbl)),
-            ) if mtbl == bm_mtbl => Expression {
-                ty: self.ty,
-                kind: ExprKind::Abstract {
-                    not_a_ref: false,
-                    scrutinee_mutability,
-                },
-            },
-            (ExprKind::Ref(mtbl, e), _) => e.set_abstract_bm(a, bm).borrow(a, mtbl),
-            (ExprKind::Deref(e), _) => e.set_abstract_bm(a, bm).deref(a),
-            (ExprKind::Field(e, n), _) => e.set_abstract_bm(a, bm).field(a, n),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -264,8 +191,6 @@ impl<'a> Expression<'a> {
 pub enum PredicateStyle {
     /// Draws the expression as-is.
     Expression,
-    /// Replaces the expression with a binding-mode side-constraint.
-    BindingMode,
     /// Tracks the two bits of state on the lhs of a sequent.
     Sequent,
     /// Like `Sequent` but hides the inherited reference and uses DBM terminology.
@@ -286,7 +211,7 @@ impl PredicateStyle {
 
         let mut components = vec![];
         match self {
-            PredicateStyle::Expression | PredicateStyle::BindingMode => {
+            PredicateStyle::Expression => {
                 components.push(format!("{} is an expression", "e".code()));
             }
             PredicateStyle::Sequent => {
@@ -319,9 +244,7 @@ impl PredicateStyle {
                     "ro".code(),
                 ));
             }
-            PredicateStyle::Expression
-            | PredicateStyle::BindingMode
-            | PredicateStyle::Stateless => {}
+            PredicateStyle::Expression | PredicateStyle::Stateless => {}
         }
         components.push(format!("{} is a pattern;", "p".code()));
         components.push(format!("{} is a type.", "T".code()));
@@ -337,7 +260,6 @@ enum RenderablePredicate<'a> {
     Pred(TypingPredicate<'a>),
     ExprNotRef(ExprKind<'a>),
     TyNotRef(Type<'a>),
-    BindingMode(ExprKind<'a>, BindingMode),
     Mutability(ExprKind<'a>, Mutability),
 }
 
@@ -347,7 +269,6 @@ impl RenderablePredicate<'_> {
             RenderablePredicate::Pred(p) => p.display(style),
             RenderablePredicate::ExprNotRef(e) => format!("{e} is not a reference"),
             RenderablePredicate::TyNotRef(ty) => format!("{ty} is not a reference"),
-            RenderablePredicate::BindingMode(e, bm) => format!("binding_mode({e}) = {}", bm.name()),
             RenderablePredicate::Mutability(e, mtbl) => {
                 let mtbl = match mtbl {
                     Mutability::Shared => "read-only",
@@ -378,48 +299,34 @@ impl<'a> TypingRule<'a> {
 
     fn make_renderable(
         &'a self,
-        a: &'a Arenas<'a>,
+        _a: &'a Arenas<'a>,
         style: PredicateStyle,
     ) -> Result<RenderableTypingRule<'a>, IncompatibleStyle> {
         use PredicateStyle::*;
         let abstract_expr = ExprKind::ABSTRACT;
 
         let mut cstrs = self.collect_side_constraints();
-        if matches!(style, Sequent | BindingMode | Stateless) {
+        if matches!(style, Sequent | Stateless) {
             // Interpret the expression as a binding mode if possible.
             cstrs.binding_mode = self.postcondition.expr.as_binding_mode()?;
         }
 
-        let mut rule = self.clone();
         match style {
-            BindingMode => {
-                // Reset the expression to be the abstract one.
-                rule.postcondition.expr.kind = abstract_expr;
-                // We may have changed the type of `e` so we must change it in the postconditions too.
-                for pred in &mut rule.preconditions {
-                    pred.expr = pred.expr.set_abstract_bm(a, cstrs.binding_mode);
-                }
-            }
             Stateless if cstrs.binding_mode.is_some() => return Err(IncompatibleStyle),
             SequentBindingMode
-                if rule.postcondition.expr.binding_mode().is_err()
-                    && matches!(rule.postcondition.expr.ty, Type::Ref(..)) =>
+                if self.postcondition.expr.binding_mode().is_err()
+                    && matches!(self.postcondition.expr.ty, Type::Ref(..)) =>
             {
                 return Err(IncompatibleStyle)
             }
             _ => {}
         }
 
-        let mut postconditions = vec![RenderablePredicate::Pred(rule.postcondition)];
+        let mut postconditions = vec![RenderablePredicate::Pred(self.postcondition)];
         match style {
             Expression => {
                 if cstrs.abstract_expr_is_not_ref {
                     postconditions.push(RenderablePredicate::ExprNotRef(abstract_expr));
-                }
-            }
-            BindingMode => {
-                if let Some(bm) = cstrs.binding_mode {
-                    postconditions.push(RenderablePredicate::BindingMode(abstract_expr, bm));
                 }
             }
             _ => {}
@@ -429,7 +336,7 @@ impl<'a> TypingRule<'a> {
         }
         if let Some(mtbl) = cstrs.scrutinee_mutability {
             match style {
-                Expression | BindingMode => {
+                Expression => {
                     postconditions.push(RenderablePredicate::Mutability(abstract_expr, mtbl));
                 }
                 // We already print this information with the predicate.
@@ -438,9 +345,10 @@ impl<'a> TypingRule<'a> {
             }
         }
 
-        let preconditions = rule
+        let preconditions = self
             .preconditions
-            .into_iter()
+            .iter()
+            .cloned()
             .map(RenderablePredicate::Pred)
             .collect();
 
@@ -459,30 +367,17 @@ impl<'a> TypingRule<'a> {
 }
 
 impl<'a> RenderableTypingRule<'a> {
-    // TODO: deprecate `BindingMode` style
     pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
-        use PredicateStyle::*;
-
         let postconditions_str = self
             .postconditions
             .iter()
             .map(|x| x.display(style))
             .join(", ");
-        let mut preconditions_str = self
+        let preconditions_str = self
             .preconditions
             .iter()
             .map(|x| x.display(style))
             .join(",  ");
-
-        if let BindingMode = style
-            && self
-                .postconditions
-                .iter()
-                .any(|x| matches!(x, RenderablePredicate::BindingMode(_, ByRef(..))))
-        {
-            // In binding mode style, dereferencing the bm is called "resetting".
-            preconditions_str = preconditions_str.replace("*q", "reset(q)");
-        }
 
         let display_len = if cfg!(target_arch = "wasm32") {
             // Compute string length skipping html tags.
@@ -541,7 +436,6 @@ fn bundle_rules() -> anyhow::Result<()> {
             PredicateStyle::Expression,
             PredicateStyle::Sequent,
             PredicateStyle::SequentBindingMode,
-            PredicateStyle::BindingMode,
             PredicateStyle::Stateless,
         ])
         .map(|(b, style)| (b.name, b.ruleset, style));

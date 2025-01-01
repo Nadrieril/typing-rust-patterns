@@ -20,7 +20,7 @@ fn trace_cli() -> anyhow::Result<()> {
         "&[[x]]: &[&mut [x]]",
         "set allow_ref_pat_on_ref_mut false\n&x: &mut T",
         "set structural\nrules",
-        "set rfc3627\nset predicate_style BindingMode\nrules",
+        "set rfc3627\nset predicate_style SequentBindingMode\nrules",
         "save\nset downgrade_mut_inside_shared true\nswap\ncompare",
         "save\nset structural\nswap\nrules",
         "set predicate_style Stateless",
