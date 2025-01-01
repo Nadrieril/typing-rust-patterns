@@ -34,6 +34,9 @@ inquire = { git = "https://github.com/Nadrieril/inquire", branch = "history" }
 [dev-dependencies]
 insta = { version = "1.39.0", features = ["serde"] }
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(wasm_bindgen_unstable_test_coverage)'] }
+
 [profile.dev.package]
 insta.opt-level = 3
 similar.opt-level = 3
