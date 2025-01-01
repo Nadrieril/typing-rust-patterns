@@ -166,40 +166,43 @@ impl<'a> DisplayTree<'a> {
 
     /// Display `self` and `other`, highlighting differences.
     pub fn diff_display(&self, other: &Self) -> (String, String) {
-        let mut left = String::new();
-        let mut right = String::new();
-        let _ = self.diff_display_inner(other, &mut left, &mut right);
+        let (left, right, _) = self.diff_display_has_diff(other);
         (left, right)
     }
 
+    /// Display `self` and `other`, highlighting differences. Returns whether there was any diff.
+    pub fn diff_display_has_diff(&self, other: &Self) -> (String, String, bool) {
+        let mut left = String::new();
+        let mut right = String::new();
+        let has_diff = self
+            .diff_display_inner(other, &mut left, &mut right)
+            .unwrap();
+        (left, right, has_diff)
+    }
+
+    /// Returns whether there was any diff.
     fn diff_display_inner(
         &self,
         other: &Self,
         left: &mut String,
         right: &mut String,
-    ) -> std::fmt::Result {
+    ) -> Result<bool, std::fmt::Error> {
         use std::fmt::Write;
         // The trivial cases: the trees are either fully identical or fully different.
         let all_same = |left: &mut String, right: &mut String| {
             write!(left, "{self}")?;
             write!(right, "{other}")?;
-            Ok(())
+            Ok(false)
         };
         let all_different = |left: &mut String, right: &mut String| {
             write!(left, "{}", self.to_string().red())?;
             write!(right, "{}", other.to_string().green())?;
-            Ok(())
+            Ok(true)
         };
         match (self.kind, other.kind) {
-            _ if self.tag != other.tag => {
-                all_different(left, right)?;
-            }
-            _ if self.ignore_for_diff && other.ignore_for_diff => {
-                all_same(left, right)?;
-            }
-            (Leaf(l), Leaf(r)) if strip_markup(l) == strip_markup(r) => {
-                all_same(left, right)?;
-            }
+            _ if self.tag != other.tag => all_different(left, right),
+            _ if self.ignore_for_diff && other.ignore_for_diff => all_same(left, right),
+            (Leaf(l), Leaf(r)) if strip_markup(l) == strip_markup(r) => all_same(left, right),
             // The non-trivial case: the trees differ partially.
             (
                 Separated { sep, children: c1 },
@@ -209,20 +212,19 @@ impl<'a> DisplayTree<'a> {
                 },
             ) if strip_markup(sep) == strip_markup(sep2) && c1.len() == c2.len() => {
                 let mut is_first = true;
+                let mut any_diff = false;
                 for (c1, c2) in c1.iter().zip(c2) {
                     if !is_first {
                         write!(left, "{sep}")?;
                         write!(right, "{sep}")?;
                     }
-                    c1.diff_display_inner(c2, left, right)?;
+                    any_diff |= c1.diff_display_inner(c2, left, right)?;
                     is_first = false;
                 }
+                Ok(any_diff)
             }
-            _ => {
-                all_different(left, right)?;
-            }
+            _ => all_different(left, right),
         }
-        Ok(())
     }
 }
 

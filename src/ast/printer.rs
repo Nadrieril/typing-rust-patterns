@@ -10,18 +10,19 @@ pub trait Style {
     fn green(&self) -> String;
     fn red(&self) -> String;
     fn comment(&self) -> String;
+    fn dimmed(&self) -> String;
     fn tooltip(&self, text: &str) -> String;
     fn inherited_ref(&self) -> String;
     fn code(&self) -> String;
 }
 
-impl Style for &str {
+impl<T: Display + AsRef<str>> Style for T {
     fn green(&self) -> String {
         if cfg!(target_arch = "wasm32") {
             format!("<span style=\"color: green\">{self}</span>")
         } else {
             use colored::Colorize;
-            <Self as Colorize>::green(self).to_string()
+            <_ as Colorize>::green(self.as_ref()).to_string()
         }
     }
     fn red(&self) -> String {
@@ -29,7 +30,15 @@ impl Style for &str {
             format!("<span style=\"color: red\">{self}</span>")
         } else {
             use colored::Colorize;
-            <Self as Colorize>::red(self).to_string()
+            <_ as Colorize>::red(self.as_ref()).to_string()
+        }
+    }
+    fn dimmed(&self) -> String {
+        if cfg!(target_arch = "wasm32") {
+            format!("<span style=\"opacity: 0.5\">{self}</span>")
+        } else {
+            use colored::Colorize;
+            <_ as Colorize>::dimmed(self.as_ref()).to_string()
         }
     }
     fn comment(&self) -> String {
@@ -37,7 +46,7 @@ impl Style for &str {
             format!("<span style=\"color: dimgray\">{self}</span>")
         } else {
             use colored::Colorize;
-            <Self as Colorize>::dimmed(self).to_string()
+            <_ as Colorize>::dimmed(self.as_ref()).to_string()
         }
     }
     fn tooltip(&self, text: &str) -> String {
@@ -52,7 +61,7 @@ impl Style for &str {
             format!("<span class=\"inherited-ref\">{self}</span>")
         } else {
             use colored::Colorize;
-            <Self as Colorize>::dimmed(self).to_string()
+            <_ as Colorize>::dimmed(self.as_ref()).to_string()
         }
         .tooltip("inherited reference")
     }
@@ -62,27 +71,6 @@ impl Style for &str {
         } else {
             format!("`{self}`")
         }
-    }
-}
-
-impl Style for String {
-    fn green(&self) -> String {
-        self.as_str().green()
-    }
-    fn red(&self) -> String {
-        self.as_str().red()
-    }
-    fn inherited_ref(&self) -> String {
-        self.as_str().inherited_ref()
-    }
-    fn comment(&self) -> String {
-        self.as_str().comment()
-    }
-    fn tooltip(&self, text: &str) -> String {
-        self.as_str().tooltip(text)
-    }
-    fn code(&self) -> String {
-        self.as_str().code()
     }
 }
 

@@ -285,7 +285,11 @@ pub fn display_joint_rules_js(
                 .map(|r| r.make_renderable(a, style).unwrap())
                 .map(|r| r.display_to_tree(a, style))
                 .unwrap_or_default();
-            let (left, right) = left.diff_display(&right);
+            let (mut left, mut right, has_diff) = left.diff_display_has_diff(&right);
+            if !has_diff {
+                left = left.dimmed();
+                right = right.dimmed();
+            }
             JointDisplayOutput { left, right }
         })
         .map(|out| JsValue::from_serde(&out).unwrap())
