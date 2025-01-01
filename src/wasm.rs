@@ -184,6 +184,46 @@ impl PredicateStyleJs {
         self.0.to_name().unwrap().to_string()
     }
 
+    pub fn doc(&self) -> String {
+        let mut out = String::new();
+        match self.0 {
+            PredicateStyle::Expression => {
+                todo!("explain expression style")
+            }
+            PredicateStyle::Sequent {
+                ty: type_of_interest,
+                show_reference_state,
+                ..
+            } => {
+                let _ = write!(&mut out, "Track the type ");
+                match type_of_interest {
+                    TypeOfInterest::UserVisible => {
+                        let _ = write!(&mut out, "that the user observes");
+                        if show_reference_state {
+                            let _ = write!(&mut out, " and whether the outermost reference in the type is real or inherited");
+                        }
+                    }
+                    TypeOfInterest::InMemory => {
+                        let _ = write!(&mut out, "of the matched place");
+                        if show_reference_state {
+                            let _ = write!(&mut out, " and the current binding mode");
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    pub fn display_generic_predicate(&self) -> String {
+        let a = &Arenas::default();
+        TypingPredicate {
+            pat: &Pattern::ABSTRACT,
+            expr: Expression::ABSTRACT.borrow(a, Mutability::Shared),
+        }
+        .display(self.0)
+    }
+
     pub fn explain_predicate(&self) -> String {
         let explanation = self.0.explain_predicate();
         let mut out = String::new();

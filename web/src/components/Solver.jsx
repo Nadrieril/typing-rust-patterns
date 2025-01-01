@@ -50,19 +50,6 @@ function InhRef() {
     return <span className="inherited-ref" title="inherited reference">&</span>
 }
 
-const availableStyles = [
-    {
-        name: 'Sequent',
-        display: <>inh, _ ⊢ p: <InhRef/>T</>,
-        doc: "Track the type that the user observes and whether the outermost reference in the type is real or inherited"
-    },
-    {
-        name: 'SequentBindingMode',
-        display: <>ref, _ ⊢ p: T</>,
-        doc: "Track the type of the matched place and the current binding mode"
-    },
-];
-
 export function Help({show, setShow, style}) {
     return <>
         <Offcanvas placement="end" scroll show={show} onHide={() => setShow(false)}>
@@ -108,6 +95,8 @@ export function Help({show, setShow, style}) {
     </>
 }
 
+const availableStyles = ['Sequent', 'SequentBindingMode'];
+
 export function MainNavBar({compare, setCompare, style, setStyle}) {
     const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams();
@@ -124,14 +113,14 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
     const [helpShow, setHelpShow] = useState(false);
 
     const currentStyle = style;
-    const styles = availableStyles.map(style => {
-        return <OverlayTrigger key={style.name} placement="bottom" overlay={<Tooltip>{style.doc}</Tooltip>}>
+    const styles = availableStyles.map(style_name => {
+        let style = PredicateStyleJs.from_name(style_name);
+        return <OverlayTrigger key={style_name} placement="bottom" overlay={<Tooltip>{style.doc()}</Tooltip>}>
             <Button
-                active={currentStyle.to_name() == style.name}
-                onClick={() => setStyle(PredicateStyleJs.from_name(style.name))}
-            >
-                {style.display}
-            </Button>
+                active={currentStyle.to_name() == style_name}
+                onClick={() => setStyle(style)}
+                dangerouslySetInnerHTML={{__html: style.display_generic_predicate()}}
+            ></Button>
         </OverlayTrigger>
     });
 
