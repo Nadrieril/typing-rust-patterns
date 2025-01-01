@@ -129,7 +129,11 @@ impl RuleSetJs {
 
     /// Runs the solver on this input. Returns the trace of the solver steps and the result of
     /// typechecking.
-    pub fn trace_solver(&self, request: &str, style: PredicateStyle) -> Vec<String> {
+    pub fn trace_solver(
+        &self,
+        request: &str,
+        PredicateStyleJs(style): PredicateStyleJs,
+    ) -> Vec<String> {
         let a = &Arenas::default();
         let req = match TypingRequest::parse(a, request) {
             Ok(req) => req,
@@ -139,7 +143,7 @@ impl RuleSetJs {
         vec![trace, res.to_string()]
     }
 
-    pub fn display_rules(&self, style: PredicateStyle) -> Vec<String> {
+    pub fn display_rules(&self, PredicateStyleJs(style): PredicateStyleJs) -> Vec<String> {
         assert!(self.this_solver);
         let arenas = &Arenas::default();
         let options = self.ty_based;
@@ -155,30 +159,35 @@ impl RuleSetJs {
     }
 }
 
+/// Wrapper because wasm_bindgen doesn't support non-trivial enums.
 #[wasm_bindgen]
-// `wasm_bindgen` doesn't support methods on enums: https://github.com/rustwasm/wasm-bindgen/issues/1715
-pub fn style_from_name(name: &str) -> PredicateStyle {
-    serde_yaml::from_str(name).unwrap()
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct PredicateStyleJs(PredicateStyle);
 
 #[wasm_bindgen]
-pub fn explain_predicate_js(style: PredicateStyle) -> String {
-    let explanation = style.explain_predicate();
-    let mut out = String::new();
-    let _ = writeln!(&mut out, "{}, where:", explanation.pred.code());
-    let _ = writeln!(&mut out, "<ul>");
-    for component in explanation.components {
-        let _ = writeln!(&mut out, "<li>{}</li>", component);
+impl PredicateStyleJs {
+    pub fn from_name(name: &str) -> PredicateStyleJs {
+        PredicateStyleJs(serde_yaml::from_str(name).unwrap())
     }
-    let _ = writeln!(&mut out, "</ul>");
-    out
+
+    pub fn explain_predicate(&self) -> String {
+        let explanation = self.0.explain_predicate();
+        let mut out = String::new();
+        let _ = writeln!(&mut out, "{}, where:", explanation.pred.code());
+        let _ = writeln!(&mut out, "<ul>");
+        for component in explanation.components {
+            let _ = writeln!(&mut out, "<li>{}</li>", component);
+        }
+        let _ = writeln!(&mut out, "</ul>");
+        out
+    }
 }
 
 #[wasm_bindgen]
 pub fn display_joint_rules_js(
     left: &RuleSetJs,
     right: &RuleSetJs,
-    style: PredicateStyle,
+    PredicateStyleJs(style): PredicateStyleJs,
 ) -> Vec<JsValue> {
     #[derive(Debug, Clone, Serialize)]
     pub struct JointDisplayOutput {

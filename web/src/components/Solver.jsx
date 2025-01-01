@@ -1,7 +1,6 @@
 import init, {
     RuleSetJs,
-    style_from_name,
-    explain_predicate_js,
+    PredicateStyleJs,
     display_joint_rules_js,
     compare_rulesets_js,
 } from "../../typing_rust_patterns/typing_rust_patterns.js";
@@ -81,7 +80,7 @@ export function Help({show, setShow, style}) {
                 <p>
                 We represent the internal state of the typechecker as a predicate
                 that looks like&nbsp;
-                <span dangerouslySetInnerHTML={{__html: explain_predicate_js(style_from_name(style))}}/>
+                <span dangerouslySetInnerHTML={{__html: PredicateStyleJs.from_name(style).explain_predicate() }}/>
                 </p>
                 <p>
                 Starting with the predicate that corresponds to your query, we
@@ -187,10 +186,10 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
 
 export function SolverSteps({inputQuery, optionsLeft, optionsRight, compare, style}) {
     const [stepsLeft, resultLeft] = useMemo(() => {
-        return optionsLeft.trace_solver(inputQuery, style_from_name(style));
+        return optionsLeft.trace_solver(inputQuery, PredicateStyleJs.from_name(style));
     }, [inputQuery, optionsLeft, style]);
     const [stepsRight, resultRight] = useMemo(() => {
-        return optionsRight.trace_solver(inputQuery, style_from_name(style));
+        return optionsRight.trace_solver(inputQuery, PredicateStyleJs.from_name(style));
     }, [inputQuery, optionsRight, style]);
 
     const resultStyle = {position: 'sticky', bottom: 0, fontWeight: 'normal'};
@@ -226,7 +225,7 @@ export function SolverSteps({inputQuery, optionsLeft, optionsRight, compare, sty
 
 export function RulesDisplay({options, style}) {
     const rulesDisplay = useMemo(() => {
-        return options.display_rules(style_from_name(style));
+        return options.display_rules(PredicateStyleJs.from_name(style));
     }, [options, style]);
 
     const rows = rulesDisplay.map((rule, index) => {
@@ -244,7 +243,7 @@ export function RulesDisplay({options, style}) {
 
 export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
     const jointDisplay = useMemo(() => {
-        return display_joint_rules_js(optionsLeft, optionsRight, style_from_name(style));
+        return display_joint_rules_js(optionsLeft, optionsRight, PredicateStyleJs.from_name(style));
     }, [optionsLeft, optionsRight, style]);
 
     const rows = jointDisplay.map((joint, index) => {
