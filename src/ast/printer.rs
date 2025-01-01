@@ -3,6 +3,9 @@ use std::fmt::{Debug, Display, Write};
 
 use crate::*;
 
+pub mod display_tree;
+pub use display_tree::*;
+
 pub trait Style {
     fn green(&self) -> String;
     fn red(&self) -> String;
@@ -101,6 +104,23 @@ impl BindingMode {
     }
 }
 
+impl<'d> ToDisplayTree<'d> for Type<'_> {
+    fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
+        match self {
+            Self::Tuple(tys) => DisplayTree::sep_by(a, ", ", tys.iter())
+                .surrounded(a, "[", "]")
+                .tag("ty_list"),
+            Self::Ref(mutable, ty) => format!("&{mutable}")
+                .to_display_tree(a)
+                .then(a, ty)
+                .tag("ty_ref"),
+            Self::OtherNonRef(name) | Self::AbstractNonRef(name) | Self::Abstract(name) => {
+                name.to_display_tree(a)
+            }
+        }
+    }
+}
+
 impl<'a> TypingPredicate<'a> {
     /// Display as `let ...`.
     pub fn display_as_let(&self) -> String {
@@ -108,10 +128,18 @@ impl<'a> TypingPredicate<'a> {
     }
 
     pub fn display(&self, style: PredicateStyle) -> String {
+        let a = &Arenas::default();
+        self.display_to_tree(a, style).to_string()
+    }
+
+    pub fn display_to_tree<'d>(&self, a: &'d Arenas<'d>, style: PredicateStyle) -> DisplayTree<'d> {
         match style {
-            PredicateStyle::Expression => {
-                format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty)
-            }
+            PredicateStyle::Expression => self
+                .pat
+                .to_string()
+                .to_display_tree(a)
+                .sep_then(a, " @ ", self.expr.to_string())
+                .sep_then(a, ": ", self.expr.ty),
             PredicateStyle::Sequent {
                 ty: toi,
                 show_reference_state,
@@ -148,45 +176,50 @@ impl<'a> TypingPredicate<'a> {
                     };
                     pre_turnstile.push(scrut_access.to_string());
                 }
+                let pre_turnstile = DisplayTree::sep_by(a, ", ", pre_turnstile);
 
                 // Type to display.
                 let ty = match toi {
                     TypeOfInterest::UserVisible => {
-                        let mut ty = self.expr.ty.to_string();
+                        let ty = self.expr.ty;
                         if show_reference_state
                             && let Some(BindingMode::ByRef(_)) = self.expr.binding_mode().ok()
+                            && let Type::Ref(mtbl, sub_ty) = ty
                         {
-                            if let Some(rest) = ty.strip_prefix("&mut") {
-                                ty = format!("{}{rest}", "&mut".inherited_ref());
-                            } else if let Some(rest) = ty.strip_prefix("&") {
-                                ty = format!("{}{rest}", "&".inherited_ref());
-                            }
+                            // Highlight the inherited reference.
+                            format!("&{mtbl}")
+                                .inherited_ref()
+                                .to_display_tree(a)
+                                .then(a, sub_ty)
+                                .tag("ty_ref")
+                        } else {
+                            ty.to_display_tree(a)
                         }
-                        ty
                     }
                     TypeOfInterest::InMemory => match self.expr.binding_mode().ok() {
-                        Some(BindingMode::ByMove) => self.expr.ty.to_string(),
-                        Some(BindingMode::ByRef(_)) => {
-                            self.expr.reset_binding_mode().unwrap().ty.to_string()
-                        }
+                        Some(BindingMode::ByMove) => self.expr.ty.to_display_tree(a),
+                        Some(BindingMode::ByRef(_)) => self
+                            .expr
+                            .reset_binding_mode()
+                            .unwrap()
+                            .ty
+                            .to_display_tree(a),
                         None => match self.expr.ty {
                             Type::Ref(_, inner_ty) => {
-                                format!("{} or {}", self.expr.ty, inner_ty)
+                                format!("{} or {}", self.expr.ty, inner_ty).to_display_tree(a)
                             }
-                            Type::Abstract(_) => self.expr.ty.to_string(),
+                            Type::Abstract(_) => self.expr.ty.to_display_tree(a),
                             _ => unreachable!(),
                         },
                     },
                 };
+                let post_turnstile = self
+                    .pat
+                    .to_string()
+                    .to_display_tree(a)
+                    .sep_then(a, ": ", ty);
 
-                let turnstile = if pre_turnstile.is_empty() {
-                    ""
-                } else {
-                    " ⊢ "
-                };
-                let pre_turnstile = pre_turnstile.join(", ");
-                let pat = self.pat;
-                format!("{pre_turnstile}{turnstile}{pat}: {ty}")
+                pre_turnstile.sep_then(a, " ⊢ ", post_turnstile)
             }
         }
     }
@@ -268,13 +301,8 @@ impl Display for Pattern<'_> {
 
 impl Display for Type<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Tuple(tys) => write!(f, "[{}]", tys.iter().format(", ")),
-            Self::Ref(mutable, ty) => write!(f, "&{mutable}{ty}"),
-            Self::OtherNonRef(name) | Self::AbstractNonRef(name) | Self::Abstract(name) => {
-                write!(f, "{name}")
-            }
-        }
+        let a = &Arenas::default();
+        write!(f, "{}", self.to_display_tree(a))
     }
 }
 

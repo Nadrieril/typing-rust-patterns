@@ -2,7 +2,6 @@ use bincode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use std::cmp::max;
 use std::collections::HashSet;
-use std::fmt::Write;
 
 use itertools::{EitherOrBoth, Itertools};
 
@@ -315,17 +314,23 @@ enum RenderablePredicate<'a> {
 }
 
 impl RenderablePredicate<'_> {
-    fn display(&self, style: PredicateStyle) -> String {
+    fn display_to_tree<'d>(&self, a: &'d Arenas<'d>, style: PredicateStyle) -> DisplayTree<'d> {
         match self {
-            RenderablePredicate::Pred(p) => p.display(style),
-            RenderablePredicate::ExprNotRef(e) => format!("{e} is not a reference"),
-            RenderablePredicate::TyNotRef(ty) => format!("{ty} is not a reference"),
+            RenderablePredicate::Pred(p) => p.display_to_tree(a, style),
+            RenderablePredicate::ExprNotRef(e) => e
+                .to_string()
+                .to_display_tree(a)
+                .then(a, " is not a reference"),
+            RenderablePredicate::TyNotRef(ty) => ty
+                .to_string()
+                .to_display_tree(a)
+                .then(a, " is not a reference"),
             RenderablePredicate::Mutability(e, mtbl) => {
                 let mtbl = match mtbl {
                     Mutability::Shared => "read-only",
                     Mutability::Mutable => "mutable",
                 };
-                format!("{e} {mtbl}")
+                e.to_string().to_display_tree(a).sep_then(a, " ", mtbl)
             }
         }
     }
@@ -448,67 +453,47 @@ impl<'a> TypingRule<'a> {
 
 impl<'a> RenderableTypingRule<'a> {
     pub fn display(&self, style: PredicateStyle) -> String {
-        Self::assemble_pieces(self.display_piecewise(style))
+        let a = &Arenas::default();
+        self.display_to_tree(a, style).to_string()
     }
 
-    pub fn assemble_pieces(
-        [preconditions_str, bar, name, postconditions_str]: [String; 4],
-    ) -> String {
-        let mut out = String::new();
-        let _ = write!(&mut out, "{preconditions_str}\n");
-        let _ = write!(&mut out, "{bar} \"{name}\"\n");
-        let _ = write!(&mut out, "{postconditions_str}");
-        out
-    }
-
-    pub fn display_piecewise(&self, style: PredicateStyle) -> [String; 4] {
-        let postconditions_str = self
-            .postconditions
-            .iter()
-            .map(|x| x.display(style))
-            .join(", ");
-        let preconditions_str = self
-            .preconditions
-            .iter()
-            .map(|x| x.display(style))
-            .join(",  ");
-
-        let display_len = if cfg!(target_arch = "wasm32") {
-            // Compute string length skipping html tags.
-            |s: &str| {
-                let mut in_tag = false;
-                s.chars()
-                    .filter(|&c| {
-                        if c == '<' {
-                            in_tag = true;
-                            false
-                        } else if c == '>' {
-                            in_tag = false;
-                            false
-                        } else {
-                            !in_tag
-                        }
-                    })
-                    .count()
-            }
-        } else {
-            // Compute string length skipping ansi escape codes.
-            ansi_width::ansi_width
-        };
-
+    pub fn display_to_tree<'d>(&self, a: &'d Arenas<'d>, style: PredicateStyle) -> DisplayTree<'d> {
+        let preconditions = DisplayTree::sep_by(
+            a,
+            ",  ",
+            self.preconditions
+                .iter()
+                .map(|x| x.display_to_tree(a, style)),
+        );
+        let postconditions = DisplayTree::sep_by(
+            a,
+            ", ",
+            self.postconditions
+                .iter()
+                .map(|x| x.display_to_tree(a, style)),
+        );
         let len = max(
-            display_len(&preconditions_str),
-            display_len(&postconditions_str),
+            preconditions.len_ignoring_markup(),
+            postconditions.len_ignoring_markup(),
         );
         let bar = "-".repeat(len);
         let name = self.name.display(self.options);
-        [preconditions_str, bar, name, postconditions_str]
+        DisplayTree::sep_by(
+            a,
+            "\n",
+            [
+                preconditions,
+                DisplayTree::sep2_by(a, bar, " ", format!("\"{name}\"")).ignore_for_diff(),
+                postconditions,
+            ],
+        )
     }
 }
 
 #[test]
 /// Compute the rulesets for each known bundle.
 fn bundle_rules() -> anyhow::Result<()> {
+    use std::fmt::Write;
     colored::control::set_override(false);
 
     #[derive(Serialize)]
