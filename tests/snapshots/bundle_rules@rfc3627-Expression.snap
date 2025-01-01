@@ -62,7 +62,7 @@ p @ *e: T
 ---------------------------------------- "Deref(EatOuter)"
 &mut p @ e: &mut T, e is not a reference
 
-p @ e: T
+p @ *&mut e: T
 --------------------------------------------- "Deref(EatOuter)"
 &mut p @ &mut e: &mut T, T is not a reference
 
@@ -78,7 +78,7 @@ p @ &mut *e: &mut T
 --------------------------------------- "Deref(EatInner)"
 &mut p @ &mut e: &mut &mut T, e mutable
 
-p @ e: &T
+p @ *&mut e: &T
 ------------------------ "Deref(EatInner, FallbackToOuter)"
 &mut p @ &mut e: &mut &T
 
@@ -94,7 +94,7 @@ p @ *&*e: T
 ------------------------------------ "DerefMutWithShared(EatOuter)"
 &p @ e: &mut T, e is not a reference
 
-p @ *&e: T
+p @ *&*&mut e: T
 ----------------------------------------- "DerefMutWithShared(EatOuter)"
 &p @ &mut e: &mut T, T is not a reference
 

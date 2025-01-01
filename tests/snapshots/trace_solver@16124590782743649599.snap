@@ -19,11 +19,11 @@ info:
 // Applying rule `ConstructorRef`
 &mut ref mut x @ &mut (*s).0: &mut &T
 // Applying rule `Deref(EatInner, FallbackToOuter)`
-ref mut x @ (*s).0: &T
+ref mut x @ *&mut (*s).0: &T
 // Applying rule `BindingBorrow`
-x @ &mut (*s).0: &mut &T
+x @ &mut *&mut (*s).0: &mut &T
 // Applying rule `Binding`
-let x: &mut &T = &mut (*s).0
+let x: &mut &T = &mut *&mut (*s).0
 
 // Final bindings (simplified):
 let x: &mut &T = &mut (*s).0;

@@ -78,7 +78,7 @@ inh, rw ⊢ p: &mut T
 ----------------------------- "Deref(EatInner)"
 inh, rw ⊢ &mut p: &mut &mut T
 
-r, m ⊢ p: &T
+real, m ⊢ p: &T
 ------------------------ "Deref(EatInner, FallbackToOuter)"
 inh, m ⊢ &mut p: &mut &T
 

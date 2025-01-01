@@ -110,8 +110,8 @@ ref mut, rw ⊢ p: T
 ---------------------------- "Deref(EatInner)"
 ref mut, rw ⊢ &mut p: &mut T
 
-move or ref, m ⊢ p: &T or T
---------------------------- "Deref(EatInner, FallbackToOuter)"
+move, m ⊢ p: &T
+----------------------- "Deref(EatInner, FallbackToOuter)"
 ref mut, m ⊢ &mut p: &T
 
 ref, ro ⊢ p: T

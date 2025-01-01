@@ -153,13 +153,7 @@ impl<'a> TypingPredicate<'a> {
                         T::Ref(inner_mtbl, _) => {
                             rule_variant = o.inherited_ref_on_ref;
                             match o.inherited_ref_on_ref {
-                                InheritedRefOnRefBehavior::EatOuter => {
-                                    if o.simplify_deref_mut && bm_mtbl == Mutable {
-                                        underlying_place
-                                    } else {
-                                        self.expr.deref(a)
-                                    }
-                                }
+                                InheritedRefOnRefBehavior::EatOuter => self.expr.deref(a),
                                 InheritedRefOnRefBehavior::EatInner => {
                                     let can_eat_inner = match (p_mtbl, *inner_mtbl) {
                                         (Shared, Shared) => true,
@@ -175,11 +169,7 @@ impl<'a> TypingPredicate<'a> {
                                         underlying_place.deref(a)
                                     } else if o.fallback_to_outer {
                                         fallback_to_outer = FallbackToOuter(true);
-                                        if o.simplify_deref_mut && bm_mtbl == Mutable {
-                                            underlying_place
-                                        } else {
-                                            self.expr.deref(a)
-                                        }
+                                        self.expr.deref(a)
                                     } else {
                                         return Err(TypeError::MutabilityMismatch);
                                     }
@@ -198,11 +188,7 @@ impl<'a> TypingPredicate<'a> {
                                         underlying_place.deref(a)
                                     } else if o.fallback_to_outer {
                                         fallback_to_outer = FallbackToOuter(true);
-                                        if o.simplify_deref_mut && bm_mtbl == Mutable {
-                                            underlying_place
-                                        } else {
-                                            self.expr.deref(a)
-                                        }
+                                        self.expr.deref(a)
                                     } else {
                                         return Err(TypeError::MutabilityMismatch);
                                     }
@@ -215,11 +201,7 @@ impl<'a> TypingPredicate<'a> {
                         T::Tuple(_) | T::OtherNonRef(_) | T::AbstractNonRef(..)
                             if o.eat_inherited_ref_alone =>
                         {
-                            if o.simplify_deref_mut && bm_mtbl == Mutable {
-                                underlying_place
-                            } else {
-                                self.expr.deref(a)
-                            }
+                            self.expr.deref(a)
                         }
                         T::Tuple(_) | T::OtherNonRef(_) | T::AbstractNonRef(..) => {
                             return Err(TypeError::InheritedRefIsAlone);

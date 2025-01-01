@@ -82,7 +82,7 @@ real, m ⊢ p: T
 ---------------------------- "Deref(EatBoth)"
 inh, m ⊢ &mut p: &mut &mut T
 
-r, m ⊢ p: &T
+real, m ⊢ p: &T
 ------------------------ "Deref(EatBoth, FallbackToOuter)"
 inh, m ⊢ &mut p: &mut &T
 

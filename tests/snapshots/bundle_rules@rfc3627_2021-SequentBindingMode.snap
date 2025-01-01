@@ -114,8 +114,8 @@ move, m ⊢ p: T
 --------------------------- "Deref(EatBoth)"
 ref mut, m ⊢ &mut p: &mut T
 
-move or ref, m ⊢ p: &T or T
---------------------------- "Deref(EatBoth, FallbackToOuter)"
+move, m ⊢ p: &T
+----------------------- "Deref(EatBoth, FallbackToOuter)"
 ref mut, m ⊢ &mut p: &T
 
 move, ro ⊢ p: T

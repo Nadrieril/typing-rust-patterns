@@ -19,9 +19,9 @@ info:
 // Applying rule `ConstructorRef`
 &mut x @ &mut (*s).0: &mut &T
 // Applying rule `Deref`
-x @ (*s).0: &T
+x @ *&mut (*s).0: &T
 // Applying rule `Binding`
-let x: &T = (*s).0
+let x: &T = *&mut (*s).0
 
 // Final bindings (simplified):
 let x: &T = (*s).0;

@@ -65,7 +65,7 @@ The old ruleset is on the left, and the new one on the right.
  --------------------------------------------- "Deref"                            | --------------------------------------------- "Deref(EatOuter)"
  inh, m ⊢ &mut p: &mut T, T is not a reference                                    | inh, m ⊢ &mut p: &mut T, T is not a reference
 
- real, m ⊢ p: &T                                                                  | r, m ⊢ p: &T
+ real, m ⊢ p: &T                                                                  | real, m ⊢ p: &T
  ------------------------ "Deref"                                                 | ------------------------ "Deref(EatInner, FallbackToOuter)"
  inh, m ⊢ &mut p: &mut &T                                                         | inh, m ⊢ &mut p: &mut &T
 
