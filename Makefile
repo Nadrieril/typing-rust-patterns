@@ -6,3 +6,7 @@ wasm:
 	wasm-pack build --target web --release -d $(OUTPUT_DIR)
 	# mv $(OUTPUT_DIR)/typing_rust_patterns_bg.wasm $(OUTPUT_DIR)/typing_rust_patterns_bg.big.wasm
 	# wasm-opt -Oz $(OUTPUT_DIR)/typing_rust_patterns_bg.big.wasm -o $(OUTPUT_DIR)/typing_rust_patterns_bg.wasm
+
+.PHONY: web-dev
+web-dev: wasm
+	cd web && pnpm dev
