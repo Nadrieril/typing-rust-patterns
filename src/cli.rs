@@ -92,7 +92,7 @@ impl CliState {
                 {
                     self.options.set_key(key, val);
                 } else if key == "predicate_style" {
-                    self.predicate_style = serde_yaml::from_str(val)?;
+                    self.predicate_style = PredicateStyle::from_name(val)?;
                 } else {
                     bail!("oops, forgot to implement `set {key}`; please open an issue")
                 }
@@ -160,8 +160,7 @@ impl CliState {
                 println!("The current ruleset is on the left, and the saved one on the right.");
                 display_options_diff(self.options, saved);
             } else {
-                let style = serde_yaml::to_string(&self.predicate_style)?;
-                print!("predicate_style: {}", style);
+                println!("predicate_style: {}", self.predicate_style);
                 display_options_diff(self.options, self.options);
             }
         } else if request == "rules" {

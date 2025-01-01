@@ -6,6 +6,22 @@ use std::cmp::Ordering;
 use std::fmt::Write;
 use wasm_bindgen::prelude::*;
 
+/// Encode a value as base64.
+fn encode_base64<T: Encode>(x: &T) -> String {
+    use base64::{engine::general_purpose::URL_SAFE, Engine as _};
+    let config = bincode::config::standard();
+    let bits = bincode::encode_to_vec(x, config).unwrap();
+    URL_SAFE.encode(bits)
+}
+
+/// Decode the current style from base64.
+fn decode_base64<T: Decode>(x: JsValue) -> Option<T> {
+    use base64::{engine::general_purpose::URL_SAFE, Engine as _};
+    let config = bincode::config::standard();
+    let bits = URL_SAFE.decode(x.as_string()?).ok()?;
+    Some(bincode::decode_from_slice(&bits, config).ok()?.0)
+}
+
 /// Like `RuleSet` but remembers the ruleset of the other solver to avoid losing state in the
 /// frontend.
 #[wasm_bindgen]
@@ -113,18 +129,12 @@ impl RuleSetJs {
 
     /// Encode the current options as base64.
     pub fn encode(&self) -> String {
-        use base64::{engine::general_purpose::URL_SAFE, Engine as _};
-        let config = bincode::config::standard();
-        let bits = bincode::encode_to_vec(self, config).unwrap();
-        URL_SAFE.encode(bits)
+        encode_base64(self)
     }
 
     /// Decode the current options from base64.
     pub fn decode(x: JsValue) -> Option<RuleSetJs> {
-        use base64::{engine::general_purpose::URL_SAFE, Engine as _};
-        let config = bincode::config::standard();
-        let bits = URL_SAFE.decode(x.as_string()?).ok()?;
-        Some(bincode::decode_from_slice(&bits, config).ok()?.0)
+        decode_base64(x)
     }
 
     /// Runs the solver on this input. Returns the trace of the solver steps and the result of
@@ -161,13 +171,23 @@ impl RuleSetJs {
 
 /// Wrapper because wasm_bindgen doesn't support non-trivial enums.
 #[wasm_bindgen]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Encode, Decode)]
 pub struct PredicateStyleJs(PredicateStyle);
 
 #[wasm_bindgen]
 impl PredicateStyleJs {
     pub fn from_name(name: &str) -> PredicateStyleJs {
-        PredicateStyleJs(serde_yaml::from_str(name).unwrap())
+        PredicateStyleJs(PredicateStyle::from_name(name).unwrap())
+    }
+
+    /// Encode the current style as base64.
+    pub fn encode(&self) -> String {
+        encode_base64(self)
+    }
+
+    /// Decode the current style from base64.
+    pub fn decode(x: JsValue) -> Option<PredicateStyleJs> {
+        decode_base64(x)
     }
 
     pub fn explain_predicate(&self) -> String {

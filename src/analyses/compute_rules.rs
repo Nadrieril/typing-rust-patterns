@@ -1,3 +1,4 @@
+use bincode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use std::cmp::max;
 use std::collections::HashSet;
@@ -186,7 +187,7 @@ impl<'a> Expression<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Encode, Decode)]
 pub enum PredicateStyle {
     /// Draws the expression as-is.
     Expression,
@@ -205,6 +206,30 @@ pub struct PredicateExplanation {
 }
 
 impl PredicateStyle {
+    pub(crate) const KNOWN_PREDICATE_STYLES: &[(&str, PredicateStyle)] = &[
+        ("Expression", PredicateStyle::Expression),
+        ("Sequent", PredicateStyle::Sequent),
+        ("SequentBindingMode", PredicateStyle::SequentBindingMode),
+        ("Stateless", PredicateStyle::Stateless),
+    ];
+
+    pub fn to_name(&self) -> Option<&str> {
+        Self::KNOWN_PREDICATE_STYLES
+            .iter()
+            .find(|(_, style)| style == self)
+            .map(|(name, _)| *name)
+    }
+
+    pub fn from_name(name: &str) -> anyhow::Result<Self> {
+        match Self::KNOWN_PREDICATE_STYLES
+            .iter()
+            .find(|(n, _)| *n == name)
+        {
+            Some((_, style)) => Ok(*style),
+            None => anyhow::bail!("unknown style {name}"),
+        }
+    }
+
     pub fn explain_predicate(self) -> PredicateExplanation {
         let pred = TypingPredicate::ABSTRACT.display(self);
 

@@ -321,7 +321,10 @@ impl Display for TypingPredicate<'_> {
 
 impl Display for PredicateStyle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", serde_yaml::to_string(self).unwrap().trim())
+        match self.to_name() {
+            Some(name) => write!(f, "{name}"),
+            None => write!(f, "{self:?}"),
+        }
     }
 }
 
