@@ -23,7 +23,6 @@ fn trace_cli() -> anyhow::Result<()> {
         "set rfc3627\nset predicate_style SequentBindingMode\nrules",
         "save\nset downgrade_mut_inside_shared true\nswap\ncompare",
         "save\nset structural\nswap\nrules",
-        "set predicate_style Stateless",
         "set stable_rust\n[&x]: &[AT]",
         "&ap: &T",
         "set predicate_style SequentBindingMode",

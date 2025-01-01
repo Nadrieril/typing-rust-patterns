@@ -50,15 +50,7 @@ impl CliState {
                 doc: "TODO",
             },
             OptionValue {
-                name: "BindingMode",
-                doc: "TODO",
-            },
-            OptionValue {
                 name: "SequentBindingMode",
-                doc: "TODO",
-            },
-            OptionValue {
-                name: "Stateless",
                 doc: "TODO",
             },
         ],

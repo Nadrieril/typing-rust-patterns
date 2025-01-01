@@ -237,14 +237,6 @@ impl PredicateStyle {
                 show_scrut_access: true,
             },
         ),
-        (
-            "Stateless",
-            PredicateStyle::Sequent {
-                ty: TypeOfInterest::UserVisible,
-                show_reference_state: false,
-                show_scrut_access: false,
-            },
-        ),
     ];
 
     pub fn to_name(&self) -> Option<&str> {
