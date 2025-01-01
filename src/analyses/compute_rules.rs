@@ -7,7 +7,6 @@ use std::fmt::Write;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::*;
-use BindingMode::*;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct TypingRule<'a> {
@@ -124,15 +123,13 @@ pub fn compute_joint_rules<'a>(
 
 /// Extra constraints to display as preconditions.
 #[derive(Default)]
-pub struct SideConstraints<'a> {
-    /// The binding mode of the abstract expression.
-    pub binding_mode: Option<BindingMode>,
+struct SideConstraints<'a> {
     /// Whether the abstract expression is known not to be a reference.
-    pub abstract_expr_is_not_ref: bool,
+    abstract_expr_is_not_ref: bool,
     /// Type variables that are known not to be references.
-    pub non_ref_types: HashSet<&'a str>,
+    non_ref_types: HashSet<&'a str>,
     /// What access the abstract expression has of the scrutinee.
-    pub scrutinee_mutability: Option<Mutability>,
+    scrutinee_mutability: Option<Mutability>,
 }
 
 impl<'a> Type<'a> {
@@ -161,29 +158,6 @@ impl<'a> Expression<'a> {
             }
             _ => {}
         })
-    }
-
-    /// Interprets the expression as a binding mode, or returns `None` if that doesn't make sense.
-    fn as_binding_mode(&self) -> Result<Option<BindingMode>, IncompatibleStyle> {
-        match self.kind {
-            ExprKind::Abstract {
-                not_a_ref: false, ..
-            } => Ok(None),
-            ExprKind::Abstract {
-                not_a_ref: true, ..
-            } => Ok(Some(ByMove)),
-            ExprKind::Ref(
-                mtbl,
-                Expression {
-                    kind:
-                        ExprKind::Abstract {
-                            not_a_ref: false, ..
-                        },
-                    ..
-                },
-            ) => Ok(Some(ByRef(mtbl))),
-            _ => Err(IncompatibleStyle),
-        }
     }
 }
 
@@ -369,35 +343,48 @@ impl<'a> TypingRule<'a> {
         use TypeOfInterest::*;
         let abstract_expr = ExprKind::ABSTRACT;
 
-        let mut cstrs = self.collect_side_constraints();
-        if matches!(
-            style,
+        // Ensure the postcondition (the one that is branched on) has a shape compatible with the
+        // selected style.
+        match style {
+            // This style can display all expressions.
+            Expression => {}
+            // In this style, only a few select expressions can be branched on (i.e. in the
+            // postcondition). We error if the expression is not of an appropriate shape.
             Sequent {
                 ty: UserVisible,
+                show_reference_state,
                 ..
+            } => match self.postcondition.expr.kind {
+                ExprKind::Abstract {
+                    not_a_ref: false, ..
+                } => {}
+                ExprKind::Abstract {
+                    not_a_ref: true, ..
+                }
+                | ExprKind::Ref(
+                    _,
+                    crate::Expression {
+                        kind:
+                            ExprKind::Abstract {
+                                not_a_ref: false, ..
+                            },
+                        ..
+                    },
+                ) if show_reference_state => {}
+                _ => return Err(IncompatibleStyle),
+            },
+            // In this style, the binding mode must be known unless the rule doesn't depend on it
+            // at all.
+            Sequent { ty: InMemory, .. } => {
+                if self.postcondition.expr.binding_mode().is_err()
+                    && matches!(self.postcondition.expr.ty, Type::Ref(..))
+                {
+                    return Err(IncompatibleStyle);
+                }
             }
-        ) {
-            // Interpret the expression as a binding mode if possible.
-            cstrs.binding_mode = self.postcondition.expr.as_binding_mode()?;
         }
 
-        match style {
-            Sequent {
-                show_reference_state: false,
-                ..
-            } if cstrs.binding_mode.is_some() => return Err(IncompatibleStyle),
-            Sequent {
-                ty: InMemory,
-                show_reference_state: true,
-                ..
-            } if self.postcondition.expr.binding_mode().is_err()
-                && matches!(self.postcondition.expr.ty, Type::Ref(..)) =>
-            {
-                return Err(IncompatibleStyle)
-            }
-            _ => {}
-        }
-
+        let cstrs = self.collect_side_constraints();
         let mut postconditions = vec![RenderablePredicate::Pred(self.postcondition)];
         match style {
             Expression => {
@@ -416,7 +403,7 @@ impl<'a> TypingRule<'a> {
                     postconditions.push(RenderablePredicate::Mutability(abstract_expr, mtbl));
                 }
                 Sequent {
-                    show_reference_state: false,
+                    show_scrut_access: false,
                     ..
                 } => return Err(IncompatibleStyle),
                 // We already print this information with the predicate.
