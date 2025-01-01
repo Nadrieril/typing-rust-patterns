@@ -83,7 +83,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
 /// starting predicates.
 pub fn compute_joint_rules<'a>(
     a: &'a Arenas<'a>,
-    always_inspect_bm: bool,
+    type_of_interest: TypeOfInterest,
     left: RuleOptions,
     right: RuleOptions,
 ) -> Vec<EitherOrBoth<TypingRule<'a>>> {
@@ -92,12 +92,12 @@ pub fn compute_joint_rules<'a>(
     let left = TypingCtx {
         arenas: a,
         options: left,
-        always_inspect_bm,
+        type_of_interest,
     };
     let right = TypingCtx {
         arenas: a,
         options: right,
-        always_inspect_bm,
+        type_of_interest,
     };
 
     let mut rules = Vec::new();
@@ -530,7 +530,7 @@ fn bundle_rules() -> anyhow::Result<()> {
         let ctx = TypingCtx {
             arenas,
             options,
-            always_inspect_bm: matches!(style.type_of_interest(), TypeOfInterest::InMemory),
+            type_of_interest: style.type_of_interest(),
         };
 
         let mut typing_rules = compute_rules(ctx);

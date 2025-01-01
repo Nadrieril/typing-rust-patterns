@@ -58,7 +58,11 @@ impl<'a> TypingPredicate<'a> {
         use Type as T;
         let a = ctx.arenas;
         let o = ctx.options;
-        if ctx.always_inspect_bm && !matches!(self.expr.ty, Type::Abstract(..)) {
+        if matches!(ctx.type_of_interest, TypeOfInterest::InMemory)
+            && !matches!(self.expr.ty, Type::Abstract(..))
+        {
+            // Force branching on the binding mode if the type is (partially-)known but the binding
+            // mode isn't.
             let _ = self.expr.binding_mode()?;
         }
 

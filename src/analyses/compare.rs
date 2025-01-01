@@ -96,7 +96,7 @@ impl<'a> ComparisonState<'a> {
                     let ctx = TypingCtx {
                         arenas: a,
                         options,
-                        always_inspect_bm: false,
+                        type_of_interest: TypeOfInterest::UserVisible,
                     };
                     match pred.step(ctx) {
                         Ok((_rule, next)) => {

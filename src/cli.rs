@@ -115,8 +115,8 @@ impl CliState {
     ) -> Result<String, IncompatibleStyle> {
         let style = self.predicate_style;
         let arenas = &Arenas::default();
-        let always_inspect_bm = matches!(style.type_of_interest(), TypeOfInterest::InMemory);
-        let joint_rules = compute_joint_rules(arenas, always_inspect_bm, left, right);
+        let type_of_interest = style.type_of_interest();
+        let joint_rules = compute_joint_rules(arenas, type_of_interest, left, right);
 
         let mut out = String::new();
         for joint_rule in joint_rules {
@@ -411,7 +411,7 @@ pub fn display_rules(
     let ctx = TypingCtx {
         arenas,
         options,
-        always_inspect_bm: matches!(style.type_of_interest(), TypeOfInterest::InMemory),
+        type_of_interest: style.type_of_interest(),
     };
     let typing_rules = compute_rules(ctx);
     let mut out = String::new();

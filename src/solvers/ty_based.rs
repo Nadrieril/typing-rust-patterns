@@ -10,9 +10,9 @@ use crate::*;
 pub struct TypingCtx<'a> {
     pub arenas: &'a Arenas<'a>,
     pub options: RuleOptions,
-    /// Whether to always branch on the binding mode when computing rules. This is required for the
-    /// `SequentBindingMode` style
-    pub always_inspect_bm: bool,
+    /// If the type of interest is the in-memory one, we'll always inspect the binding mode when
+    /// computing rules.
+    pub type_of_interest: TypeOfInterest,
 }
 
 pub enum CantStep<'a> {
@@ -144,7 +144,7 @@ pub fn trace_solver<'a>(
     let ctx = TypingCtx {
         arenas,
         options,
-        always_inspect_bm: false,
+        type_of_interest: TypeOfInterest::UserVisible,
     };
     let mut trace = String::new();
     let res = run_solver(ctx, &request, |solver, event| match event {
@@ -178,7 +178,7 @@ pub fn typecheck_with_this_crate<'a>(
     let ctx = TypingCtx {
         arenas,
         options,
-        always_inspect_bm: false,
+        type_of_interest: TypeOfInterest::UserVisible,
     };
     run_solver(ctx, req, |_, _| {})
 }

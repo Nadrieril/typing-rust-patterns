@@ -160,7 +160,7 @@ impl RuleSetJs {
         let ctx = TypingCtx {
             arenas,
             options,
-            always_inspect_bm: matches!(style.type_of_interest(), TypeOfInterest::InMemory),
+            type_of_interest: style.type_of_interest(),
         };
         compute_rules(ctx)
             .into_iter()
@@ -212,8 +212,8 @@ pub fn display_joint_rules_js(
     assert!(left.this_solver);
     assert!(right.this_solver);
     let arenas = &Arenas::default();
-    let always_inspect_bm = matches!(style.type_of_interest(), TypeOfInterest::InMemory);
-    compute_joint_rules(arenas, always_inspect_bm, left.ty_based, right.ty_based)
+    let type_of_interest = style.type_of_interest();
+    compute_joint_rules(arenas, type_of_interest, left.ty_based, right.ty_based)
         .into_iter()
         .map(|joint_rule| {
             let (left, right) = joint_rule.left_and_right();
