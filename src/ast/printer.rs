@@ -107,52 +107,24 @@ impl<'a> TypingPredicate<'a> {
     }
 
     pub fn display(&self, style: PredicateStyle) -> String {
+        if let PredicateStyle::Expression | PredicateStyle::BindingMode = style {
+            return format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty);
+        }
+
+        // Bits of state before the turnstile.
+        let mut pre_turnstile = vec![];
         match style {
-            PredicateStyle::Stateless => format!("{}: {}", self.pat, self.expr.ty),
             PredicateStyle::Sequent => {
-                let mut ty = self.expr.ty.to_string();
                 let bm = match self.expr.binding_mode().ok() {
-                    Some(BindingMode::ByRef(_)) => {
-                        if let Some(rest) = ty.strip_prefix("&mut") {
-                            ty =
-                                format!("{}{rest}", "&mut".dimmed().tooltip("inherited reference"));
-                        } else if let Some(rest) = ty.strip_prefix("&") {
-                            ty = format!("{}{rest}", "&".dimmed().tooltip("inherited reference"));
-                        }
-                        &"inh".dimmed().to_string()
-                    }
+                    Some(BindingMode::ByRef(_)) => &"inh".dimmed().to_string(),
                     _ if !matches!(self.expr.ty, Type::Ref(..) | Type::Abstract(..)) => "_",
                     Some(BindingMode::ByMove) => "real",
                     None => "r",
                 };
-                let scrut_access = match self.expr.scrutinee_mutability().ok() {
-                    None => "m",
-                    Some(Mutability::Mutable) => "rw",
-                    Some(Mutability::Shared) => "ro",
-                };
-                format!("{bm}, {scrut_access} ⊢ {}: {ty}", self.pat)
+                pre_turnstile.push(bm.to_string());
             }
             PredicateStyle::SequentBindingMode => {
-                let bm = self.expr.binding_mode().ok();
-                let scrut_access = match self.expr.scrutinee_mutability().ok() {
-                    None => "m",
-                    Some(Mutability::Mutable) => "rw",
-                    Some(Mutability::Shared) => "ro",
-                };
-                let ty = match bm {
-                    Some(BindingMode::ByMove) => self.expr.ty.to_string(),
-                    Some(BindingMode::ByRef(_)) => {
-                        self.expr.reset_binding_mode().unwrap().ty.to_string()
-                    }
-                    None => match self.expr.ty {
-                        Type::Ref(_, inner_ty) => {
-                            format!("{} or {}", self.expr.ty, inner_ty)
-                        }
-                        Type::Abstract(_) => self.expr.ty.to_string(),
-                        _ => unreachable!(),
-                    },
-                };
-                let bm = match bm {
+                let bm = match self.expr.binding_mode().ok() {
                     None => match self.expr.ty {
                         Type::Ref(Mutability::Shared, _) => "move or ref",
                         Type::Ref(Mutability::Mutable, _) => "move or ref mut",
@@ -161,10 +133,66 @@ impl<'a> TypingPredicate<'a> {
                     },
                     Some(bm) => bm.name(),
                 };
-                format!("{bm}, {scrut_access} ⊢ {}: {ty}", self.pat)
+                pre_turnstile.push(bm.to_string());
             }
-            _ => format!("{} @ {}: {}", self.pat, self.expr, self.expr.ty),
+            _ => {}
         }
+        match style {
+            PredicateStyle::Sequent | PredicateStyle::SequentBindingMode => {
+                let scrut_access = match self.expr.scrutinee_mutability().ok() {
+                    None => "m",
+                    Some(Mutability::Mutable) => "rw",
+                    Some(Mutability::Shared) => "ro",
+                };
+                pre_turnstile.push(scrut_access.to_string());
+            }
+            _ => {}
+        }
+
+        // Type to display.
+        let ty = match style {
+            PredicateStyle::Stateless => self.expr.ty.to_string(),
+            PredicateStyle::Sequent => {
+                let mut ty = self.expr.ty.to_string();
+                match self.expr.binding_mode().ok() {
+                    Some(BindingMode::ByRef(_)) => {
+                        if let Some(rest) = ty.strip_prefix("&mut") {
+                            ty =
+                                format!("{}{rest}", "&mut".dimmed().tooltip("inherited reference"));
+                        } else if let Some(rest) = ty.strip_prefix("&") {
+                            ty = format!("{}{rest}", "&".dimmed().tooltip("inherited reference"));
+                        }
+                    }
+                    _ => {}
+                };
+                ty
+            }
+            PredicateStyle::SequentBindingMode => match self.expr.binding_mode().ok() {
+                Some(BindingMode::ByMove) => self.expr.ty.to_string(),
+                Some(BindingMode::ByRef(_)) => {
+                    self.expr.reset_binding_mode().unwrap().ty.to_string()
+                }
+                None => match self.expr.ty {
+                    Type::Ref(_, inner_ty) => {
+                        format!("{} or {}", self.expr.ty, inner_ty)
+                    }
+                    Type::Abstract(_) => self.expr.ty.to_string(),
+                    _ => unreachable!(),
+                },
+            },
+            PredicateStyle::Expression | PredicateStyle::BindingMode => {
+                unreachable!()
+            }
+        };
+
+        let turnstile = if pre_turnstile.is_empty() {
+            ""
+        } else {
+            " ⊢ "
+        };
+        let pre_turnstile = pre_turnstile.join(", ");
+        let pat = self.pat;
+        format!("{pre_turnstile}{turnstile}{pat}: {ty}")
     }
 }
 
