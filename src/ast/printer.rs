@@ -6,9 +6,9 @@ use crate::*;
 pub trait Style {
     fn green(&self) -> String;
     fn red(&self) -> String;
-    fn dimmed(&self) -> String;
     fn comment(&self) -> String;
     fn tooltip(&self, text: &str) -> String;
+    fn inherited_ref(&self) -> String;
     fn code(&self) -> String;
 }
 
@@ -29,14 +29,6 @@ impl Style for &str {
             <Self as Colorize>::red(self).to_string()
         }
     }
-    fn dimmed(&self) -> String {
-        if cfg!(target_arch = "wasm32") {
-            format!("<span style=\"color: gray\">{self}</span>")
-        } else {
-            use colored::Colorize;
-            <Self as Colorize>::dimmed(self).to_string()
-        }
-    }
     fn comment(&self) -> String {
         if cfg!(target_arch = "wasm32") {
             format!("<span style=\"color: dimgray\">{self}</span>")
@@ -51,6 +43,15 @@ impl Style for &str {
         } else {
             self.to_string()
         }
+    }
+    fn inherited_ref(&self) -> String {
+        if cfg!(target_arch = "wasm32") {
+            format!("<span class=\"inherited-ref\">{self}</span>")
+        } else {
+            use colored::Colorize;
+            <Self as Colorize>::dimmed(self).to_string()
+        }
+        .tooltip("inherited reference")
     }
     fn code(&self) -> String {
         if cfg!(target_arch = "wasm32") {
@@ -68,8 +69,8 @@ impl Style for String {
     fn red(&self) -> String {
         self.as_str().red()
     }
-    fn dimmed(&self) -> String {
-        self.as_str().dimmed()
+    fn inherited_ref(&self) -> String {
+        self.as_str().inherited_ref()
     }
     fn comment(&self) -> String {
         self.as_str().comment()
@@ -122,7 +123,7 @@ impl<'a> TypingPredicate<'a> {
                     let bm = self.expr.binding_mode().ok();
                     let bm = match toi {
                         TypeOfInterest::UserVisible => match bm {
-                            Some(BindingMode::ByRef(_)) => &"inh".dimmed().to_string(),
+                            Some(BindingMode::ByRef(_)) => &"inh".inherited_ref().to_string(),
                             _ if !matches!(self.expr.ty, Type::Ref(..) | Type::Abstract(..)) => "_",
                             Some(BindingMode::ByMove) => "real",
                             None => "r",
@@ -156,15 +157,9 @@ impl<'a> TypingPredicate<'a> {
                             && let Some(BindingMode::ByRef(_)) = self.expr.binding_mode().ok()
                         {
                             if let Some(rest) = ty.strip_prefix("&mut") {
-                                ty = format!(
-                                    "{}{rest}",
-                                    "&mut".dimmed().tooltip("inherited reference")
-                                );
+                                ty = format!("{}{rest}", "&mut".inherited_ref());
                             } else if let Some(rest) = ty.strip_prefix("&") {
-                                ty = format!(
-                                    "{}{rest}",
-                                    "&".dimmed().tooltip("inherited reference")
-                                );
+                                ty = format!("{}{rest}", "&".inherited_ref());
                             }
                         }
                         ty
