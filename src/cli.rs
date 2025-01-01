@@ -70,7 +70,7 @@ impl CliState {
         Self {
             history: Vec::new(),
             options: RuleOptions::NADRI,
-            predicate_style: PredicateStyle::Sequent,
+            predicate_style: PredicateStyle::from_name("Sequent").unwrap(),
             saved: None,
         }
     }
@@ -115,7 +115,7 @@ impl CliState {
     ) -> Result<String, IncompatibleStyle> {
         let style = self.predicate_style;
         let arenas = &Arenas::default();
-        let always_inspect_bm = matches!(style, PredicateStyle::SequentBindingMode);
+        let always_inspect_bm = matches!(style.type_of_interest(), TypeOfInterest::InMemory);
         let joint_rules = compute_joint_rules(arenas, always_inspect_bm, left, right);
 
         let mut out = String::new();
@@ -411,7 +411,7 @@ pub fn display_rules(
     let ctx = TypingCtx {
         arenas,
         options,
-        always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
+        always_inspect_bm: matches!(style.type_of_interest(), TypeOfInterest::InMemory),
     };
     let typing_rules = compute_rules(ctx);
     let mut out = String::new();

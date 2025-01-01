@@ -187,16 +187,29 @@ impl<'a> Expression<'a> {
     }
 }
 
+/// Which type is shown in the sequent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Encode, Decode)]
+pub enum TypeOfInterest {
+    /// The type that a binding pattern would take.
+    UserVisible,
+    /// The type of the place under scrutiny.
+    InMemory,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Encode, Decode)]
 pub enum PredicateStyle {
-    /// Draws the expression as-is.
+    /// `pattern @ expression : ty`
     Expression,
-    /// Tracks the two bits of state on the lhs of a sequent.
-    Sequent,
-    /// Like `Sequent` but hides the inherited reference and uses DBM terminology.
-    SequentBindingMode,
-    /// Doesn't draw the expression.
-    Stateless,
+    /// `state ⊢ pattern : ty`
+    Sequent {
+        /// Which type is shown in the sequent.
+        ty: TypeOfInterest,
+        /// Show the state of inherited references/binding mode (depending on the type of
+        /// interest).
+        show_reference_state: bool,
+        /// Whether to show how mutably we can access the scrutinee.
+        show_scrut_access: bool,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -208,9 +221,30 @@ pub struct PredicateExplanation {
 impl PredicateStyle {
     pub(crate) const KNOWN_PREDICATE_STYLES: &[(&str, PredicateStyle)] = &[
         ("Expression", PredicateStyle::Expression),
-        ("Sequent", PredicateStyle::Sequent),
-        ("SequentBindingMode", PredicateStyle::SequentBindingMode),
-        ("Stateless", PredicateStyle::Stateless),
+        (
+            "Sequent",
+            PredicateStyle::Sequent {
+                ty: TypeOfInterest::UserVisible,
+                show_reference_state: true,
+                show_scrut_access: true,
+            },
+        ),
+        (
+            "SequentBindingMode",
+            PredicateStyle::Sequent {
+                ty: TypeOfInterest::InMemory,
+                show_reference_state: true,
+                show_scrut_access: true,
+            },
+        ),
+        (
+            "Stateless",
+            PredicateStyle::Sequent {
+                ty: TypeOfInterest::UserVisible,
+                show_reference_state: false,
+                show_scrut_access: false,
+            },
+        ),
     ];
 
     pub fn to_name(&self) -> Option<&str> {
@@ -230,6 +264,13 @@ impl PredicateStyle {
         }
     }
 
+    pub fn type_of_interest(self) -> TypeOfInterest {
+        match self {
+            PredicateStyle::Expression => TypeOfInterest::UserVisible,
+            PredicateStyle::Sequent { ty, .. } => ty,
+        }
+    }
+
     pub fn explain_predicate(self) -> PredicateExplanation {
         let pred = TypingPredicate::ABSTRACT.display(self);
 
@@ -238,37 +279,43 @@ impl PredicateStyle {
             PredicateStyle::Expression => {
                 components.push(format!("{} is an expression", "e".code()));
             }
-            PredicateStyle::Sequent => {
-                components.push(format!(
-                    "{} is {} or {} and indicates whether \
-                        the outermost reference type (if any) is inherited or not;",
-                    "r".code(),
-                    "inh".code(),
-                    "real".code()
-                ));
-            }
-            PredicateStyle::SequentBindingMode => {
-                components.push(format!(
-                    "{} is {}, {} or {} and indicates the binding mode;",
-                    "bm".code(),
-                    "move".code(),
-                    "ref".code(),
-                    "ref mut".code(),
-                ));
-            }
-            PredicateStyle::Stateless => {}
-        }
-        match self {
-            PredicateStyle::Sequent | PredicateStyle::SequentBindingMode => {
-                components.push(format!(
-                    "{} is {} or {} and indicates whether \
+            PredicateStyle::Sequent {
+                ty: type_of_interest,
+                show_reference_state,
+                show_scrut_access,
+            } => {
+                if show_reference_state {
+                    match type_of_interest {
+                        TypeOfInterest::UserVisible => {
+                            components.push(format!(
+                                "{} is {} or {} and indicates whether \
+                                the outermost reference type (if any) is inherited or not;",
+                                "r".code(),
+                                "inh".code(),
+                                "real".code()
+                            ));
+                        }
+                        TypeOfInterest::InMemory => {
+                            components.push(format!(
+                                "{} is {}, {} or {} and indicates the binding mode;",
+                                "bm".code(),
+                                "move".code(),
+                                "ref".code(),
+                                "ref mut".code(),
+                            ));
+                        }
+                    }
+                }
+                if show_scrut_access {
+                    components.push(format!(
+                        "{} is {} or {} and indicates whether \
                         we have mutable or read-only access to the original scrutinee;",
-                    "m".code(),
-                    "rw".code(),
-                    "ro".code(),
-                ));
+                        "m".code(),
+                        "rw".code(),
+                        "ro".code(),
+                    ));
+                }
             }
-            PredicateStyle::Expression | PredicateStyle::Stateless => {}
         }
         components.push(format!("{} is a pattern;", "p".code()));
         components.push(format!("{} is a type.", "T".code()));
@@ -327,19 +374,32 @@ impl<'a> TypingRule<'a> {
         style: PredicateStyle,
     ) -> Result<RenderableTypingRule<'a>, IncompatibleStyle> {
         use PredicateStyle::*;
+        use TypeOfInterest::*;
         let abstract_expr = ExprKind::ABSTRACT;
 
         let mut cstrs = self.collect_side_constraints();
-        if matches!(style, Sequent | Stateless) {
+        if matches!(
+            style,
+            Sequent {
+                ty: UserVisible,
+                ..
+            }
+        ) {
             // Interpret the expression as a binding mode if possible.
             cstrs.binding_mode = self.postcondition.expr.as_binding_mode()?;
         }
 
         match style {
-            Stateless if cstrs.binding_mode.is_some() => return Err(IncompatibleStyle),
-            SequentBindingMode
-                if self.postcondition.expr.binding_mode().is_err()
-                    && matches!(self.postcondition.expr.ty, Type::Ref(..)) =>
+            Sequent {
+                show_reference_state: false,
+                ..
+            } if cstrs.binding_mode.is_some() => return Err(IncompatibleStyle),
+            Sequent {
+                ty: InMemory,
+                show_reference_state: true,
+                ..
+            } if self.postcondition.expr.binding_mode().is_err()
+                && matches!(self.postcondition.expr.ty, Type::Ref(..)) =>
             {
                 return Err(IncompatibleStyle)
             }
@@ -363,9 +423,12 @@ impl<'a> TypingRule<'a> {
                 Expression => {
                     postconditions.push(RenderablePredicate::Mutability(abstract_expr, mtbl));
                 }
+                Sequent {
+                    show_reference_state: false,
+                    ..
+                } => return Err(IncompatibleStyle),
                 // We already print this information with the predicate.
-                Sequent | SequentBindingMode => {}
-                Stateless => return Err(IncompatibleStyle),
+                Sequent { .. } => {}
             }
         }
 
@@ -456,19 +519,18 @@ fn bundle_rules() -> anyhow::Result<()> {
     let bundles = KNOWN_TY_BASED_BUNDLES
         .iter()
         .copied()
-        .cartesian_product([
-            PredicateStyle::Expression,
-            PredicateStyle::Sequent,
-            PredicateStyle::SequentBindingMode,
-            PredicateStyle::Stateless,
-        ])
+        .cartesian_product(
+            PredicateStyle::KNOWN_PREDICATE_STYLES
+                .iter()
+                .map(|(_, style)| *style),
+        )
         .map(|(b, style)| (b.name, b.ruleset, style));
 
     for (name, options, style) in bundles {
         let ctx = TypingCtx {
             arenas,
             options,
-            always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
+            always_inspect_bm: matches!(style.type_of_interest(), TypeOfInterest::InMemory),
         };
 
         let mut typing_rules = compute_rules(ctx);
@@ -486,7 +548,7 @@ fn bundle_rules() -> anyhow::Result<()> {
             };
             insta::with_settings!({
                 snapshot_path => "../../tests/snapshots",
-                snapshot_suffix => format!("{name}-{:?}", style),
+                snapshot_suffix => format!("{name}-{}", style),
                 prepend_module_to_snapshot => false,
                 omit_expression => true,
                 info => &info,

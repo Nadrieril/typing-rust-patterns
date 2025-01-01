@@ -160,7 +160,7 @@ impl RuleSetJs {
         let ctx = TypingCtx {
             arenas,
             options,
-            always_inspect_bm: matches!(style, PredicateStyle::SequentBindingMode),
+            always_inspect_bm: matches!(style.type_of_interest(), TypeOfInterest::InMemory),
         };
         compute_rules(ctx)
             .into_iter()
@@ -218,7 +218,7 @@ pub fn display_joint_rules_js(
     assert!(left.this_solver);
     assert!(right.this_solver);
     let arenas = &Arenas::default();
-    let always_inspect_bm = matches!(style, PredicateStyle::SequentBindingMode);
+    let always_inspect_bm = matches!(style.type_of_interest(), TypeOfInterest::InMemory);
     compute_joint_rules(arenas, always_inspect_bm, left.ty_based, right.ty_based)
         .into_iter()
         .map(|joint_rule| {
