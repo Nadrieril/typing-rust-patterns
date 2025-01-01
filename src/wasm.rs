@@ -142,7 +142,7 @@ impl RuleSetJs {
     pub fn trace_solver(
         &self,
         request: &str,
-        PredicateStyleJs(style): PredicateStyleJs,
+        &PredicateStyleJs(style): &PredicateStyleJs,
     ) -> Vec<String> {
         let a = &Arenas::default();
         let req = match TypingRequest::parse(a, request) {
@@ -153,7 +153,7 @@ impl RuleSetJs {
         vec![trace, res.to_string()]
     }
 
-    pub fn display_rules(&self, PredicateStyleJs(style): PredicateStyleJs) -> Vec<String> {
+    pub fn display_rules(&self, &PredicateStyleJs(style): &PredicateStyleJs) -> Vec<String> {
         assert!(self.this_solver);
         let arenas = &Arenas::default();
         let options = self.ty_based;
@@ -176,18 +176,12 @@ pub struct PredicateStyleJs(PredicateStyle);
 
 #[wasm_bindgen]
 impl PredicateStyleJs {
-    pub fn from_name(name: &str) -> PredicateStyleJs {
-        PredicateStyleJs(PredicateStyle::from_name(name).unwrap())
+    pub fn from_name(name: &str) -> Option<PredicateStyleJs> {
+        Some(PredicateStyleJs(PredicateStyle::from_name(name).ok()?))
     }
 
-    /// Encode the current style as base64.
-    pub fn encode(&self) -> String {
-        encode_base64(self)
-    }
-
-    /// Decode the current style from base64.
-    pub fn decode(x: JsValue) -> Option<PredicateStyleJs> {
-        decode_base64(x)
+    pub fn to_name(&self) -> String {
+        self.0.to_name().unwrap().to_string()
     }
 
     pub fn explain_predicate(&self) -> String {
@@ -207,7 +201,7 @@ impl PredicateStyleJs {
 pub fn display_joint_rules_js(
     left: &RuleSetJs,
     right: &RuleSetJs,
-    PredicateStyleJs(style): PredicateStyleJs,
+    &PredicateStyleJs(style): &PredicateStyleJs,
 ) -> Vec<JsValue> {
     #[derive(Debug, Clone, Serialize)]
     pub struct JointDisplayOutput {

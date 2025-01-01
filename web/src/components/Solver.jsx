@@ -80,7 +80,7 @@ export function Help({show, setShow, style}) {
                 <p>
                 We represent the internal state of the typechecker as a predicate
                 that looks like&nbsp;
-                <span dangerouslySetInnerHTML={{__html: PredicateStyleJs.from_name(style).explain_predicate() }}/>
+                <span dangerouslySetInnerHTML={{__html: style.explain_predicate() }}/>
                 </p>
                 <p>
                 Starting with the predicate that corresponds to your query, we
@@ -127,8 +127,8 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
     const styles = availableStyles.map(style => {
         return <OverlayTrigger key={style.name} placement="bottom" overlay={<Tooltip>{style.doc}</Tooltip>}>
             <Button
-                active={currentStyle == style.name}
-                onClick={() => setStyle(style.name)}
+                active={currentStyle.to_name() == style.name}
+                onClick={() => setStyle(PredicateStyleJs.from_name(style.name))}
             >
                 {style.display}
             </Button>
@@ -186,10 +186,10 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
 
 export function SolverSteps({inputQuery, optionsLeft, optionsRight, compare, style}) {
     const [stepsLeft, resultLeft] = useMemo(() => {
-        return optionsLeft.trace_solver(inputQuery, PredicateStyleJs.from_name(style));
+        return optionsLeft.trace_solver(inputQuery, style);
     }, [inputQuery, optionsLeft, style]);
     const [stepsRight, resultRight] = useMemo(() => {
-        return optionsRight.trace_solver(inputQuery, PredicateStyleJs.from_name(style));
+        return optionsRight.trace_solver(inputQuery, style);
     }, [inputQuery, optionsRight, style]);
 
     const resultStyle = {position: 'sticky', bottom: 0, fontWeight: 'normal'};
@@ -225,7 +225,7 @@ export function SolverSteps({inputQuery, optionsLeft, optionsRight, compare, sty
 
 export function RulesDisplay({options, style}) {
     const rulesDisplay = useMemo(() => {
-        return options.display_rules(PredicateStyleJs.from_name(style));
+        return options.display_rules(style);
     }, [options, style]);
 
     const rows = rulesDisplay.map((rule, index) => {
@@ -243,7 +243,7 @@ export function RulesDisplay({options, style}) {
 
 export function JointRulesDisplay({optionsLeft, optionsRight, style}) {
     const jointDisplay = useMemo(() => {
-        return display_joint_rules_js(optionsLeft, optionsRight, PredicateStyleJs.from_name(style));
+        return display_joint_rules_js(optionsLeft, optionsRight, style);
     }, [optionsLeft, optionsRight, style]);
 
     const rows = jointDisplay.map((joint, index) => {
@@ -410,7 +410,8 @@ export default function Solver() {
     const [searchParams, setSearchParams] = useSearchParams();
     const sp = {searchParams, setSearchParams};
     const [compare, setCompare] = useStateInParams(sp, 'compare', false, (x) => x == 'true');
-    const [style, setStyle] = useStateInParams(sp, 'style', 'Sequent', validateIn(['Sequent', 'SequentBindingMode', 'Expression']));
+    const defaultStyle = PredicateStyleJs.from_name('Sequent');
+    const [style, setStyle] = useStateInParams(sp, 'style', defaultStyle, PredicateStyleJs.from_name, (style) => style.to_name());
     const [optionsLeft, setOptionsLeft] = useStateInParams(sp, 'opts1', RuleSetJs.from_bundle_name('nadri', 'stable'), RuleSetJs.decode, (o) => o.encode());
     const [optionsRight, setOptionsRight] = useStateInParams(sp, 'opts2', RuleSetJs.from_bundle_name('rfc3627', 'rfc3627'), RuleSetJs.decode, (o) => o.encode());
     const [inputQuery, setInputQuery] = useStateInParams(sp, 'q', "[&x]: &mut [&T]");
