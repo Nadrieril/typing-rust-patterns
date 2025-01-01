@@ -332,7 +332,7 @@ impl RenderablePredicate<'_> {
 }
 
 /// Intermediate representation used in the display process.
-struct RenderableTypingRule<'a> {
+pub(crate) struct RenderableTypingRule<'a> {
     name: Rule,
     preconditions: Vec<RenderablePredicate<'a>>,
     postconditions: Vec<RenderablePredicate<'a>>,
@@ -348,7 +348,7 @@ impl<'a> TypingRule<'a> {
         cstrs
     }
 
-    fn make_renderable(
+    pub(crate) fn make_renderable(
         &'a self,
         _a: &'a Arenas<'a>,
         style: PredicateStyle,
@@ -442,12 +442,26 @@ impl<'a> TypingRule<'a> {
 
     pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
         let a = &Arenas::default();
-        self.make_renderable(a, style)?.display(style)
+        Ok(self.make_renderable(a, style)?.display(style))
     }
 }
 
 impl<'a> RenderableTypingRule<'a> {
-    pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
+    pub fn display(&self, style: PredicateStyle) -> String {
+        Self::assemble_pieces(self.display_piecewise(style))
+    }
+
+    pub fn assemble_pieces(
+        [preconditions_str, bar, name, postconditions_str]: [String; 4],
+    ) -> String {
+        let mut out = String::new();
+        let _ = write!(&mut out, "{preconditions_str}\n");
+        let _ = write!(&mut out, "{bar} \"{name}\"\n");
+        let _ = write!(&mut out, "{postconditions_str}");
+        out
+    }
+
+    pub fn display_piecewise(&self, style: PredicateStyle) -> [String; 4] {
         let postconditions_str = self
             .postconditions
             .iter()
@@ -487,11 +501,8 @@ impl<'a> RenderableTypingRule<'a> {
             display_len(&postconditions_str),
         );
         let bar = "-".repeat(len);
-        let mut out = String::new();
-        let _ = write!(&mut out, "{preconditions_str}\n");
-        let _ = write!(&mut out, "{bar} \"{}\"\n", self.name.display(self.options));
-        let _ = write!(&mut out, "{postconditions_str}");
-        Ok(out)
+        let name = self.name.display(self.options);
+        [preconditions_str, bar, name, postconditions_str]
     }
 }
 

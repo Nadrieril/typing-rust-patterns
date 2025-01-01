@@ -1,6 +1,7 @@
 use crate::*;
 use bincode::{Decode, Encode};
 use gloo_utils::format::JsValueSerdeExt;
+use itertools::EitherOrBoth;
 use serde::Serialize;
 use std::cmp::Ordering;
 use std::fmt::Write;
@@ -271,18 +272,49 @@ pub fn display_joint_rules_js(
 
     assert!(left.this_solver);
     assert!(right.this_solver);
-    let arenas = &Arenas::default();
+    let a = &Arenas::default();
     let type_of_interest = style.type_of_interest();
-    compute_joint_rules(arenas, type_of_interest, left.ty_based, right.ty_based)
+    compute_joint_rules(a, type_of_interest, left.ty_based, right.ty_based)
         .into_iter()
         .map(|joint_rule| {
-            let (left, right) = joint_rule.left_and_right();
-            let mut left = left.map(|r| r.display(style).unwrap()).unwrap_or_default();
-            let mut right = right.map(|r| r.display(style).unwrap()).unwrap_or_default();
-            if left != right {
-                left = left.red();
-                right = right.green();
-            }
+            let joint_rule = joint_rule
+                .as_ref()
+                .map_left(|r| r.make_renderable(a, style).unwrap())
+                .map_right(|r| r.make_renderable(a, style).unwrap());
+            let (left, right) = match joint_rule {
+                EitherOrBoth::Left(left) => {
+                    let left = left.display(style).red();
+                    (left, String::new())
+                }
+                EitherOrBoth::Right(right) => {
+                    let right = right.display(style).green();
+                    (String::new(), right)
+                }
+                EitherOrBoth::Both(left, right) => {
+                    let [mut lpreconditions_str, lbar, lname, lpostconditions_str] =
+                        left.display_piecewise(style);
+                    let [mut rpreconditions_str, rbar, rname, rpostconditions_str] =
+                        right.display_piecewise(style);
+                    if lpreconditions_str != rpreconditions_str {
+                        lpreconditions_str = lpreconditions_str.red();
+                        rpreconditions_str = rpreconditions_str.green();
+                    }
+                    assert_eq!(lpostconditions_str, rpostconditions_str);
+                    let left = RenderableTypingRule::assemble_pieces([
+                        lpreconditions_str,
+                        lbar,
+                        lname,
+                        lpostconditions_str,
+                    ]);
+                    let right = RenderableTypingRule::assemble_pieces([
+                        rpreconditions_str,
+                        rbar,
+                        rname,
+                        rpostconditions_str,
+                    ]);
+                    (left, right)
+                }
+            };
             JointDisplayOutput { left, right }
         })
         .map(|out| JsValue::from_serde(&out).unwrap())
