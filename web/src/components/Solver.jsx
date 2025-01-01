@@ -95,9 +95,9 @@ export function Help({show, setShow, style}) {
     </>
 }
 
-const availableStyles = ['Sequent', 'SequentBindingMode'];
+const availableStyles = ['UserVisible', 'InMemory'];
 
-export function MainNavBar({compare, setCompare, style, setStyle}) {
+export function MainNavBar({compare, setCompare, style, setStyleName, styleMap}) {
     const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams();
     function resetSearchParams() {
@@ -114,11 +114,11 @@ export function MainNavBar({compare, setCompare, style, setStyle}) {
 
     const currentStyle = style;
     const styles = availableStyles.map(style_name => {
-        let style = PredicateStyleJs.from_name(style_name);
+        let style = styleMap[style_name];
         return <OverlayTrigger key={style_name} placement="bottom" overlay={<Tooltip>{style.doc()}</Tooltip>}>
             <Button
                 active={currentStyle.to_name() == style_name}
-                onClick={() => setStyle(style)}
+                onClick={() => setStyleName(style_name)}
                 dangerouslySetInnerHTML={{__html: style.display_generic_predicate()}}
             ></Button>
         </OverlayTrigger>
@@ -399,17 +399,34 @@ export default function Solver() {
     const [searchParams, setSearchParams] = useSearchParams();
     const sp = {searchParams, setSearchParams};
     const [compare, setCompare] = useStateInParams(sp, 'compare', false, (x) => x == 'true');
-    const defaultStyle = PredicateStyleJs.from_name('Sequent');
-    const [style, setStyle] = useStateInParams(sp, 'style', defaultStyle, PredicateStyleJs.from_name, (style) => style.to_name());
     const [optionsLeft, setOptionsLeft] = useStateInParams(sp, 'opts1', RuleSetJs.from_bundle_name('nadri', 'stable'), RuleSetJs.decode, (o) => o.encode());
     const [optionsRight, setOptionsRight] = useStateInParams(sp, 'opts2', RuleSetJs.from_bundle_name('rfc3627', 'rfc3627'), RuleSetJs.decode, (o) => o.encode());
     const [inputQuery, setInputQuery] = useStateInParams(sp, 'q', "[&x]: &mut [&T]");
     const [mode, setMode] = useStateInParams(sp, 'mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
+    const [styleName, setStyleName] = useStateInParams(sp, 'style', 'UserVisible',  validateIn(['UserVisible', 'InMemory', 'Sequent', 'SequentBindingMode']));
+
+    // Map from style name to predicate style. Takes into account the selected
+    // options to hide parts of the predicate we don't care about.
+    const styleMap = useMemo(() => {
+        var map = availableStyles.reduce(function(map, style_name) {
+            if(compare) {
+                map[style_name] = PredicateStyleJs.from_name_and_options(style_name, optionsLeft, optionsRight);
+            } else {
+                map[style_name] = PredicateStyleJs.from_name_and_option(style_name, optionsLeft);
+            }
+            return map;
+        }, {});
+        // Back-compat with permalinks that used the old style names.
+        map['Sequent'] = map['UserVisible'];
+        map['SequentBindingMode'] = map['InMemory'];
+        return map;
+    }, [compare, optionsLeft, optionsRight]);
+    const style = styleMap[styleName];
 
     return (
         <>
             <div className="sticky-top">
-                <MainNavBar {...{compare, setCompare, style, setStyle}}/>
+                <MainNavBar {...{compare, setCompare, style, setStyleName, styleMap}}/>
                 <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title={compare ? <>Left&nbsp;&nbsp;&nbsp;</> : null}/>
                 {compare ? <SolverOptions options={optionsRight} setOptions={setOptionsRight} title="Right"/> : null}
             </div>

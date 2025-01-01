@@ -170,6 +170,20 @@ pub enum TypeOfInterest {
     InMemory,
 }
 
+impl TypeOfInterest {
+    pub fn to_str(&self) -> String {
+        format!("{self:?}")
+    }
+
+    pub fn from_str(name: &str) -> anyhow::Result<Self> {
+        Ok(match name {
+            "UserVisible" => TypeOfInterest::UserVisible,
+            "InMemory" => TypeOfInterest::InMemory,
+            _ => anyhow::bail!("unknown type of interest `{name}`"),
+        })
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Encode, Decode)]
 pub enum PredicateStyle {
     /// `pattern @ expression : ty`
@@ -226,7 +240,7 @@ impl PredicateStyle {
             .find(|(n, _)| *n == name)
         {
             Some((_, style)) => Ok(*style),
-            None => anyhow::bail!("unknown style {name}"),
+            None => anyhow::bail!("unknown style `{name}`"),
         }
     }
 

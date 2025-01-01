@@ -97,6 +97,55 @@ impl RuleOptions {
         }
     }
 
+    /// Whether this ruleset cares about scrutinee mutability.
+    /// Warning: will cause `IncompatibleStyle` crashes if incorrect.
+    pub fn tracks_scrut_mutability(&self) -> bool {
+        self.downgrade_mut_inside_shared
+    }
+
+    /// Whether this ruleset tracks some state related to inherited references/binding mode.
+    /// Warning: will cause `IncompatibleStyle` crashes if incorrect.
+    pub fn tracks_reference_state(&self, ty: TypeOfInterest) -> bool {
+        match ty {
+            // We always inspect the binding mode. More work would be needed to be able
+            // to represent rulesets that handle the binding mode generically.
+            TypeOfInterest::InMemory => true,
+            // We carefully inspect each rule to see if it inspects the expression. If
+            // it only inspects the type, that doesn't count as extra state.
+            TypeOfInterest::UserVisible => {
+                let RuleOptions {
+                    match_constructor_through_ref,
+                    eat_inherited_ref_alone,
+                    inherited_ref_on_ref,
+                    fallback_to_outer: _,
+                    allow_ref_pat_on_ref_mut: _,
+                    simplify_deref_mut: _,
+                    downgrade_mut_inside_shared: _,
+                    eat_mut_inside_shared: _,
+                    ref_binding_on_inherited,
+                    mut_binding_on_inherited,
+                } = *self;
+                if !match_constructor_through_ref {
+                    false
+                } else if matches!(inherited_ref_on_ref, InheritedRefOnRefBehavior::EatOuter)
+                    && matches!(
+                        ref_binding_on_inherited,
+                        RefBindingOnInheritedBehavior::AllocTemporary
+                    )
+                    && matches!(
+                        mut_binding_on_inherited,
+                        MutBindingOnInheritedBehavior::Keep
+                    )
+                    && eat_inherited_ref_alone
+                {
+                    false
+                } else {
+                    true
+                }
+            }
+        }
+    }
+
     pub fn to_map(&self) -> serde_json::Map<String, serde_json::Value> {
         let serde_json::Value::Object(map) = serde_json::to_value(self).unwrap() else {
             panic!()

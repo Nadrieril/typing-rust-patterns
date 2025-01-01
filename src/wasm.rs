@@ -176,12 +176,32 @@ pub struct PredicateStyleJs(PredicateStyle);
 
 #[wasm_bindgen]
 impl PredicateStyleJs {
-    pub fn from_name(name: &str) -> Option<PredicateStyleJs> {
-        Some(PredicateStyleJs(PredicateStyle::from_name(name).ok()?))
+    pub fn from_name_and_option(name: &str, ruleset: &RuleSetJs) -> Option<PredicateStyleJs> {
+        // Silly but DRY
+        Self::from_name_and_options(name, ruleset, ruleset)
+    }
+
+    /// Constructs a sequent-style style based on the given name (reflecting the type of interest)
+    /// and the passed rulesets (reflecting )
+    pub fn from_name_and_options(
+        name: &str,
+        left: &RuleSetJs,
+        right: &RuleSetJs,
+    ) -> Option<PredicateStyleJs> {
+        let ty = TypeOfInterest::from_str(name).ok()?;
+        let left = left.as_ruleset();
+        let right = right.as_ruleset();
+        let style = PredicateStyle::Sequent {
+            ty,
+            show_reference_state: left.tracks_reference_state(ty)
+                || right.tracks_reference_state(ty),
+            show_scrut_access: left.tracks_scrut_mutability() || right.tracks_scrut_mutability(),
+        };
+        Some(PredicateStyleJs(style))
     }
 
     pub fn to_name(&self) -> String {
-        self.0.to_name().unwrap().to_string()
+        self.0.type_of_interest().to_str()
     }
 
     pub fn doc(&self) -> String {

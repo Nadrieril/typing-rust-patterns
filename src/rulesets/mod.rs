@@ -71,10 +71,26 @@ impl RuleSet {
     }
 
     /// List options that can be changed without affecting the current rules.
-    pub fn irrelevant_options(self) -> &'static [&'static str] {
+    pub fn irrelevant_options(&self) -> &'static [&'static str] {
         match self {
             RuleSet::TypeBased(o) => o.irrelevant_options(),
-            RuleSet::BindingModeBased(c) => bm_based_irrelevant_options(c),
+            RuleSet::BindingModeBased(c) => bm_based_irrelevant_options(*c),
+        }
+    }
+
+    /// Whether this ruleset cares about scrutinee mutability.
+    pub fn tracks_scrut_mutability(&self) -> bool {
+        match self {
+            RuleSet::TypeBased(opts) => opts.tracks_scrut_mutability(),
+            RuleSet::BindingModeBased(_) => true,
+        }
+    }
+
+    /// Whether this ruleset tracks some state related to inherited references/binding mode.
+    pub fn tracks_reference_state(&self, ty: TypeOfInterest) -> bool {
+        match self {
+            RuleSet::TypeBased(opts) => opts.tracks_reference_state(ty),
+            RuleSet::BindingModeBased(_) => true,
         }
     }
 
