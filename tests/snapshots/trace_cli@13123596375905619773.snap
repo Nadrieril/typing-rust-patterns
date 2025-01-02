@@ -121,21 +121,21 @@ The old ruleset is on the left, and the new one on the right.
  ---------------------- "BindingBorrow"                                           | ---------------------- "BindingBorrow"
  real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
 
-                                                                                  | 
+                                                                                  |
  ----------- "Binding"                                                            | ----------- "Binding"
  r, m ⊢ x: T                                                                      | r, m ⊢ x: T
 
-                                                                                  | 
+                                                                                  |
  ------------------ "Binding"                                                     | ------------------ "Binding"
  real, m ⊢ mut x: T                                                               | real, m ⊢ mut x: T
 
-                                                                                  |  
- ------------------ "Binding"                                                     |  
- inh, m ⊢ mut x: &T                                                               |  
+                                                                                  |
+ ------------------ "Binding"                                                     |
+ inh, m ⊢ mut x: &T                                                               |
 
-                                                                                  |  
- ---------------------- "Binding"                                                 |  
- inh, m ⊢ mut x: &mut T                                                           |  
+                                                                                  |
+ ---------------------- "Binding"                                                 |
+ inh, m ⊢ mut x: &mut T                                                           |
 
 
 allow_ref_pat_on_ref_mut: true

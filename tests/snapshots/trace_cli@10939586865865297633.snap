@@ -10,77 +10,77 @@ The old ruleset is on the left, and the new one on the right.
  ----------------------------------- "Constructor"                                | ----------------------------------- "Constructor"
  _, m ⊢ [p0, p1]: [T0, T1]                                                        | _, m ⊢ [p0, p1]: [T0, T1]
 
- inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            |  
- ------------------------------------- "ConstructorRef"                           |  
- r, m ⊢ [p0, p1]: &[T0, T1]                                                       |  
+ inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            |
+ ------------------------------------- "ConstructorRef"                           |
+ r, m ⊢ [p0, p1]: &[T0, T1]                                                       |
 
- inh, m ⊢ p0: &mut T0,  inh, m ⊢ p1: &mut T1                                      |  
- ------------------------------------------- "ConstructorRef"                     |  
- r, m ⊢ [p0, p1]: &mut [T0, T1]                                                   |  
+ inh, m ⊢ p0: &mut T0,  inh, m ⊢ p1: &mut T1                                      |
+ ------------------------------------------- "ConstructorRef"                     |
+ r, m ⊢ [p0, p1]: &mut [T0, T1]                                                   |
 
- inh, ro ⊢ [p0, p1]: &T                                                           |  
- ---------------------- "ConstructorMultiRef"                                     |  
- r, m ⊢ [p0, p1]: &&T                                                             |  
+ inh, ro ⊢ [p0, p1]: &T                                                           |
+ ---------------------- "ConstructorMultiRef"                                     |
+ r, m ⊢ [p0, p1]: &&T                                                             |
 
- inh, ro ⊢ [p0, p1]: &T                                                           |  
- ------------------------ "ConstructorMultiRef"                                   |  
- r, m ⊢ [p0, p1]: &&mut T                                                         |  
+ inh, ro ⊢ [p0, p1]: &T                                                           |
+ ------------------------ "ConstructorMultiRef"                                   |
+ r, m ⊢ [p0, p1]: &&mut T                                                         |
 
- inh, ro ⊢ [p0, p1]: &T                                                           |  
- ------------------------ "ConstructorMultiRef"                                   |  
- r, m ⊢ [p0, p1]: &mut &T                                                         |  
+ inh, ro ⊢ [p0, p1]: &T                                                           |
+ ------------------------ "ConstructorMultiRef"                                   |
+ r, m ⊢ [p0, p1]: &mut &T                                                         |
 
- inh, m ⊢ [p0, p1]: &mut T                                                        |  
- ---------------------------- "ConstructorMultiRef"                               |  
- r, m ⊢ [p0, p1]: &mut &mut T                                                     |  
+ inh, m ⊢ [p0, p1]: &mut T                                                        |
+ ---------------------------- "ConstructorMultiRef"                               |
+ r, m ⊢ [p0, p1]: &mut &mut T                                                     |
 
  real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
  ---------------- "Deref"                                                         | ---------------- "Deref"
  real, m ⊢ &p: &T                                                                 | real, m ⊢ &p: &T
 
- _, ro ⊢ p: T                                                                     |  
- ------------------------------------- "Deref"                                    |  
- inh, m ⊢ &p: &T, T is not a reference                                            |  
+ _, ro ⊢ p: T                                                                     |
+ ------------------------------------- "Deref"                                    |
+ inh, m ⊢ &p: &T, T is not a reference                                            |
 
- real, ro ⊢ p: &T                                                                 |  
- ---------------- "Deref"                                                         |  
- inh, m ⊢ &p: &&T                                                                 |  
+ real, ro ⊢ p: &T                                                                 |
+ ---------------- "Deref"                                                         |
+ inh, m ⊢ &p: &&T                                                                 |
 
- real, ro ⊢ p: &mut T                                                             |  
- -------------------- "Deref"                                                     |  
- inh, m ⊢ &p: &&mut T                                                             |  
+ real, ro ⊢ p: &mut T                                                             |
+ -------------------- "Deref"                                                     |
+ inh, m ⊢ &p: &&mut T                                                             |
 
  real, m ⊢ p: T                                                                   | real, m ⊢ p: T
  ------------------------ "Deref"                                                 | ------------------------ "Deref"
  real, m ⊢ &mut p: &mut T                                                         | real, m ⊢ &mut p: &mut T
 
- _, m ⊢ p: T                                                                      |  
- --------------------------------------------- "Deref"                            |  
- inh, m ⊢ &mut p: &mut T, T is not a reference                                    |  
+ _, m ⊢ p: T                                                                      |
+ --------------------------------------------- "Deref"                            |
+ inh, m ⊢ &mut p: &mut T, T is not a reference                                    |
 
- real, m ⊢ p: &T                                                                  |  
- ------------------------ "Deref"                                                 |  
- inh, m ⊢ &mut p: &mut &T                                                         |  
+ real, m ⊢ p: &T                                                                  |
+ ------------------------ "Deref"                                                 |
+ inh, m ⊢ &mut p: &mut &T                                                         |
 
- real, m ⊢ p: &mut T                                                              |  
- ---------------------------- "Deref"                                             |  
- inh, m ⊢ &mut p: &mut &mut T                                                     |  
+ real, m ⊢ p: &mut T                                                              |
+ ---------------------------- "Deref"                                             |
+ inh, m ⊢ &mut p: &mut &mut T                                                     |
 
- real, ro ⊢ p: T                                                                  |  
- -------------------- "DerefMutWithShared"                                        |  
- real, m ⊢ &p: &mut T                                                             |  
+ real, ro ⊢ p: T                                                                  |
+ -------------------- "DerefMutWithShared"                                        |
+ real, m ⊢ &p: &mut T                                                             |
 
- _, ro ⊢ p: T                                                                     |  
- ----------------------------------------- "DerefMutWithShared"                   |  
- inh, m ⊢ &p: &mut T, T is not a reference                                        |  
+ _, ro ⊢ p: T                                                                     |
+ ----------------------------------------- "DerefMutWithShared"                   |
+ inh, m ⊢ &p: &mut T, T is not a reference                                        |
 
- real, ro ⊢ p: &T                                                                 |  
- -------------------- "DerefMutWithShared"                                        |  
- inh, m ⊢ &p: &mut &T                                                             |  
+ real, ro ⊢ p: &T                                                                 |
+ -------------------- "DerefMutWithShared"                                        |
+ inh, m ⊢ &p: &mut &T                                                             |
 
- real, ro ⊢ p: &mut T                                                             |  
- ------------------------ "DerefMutWithShared"                                    |  
- inh, m ⊢ &p: &mut &mut T                                                         |  
+ real, ro ⊢ p: &mut T                                                             |
+ ------------------------ "DerefMutWithShared"                                    |
+ inh, m ⊢ &p: &mut &mut T                                                         |
 
  inh, m ⊢ x: &T                                                                   | inh, m ⊢ x: &T
  ------------------ "BindingBorrow"                                               | ------------------ "BindingBorrow"
@@ -90,21 +90,21 @@ The old ruleset is on the left, and the new one on the right.
  ---------------------- "BindingBorrow"                                           | ---------------------- "BindingBorrow"
  real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
 
-                                                                                  | 
+                                                                                  |
  ----------- "Binding"                                                            | ----------- "Binding"
  r, m ⊢ x: T                                                                      | r, m ⊢ x: T
 
-                                                                                  | 
+                                                                                  |
  ------------------ "Binding"                                                     | ------------------ "Binding"
  real, m ⊢ mut x: T                                                               | real, m ⊢ mut x: T
 
-                                                                                  |  
- ------------------ "Binding"                                                     |  
- inh, m ⊢ mut x: &T                                                               |  
+                                                                                  |
+ ------------------ "Binding"                                                     |
+ inh, m ⊢ mut x: &T                                                               |
 
-                                                                                  |  
- ---------------------- "Binding"                                                 |  
- inh, m ⊢ mut x: &mut T                                                           |  
+                                                                                  |
+ ---------------------- "Binding"                                                 |
+ inh, m ⊢ mut x: &mut T                                                           |
 
 
 allow_ref_pat_on_ref_mut: true -> false
@@ -205,19 +205,19 @@ The old current ruleset is on the left, and the new current one on the right.
  ---------------------- "BindingBorrow"                                           | ---------------------- "BindingBorrow"
  real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
 
-                                                                                  | 
+                                                                                  |
  ----------- "Binding"                                                            | ----------- "Binding"
  r, m ⊢ x: T                                                                      | r, m ⊢ x: T
 
-                                                                                  | 
+                                                                                  |
  ------------------ "Binding"                                                     | ------------------ "Binding"
  real, m ⊢ mut x: T                                                               | real, m ⊢ mut x: T
 
-                                                                                  | 
+                                                                                  |
                                                                                   | ------------------ "Binding"
                                                                                   | inh, m ⊢ mut x: &T
 
-                                                                                  | 
+                                                                                  |
                                                                                   | ---------------------- "Binding"
                                                                                   | inh, m ⊢ mut x: &mut T
 
@@ -240,77 +240,77 @@ The current ruleset is on the left, and the saved one on the right.
  ----------------------------------- "Constructor"                                | ----------------------------------- "Constructor"
  _, m ⊢ [p0, p1]: [T0, T1]                                                        | _, m ⊢ [p0, p1]: [T0, T1]
 
- inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            |  
- ------------------------------------- "ConstructorRef"                           |  
- r, m ⊢ [p0, p1]: &[T0, T1]                                                       |  
+ inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            |
+ ------------------------------------- "ConstructorRef"                           |
+ r, m ⊢ [p0, p1]: &[T0, T1]                                                       |
 
- inh, m ⊢ p0: &mut T0,  inh, m ⊢ p1: &mut T1                                      |  
- ------------------------------------------- "ConstructorRef"                     |  
- r, m ⊢ [p0, p1]: &mut [T0, T1]                                                   |  
+ inh, m ⊢ p0: &mut T0,  inh, m ⊢ p1: &mut T1                                      |
+ ------------------------------------------- "ConstructorRef"                     |
+ r, m ⊢ [p0, p1]: &mut [T0, T1]                                                   |
 
- inh, ro ⊢ [p0, p1]: &T                                                           |  
- ---------------------- "ConstructorMultiRef"                                     |  
- r, m ⊢ [p0, p1]: &&T                                                             |  
+ inh, ro ⊢ [p0, p1]: &T                                                           |
+ ---------------------- "ConstructorMultiRef"                                     |
+ r, m ⊢ [p0, p1]: &&T                                                             |
 
- inh, ro ⊢ [p0, p1]: &T                                                           |  
- ------------------------ "ConstructorMultiRef"                                   |  
- r, m ⊢ [p0, p1]: &&mut T                                                         |  
+ inh, ro ⊢ [p0, p1]: &T                                                           |
+ ------------------------ "ConstructorMultiRef"                                   |
+ r, m ⊢ [p0, p1]: &&mut T                                                         |
 
- inh, ro ⊢ [p0, p1]: &T                                                           |  
- ------------------------ "ConstructorMultiRef"                                   |  
- r, m ⊢ [p0, p1]: &mut &T                                                         |  
+ inh, ro ⊢ [p0, p1]: &T                                                           |
+ ------------------------ "ConstructorMultiRef"                                   |
+ r, m ⊢ [p0, p1]: &mut &T                                                         |
 
- inh, m ⊢ [p0, p1]: &mut T                                                        |  
- ---------------------------- "ConstructorMultiRef"                               |  
- r, m ⊢ [p0, p1]: &mut &mut T                                                     |  
+ inh, m ⊢ [p0, p1]: &mut T                                                        |
+ ---------------------------- "ConstructorMultiRef"                               |
+ r, m ⊢ [p0, p1]: &mut &mut T                                                     |
 
  real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
  ---------------- "Deref"                                                         | ---------------- "Deref"
  real, m ⊢ &p: &T                                                                 | real, m ⊢ &p: &T
 
- _, ro ⊢ p: T                                                                     |  
- ------------------------------------- "Deref"                                    |  
- inh, m ⊢ &p: &T, T is not a reference                                            |  
+ _, ro ⊢ p: T                                                                     |
+ ------------------------------------- "Deref"                                    |
+ inh, m ⊢ &p: &T, T is not a reference                                            |
 
- real, ro ⊢ p: &T                                                                 |  
- ---------------- "Deref"                                                         |  
- inh, m ⊢ &p: &&T                                                                 |  
+ real, ro ⊢ p: &T                                                                 |
+ ---------------- "Deref"                                                         |
+ inh, m ⊢ &p: &&T                                                                 |
 
- real, ro ⊢ p: &mut T                                                             |  
- -------------------- "Deref"                                                     |  
- inh, m ⊢ &p: &&mut T                                                             |  
+ real, ro ⊢ p: &mut T                                                             |
+ -------------------- "Deref"                                                     |
+ inh, m ⊢ &p: &&mut T                                                             |
 
  real, m ⊢ p: T                                                                   | real, m ⊢ p: T
  ------------------------ "Deref"                                                 | ------------------------ "Deref"
  real, m ⊢ &mut p: &mut T                                                         | real, m ⊢ &mut p: &mut T
 
- _, m ⊢ p: T                                                                      |  
- --------------------------------------------- "Deref"                            |  
- inh, m ⊢ &mut p: &mut T, T is not a reference                                    |  
+ _, m ⊢ p: T                                                                      |
+ --------------------------------------------- "Deref"                            |
+ inh, m ⊢ &mut p: &mut T, T is not a reference                                    |
 
- real, m ⊢ p: &T                                                                  |  
- ------------------------ "Deref"                                                 |  
- inh, m ⊢ &mut p: &mut &T                                                         |  
+ real, m ⊢ p: &T                                                                  |
+ ------------------------ "Deref"                                                 |
+ inh, m ⊢ &mut p: &mut &T                                                         |
 
- real, m ⊢ p: &mut T                                                              |  
- ---------------------------- "Deref"                                             |  
- inh, m ⊢ &mut p: &mut &mut T                                                     |  
+ real, m ⊢ p: &mut T                                                              |
+ ---------------------------- "Deref"                                             |
+ inh, m ⊢ &mut p: &mut &mut T                                                     |
 
- real, ro ⊢ p: T                                                                  |  
- -------------------- "DerefMutWithShared"                                        |  
- real, m ⊢ &p: &mut T                                                             |  
+ real, ro ⊢ p: T                                                                  |
+ -------------------- "DerefMutWithShared"                                        |
+ real, m ⊢ &p: &mut T                                                             |
 
- _, ro ⊢ p: T                                                                     |  
- ----------------------------------------- "DerefMutWithShared"                   |  
- inh, m ⊢ &p: &mut T, T is not a reference                                        |  
+ _, ro ⊢ p: T                                                                     |
+ ----------------------------------------- "DerefMutWithShared"                   |
+ inh, m ⊢ &p: &mut T, T is not a reference                                        |
 
- real, ro ⊢ p: &T                                                                 |  
- -------------------- "DerefMutWithShared"                                        |  
- inh, m ⊢ &p: &mut &T                                                             |  
+ real, ro ⊢ p: &T                                                                 |
+ -------------------- "DerefMutWithShared"                                        |
+ inh, m ⊢ &p: &mut &T                                                             |
 
- real, ro ⊢ p: &mut T                                                             |  
- ------------------------ "DerefMutWithShared"                                    |  
- inh, m ⊢ &p: &mut &mut T                                                         |  
+ real, ro ⊢ p: &mut T                                                             |
+ ------------------------ "DerefMutWithShared"                                    |
+ inh, m ⊢ &p: &mut &mut T                                                         |
 
  inh, m ⊢ x: &T                                                                   | inh, m ⊢ x: &T
  ------------------ "BindingBorrow"                                               | ------------------ "BindingBorrow"
@@ -320,18 +320,18 @@ The current ruleset is on the left, and the saved one on the right.
  ---------------------- "BindingBorrow"                                           | ---------------------- "BindingBorrow"
  real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
 
-                                                                                  | 
+                                                                                  |
  ----------- "Binding"                                                            | ----------- "Binding"
  r, m ⊢ x: T                                                                      | r, m ⊢ x: T
 
-                                                                                  | 
+                                                                                  |
  ------------------ "Binding"                                                     | ------------------ "Binding"
  real, m ⊢ mut x: T                                                               | real, m ⊢ mut x: T
 
-                                                                                  |  
- ------------------ "Binding"                                                     |  
- inh, m ⊢ mut x: &T                                                               |  
+                                                                                  |
+ ------------------ "Binding"                                                     |
+ inh, m ⊢ mut x: &T                                                               |
 
-                                                                                  |  
- ---------------------- "Binding"                                                 |  
+                                                                                  |
+ ---------------------- "Binding"                                                 |
  inh, m ⊢ mut x: &mut T                                                           |

@@ -61,11 +61,11 @@ The old ruleset is on the left, and the new one on the right.
  ---------------------- "BindingBorrow"                                           | ---------------------- "BindingBorrow"
  real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
 
-                                                                                  | 
+                                                                                  |
  ----------- "Binding"                                                            | ----------- "Binding"
  r, m ⊢ x: T                                                                      | r, m ⊢ x: T
 
-                                                                                  | 
+                                                                                  |
  --------------- "Binding"                                                        | --------------- "Binding"
  r, m ⊢ mut x: T                                                                  | r, m ⊢ mut x: T
 

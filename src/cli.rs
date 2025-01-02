@@ -424,7 +424,8 @@ fn side_by_side(left: &str, right: &str) -> String {
             .checked_sub(len_ignoring_markup(l))
             .unwrap_or_default();
         let pad = " ".repeat(pad);
-        let _ = writeln!(&mut out, " {l}{pad} | {r}");
+        let gap = if r.is_empty() { "" } else { " " }; // avoid trailing whitespace
+        let _ = writeln!(&mut out, " {l}{pad} |{gap}{r}");
     }
     out
 }
