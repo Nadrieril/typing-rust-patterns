@@ -31,7 +31,7 @@ pub struct DisplayTree<'a> {
 
 /// Compute the length of this string as displayed on the screen (i.e. ignoring html tags or ansi
 /// escapes, depending on context).
-fn len_ignoring_markup(s: &str) -> usize {
+pub(crate) fn len_ignoring_markup(s: &str) -> usize {
     if cfg!(target_arch = "wasm32") {
         // Compute string length skipping html tags.
         let mut in_tag = false;

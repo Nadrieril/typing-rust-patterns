@@ -278,12 +278,10 @@ pub fn display_joint_rules_js(
         .map(|joint_rule| {
             let (left, right) = joint_rule.as_ref().left_and_right();
             let left = left
-                .map(|r| r.make_renderable(a, style).unwrap())
-                .map(|r| r.display_to_tree(a, style))
+                .map(|r| r.display_to_tree(a, style).unwrap())
                 .unwrap_or_default();
             let right = right
-                .map(|r| r.make_renderable(a, style).unwrap())
-                .map(|r| r.display_to_tree(a, style))
+                .map(|r| r.display_to_tree(a, style).unwrap())
                 .unwrap_or_default();
             let (mut left, mut right, has_diff) = left.diff_display_has_diff(&right);
             if !has_diff {

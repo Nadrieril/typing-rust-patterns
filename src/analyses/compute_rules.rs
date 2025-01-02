@@ -337,7 +337,7 @@ impl RenderablePredicate<'_> {
 }
 
 /// Intermediate representation used in the display process.
-pub(crate) struct RenderableTypingRule<'a> {
+struct RenderableTypingRule<'a> {
     name: Rule,
     preconditions: Vec<RenderablePredicate<'a>>,
     postconditions: Vec<RenderablePredicate<'a>>,
@@ -353,7 +353,7 @@ impl<'a> TypingRule<'a> {
         cstrs
     }
 
-    pub(crate) fn make_renderable(
+    fn make_renderable(
         &'a self,
         _a: &'a Arenas<'a>,
         style: PredicateStyle,
@@ -444,19 +444,21 @@ impl<'a> TypingRule<'a> {
             options: self.options,
         })
     }
+    pub fn display_to_tree<'d>(
+        &self,
+        a: &'d Arenas<'d>,
+        style: PredicateStyle,
+    ) -> Result<DisplayTree<'d>, IncompatibleStyle> {
+        Ok(self.make_renderable(a, style)?.display_to_tree(a, style))
+    }
 
     pub fn display(&self, style: PredicateStyle) -> Result<String, IncompatibleStyle> {
         let a = &Arenas::default();
-        Ok(self.make_renderable(a, style)?.display(style))
+        Ok(self.display_to_tree(a, style)?.to_string())
     }
 }
 
 impl<'a> RenderableTypingRule<'a> {
-    pub fn display(&self, style: PredicateStyle) -> String {
-        let a = &Arenas::default();
-        self.display_to_tree(a, style).to_string()
-    }
-
     pub fn display_to_tree<'d>(&self, a: &'d Arenas<'d>, style: PredicateStyle) -> DisplayTree<'d> {
         let preconditions = DisplayTree::sep_by(
             a,

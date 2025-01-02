@@ -106,23 +106,26 @@ impl CliState {
         right: RuleOptions,
     ) -> Result<String, IncompatibleStyle> {
         let style = self.predicate_style;
-        let arenas = &Arenas::default();
+        let a = &Arenas::default();
         let type_of_interest = style.type_of_interest();
-        let joint_rules = compute_joint_rules(arenas, type_of_interest, left, right);
+        let joint_rules = compute_joint_rules(a, type_of_interest, left, right);
 
         let mut out = String::new();
         for joint_rule in joint_rules {
-            let (left, right) = joint_rule.left_and_right();
+            let (left, right) = joint_rule.as_ref().left_and_right();
             let left = left
-                .map(|r| r.display(style))
-                .transpose()?
+                .map(|r| r.display_to_tree(a, style).unwrap())
                 .unwrap_or_default();
             let right = right
-                .map(|r| r.display(style))
-                .transpose()?
+                .map(|r| r.display_to_tree(a, style).unwrap())
                 .unwrap_or_default();
-            out += &DiffState::side_by_side(&left, &right);
-            let _ = writeln!(&mut out);
+            let (mut left, mut right, has_diff) = left.diff_display_has_diff(&right);
+            if !has_diff {
+                left = left.dimmed();
+                right = right.dimmed();
+            }
+            out += &side_by_side(&left, &right);
+            out += "\n";
         }
         Ok(out)
     }
@@ -413,6 +416,19 @@ pub fn display_rules(
     Ok(out)
 }
 
+fn side_by_side(left: &str, right: &str) -> String {
+    let mut out = String::new();
+    for x in left.lines().zip_longest(right.lines()) {
+        let (l, r) = x.or("", "");
+        let pad = 80usize
+            .checked_sub(len_ignoring_markup(l))
+            .unwrap_or_default();
+        let pad = " ".repeat(pad);
+        let _ = writeln!(&mut out, " {l}{pad} | {r}");
+    }
+    out
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum DiffState {
     Both,
@@ -439,13 +455,17 @@ impl DiffState {
         use DiffState::*;
         let mut out = String::new();
         for x in left.lines().zip_longest(right.lines()) {
-            let (l, r) = x.or(" ", " ");
+            let (l, r) = x.or("", "");
+            let pad = 80usize
+                .checked_sub(len_ignoring_markup(l))
+                .unwrap_or_default();
+            let pad = " ".repeat(pad);
             let same = l == r;
             let l_state = if same { Both } else { Old };
             let r_state = if same { Both } else { New };
             let l = l_state.color_line(l);
             let r = r_state.color_line(r);
-            let _ = writeln!(&mut out, " {l:80} | {r}");
+            let _ = writeln!(&mut out, " {l}{pad} | {r}");
         }
         out
     }

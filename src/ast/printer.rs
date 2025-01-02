@@ -6,7 +6,7 @@ use crate::*;
 pub mod display_tree;
 pub use display_tree::*;
 
-pub trait Style {
+pub trait Style: Display + AsRef<str> {
     fn green(&self) -> String;
     fn red(&self) -> String;
     fn comment(&self) -> String;
@@ -14,60 +14,74 @@ pub trait Style {
     fn tooltip(&self, text: &str) -> String;
     fn inherited_ref(&self) -> String;
     fn code(&self) -> String;
+
+    fn wrap_in_tag(&self, tag_name: &str, tag_args: Option<(&str, &str)>) -> String {
+        let tag_args = tag_args
+            .map(|(k, v)| format!("{k}=\"{v}\""))
+            .unwrap_or_default();
+        format!("<{tag_name} {tag_args}>{self}</{tag_name}>")
+    }
+    fn span_style(&self, style: &str) -> String {
+        self.wrap_in_tag("span", Some(("style", style)))
+    }
+    fn apply_colorize<'a>(&'a self, f: impl Fn(&'a str) -> colored::ColoredString) -> String {
+        // Apply line-by-line so that we can split by line later without messing up escape codes.
+        self.as_ref().lines().map(|line| f(line)).join("\n")
+    }
 }
 
 impl<T: Display + AsRef<str>> Style for T {
     fn green(&self) -> String {
         if cfg!(target_arch = "wasm32") {
-            format!("<span style=\"color: green\">{self}</span>")
+            self.span_style("color: green")
         } else {
             use colored::Colorize;
-            <_ as Colorize>::green(self.as_ref()).to_string()
+            self.apply_colorize(<_ as Colorize>::green)
         }
     }
     fn red(&self) -> String {
         if cfg!(target_arch = "wasm32") {
-            format!("<span style=\"color: red\">{self}</span>")
+            self.span_style("color: red")
         } else {
             use colored::Colorize;
-            <_ as Colorize>::red(self.as_ref()).to_string()
+            self.apply_colorize(<_ as Colorize>::red)
         }
     }
     fn dimmed(&self) -> String {
         if cfg!(target_arch = "wasm32") {
-            format!("<span style=\"opacity: 0.5\">{self}</span>")
+            self.span_style("opacity: 0.5")
         } else {
             use colored::Colorize;
-            <_ as Colorize>::dimmed(self.as_ref()).to_string()
+            self.apply_colorize(<_ as Colorize>::dimmed)
         }
     }
     fn comment(&self) -> String {
         if cfg!(target_arch = "wasm32") {
-            format!("<span style=\"color: dimgray\">{self}</span>")
+            self.span_style("color: dimgray")
         } else {
             use colored::Colorize;
-            <_ as Colorize>::dimmed(self.as_ref()).to_string()
+            self.apply_colorize(<_ as Colorize>::dimmed)
         }
     }
     fn tooltip(&self, text: &str) -> String {
         if cfg!(target_arch = "wasm32") {
-            format!("<span title=\"{text}\">{self}</span>")
+            self.wrap_in_tag("span", Some(("title", text)))
         } else {
             self.to_string()
         }
     }
     fn inherited_ref(&self) -> String {
         if cfg!(target_arch = "wasm32") {
-            format!("<span class=\"inherited-ref\">{self}</span>")
+            self.wrap_in_tag("span", Some(("class", "inherited-ref")))
         } else {
             use colored::Colorize;
-            <_ as Colorize>::dimmed(self.as_ref()).to_string()
+            self.apply_colorize(<_ as Colorize>::dimmed)
         }
         .tooltip("inherited reference")
     }
     fn code(&self) -> String {
         if cfg!(target_arch = "wasm32") {
-            format!("<code>{self}</code>")
+            self.wrap_in_tag("code", None)
         } else {
             format!("`{self}`")
         }
