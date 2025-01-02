@@ -149,21 +149,26 @@ pub fn trace_solver<'a>(
     let mut trace = String::new();
     let res = run_solver(ctx, &request, |solver, event| match event {
         SolverTraceEvent::Start => {
-            let _ = write!(&mut trace, "{}\n", solver.display_state(style));
+            let _ = writeln!(&mut trace, "{}", solver.display_state(style));
         }
         SolverTraceEvent::Step(rule) => {
             let line = format!("// Applying rule `{}`", rule.display(ctx.options));
-            let _ = write!(&mut trace, "{}\n", line.comment());
-            let _ = write!(&mut trace, "{}\n", solver.display_state(style));
+            let _ = writeln!(&mut trace, "{}", line.comment());
+            let _ = writeln!(&mut trace, "{}", solver.display_state(style));
         }
         SolverTraceEvent::CantStep(e) => match e {
             CantStep::Done => {
-                let _ = write!(&mut trace, "\n// Final bindings (simplified):\n");
-                let _ = write!(&mut trace, "{}\n", solver.display_final_state(ctx, style));
+                trace += "\n";
+                let _ = writeln!(
+                    &mut trace,
+                    "{}",
+                    "// Final bindings (simplified):".comment()
+                );
+                let _ = writeln!(&mut trace, "{}", solver.display_final_state(ctx, style));
             }
             CantStep::NoApplicableRule(pred, err) => {
                 let line = format!("// Type error for `{}`: {err:?}", pred.display(style));
-                let _ = write!(&mut trace, "{}\n", line.red());
+                let _ = writeln!(&mut trace, "{}", line.red());
             }
         },
     });
