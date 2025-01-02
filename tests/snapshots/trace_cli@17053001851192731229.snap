@@ -1,0 +1,176 @@
+---
+source: tests/trace_cli.rs
+info: "save;set rfc3627\n[&ref x, y]: &[&mut T, T]"
+---
+Current ruleset was saved
+The two rulesets are described by the following sets of rules, with differences highlighted.
+The old ruleset is on the left, and the new one on the right.
+
+ real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
+ ----------------------------------- "Constructor"                                | ----------------------------------- "Constructor"
+ _, m ⊢ [p0, p1]: [T0, T1]                                                        | _, m ⊢ [p0, p1]: [T0, T1]
+
+ inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+ ------------------------------------- "ConstructorRef"                           | ------------------------------------- "ConstructorRef"
+ r, m ⊢ [p0, p1]: &[T0, T1]                                                       | r, m ⊢ [p0, p1]: &[T0, T1]
+
+ inh, ro ⊢ p0: &mut T0,  inh, ro ⊢ p1: &mut T1                                    | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+ --------------------------------------------- "ConstructorRef"                   | ------------------------------------- "ConstructorRef(ForceReadOnly)"
+ r, ro ⊢ [p0, p1]: &mut [T0, T1]                                                  | r, ro ⊢ [p0, p1]: &mut [T0, T1]
+
+ inh, rw ⊢ p0: &mut T0,  inh, rw ⊢ p1: &mut T1                                    | inh, rw ⊢ p0: &mut T0,  inh, rw ⊢ p1: &mut T1
+ --------------------------------------------- "ConstructorRef"                   | --------------------------------------------- "ConstructorRef"
+ r, rw ⊢ [p0, p1]: &mut [T0, T1]                                                  | r, rw ⊢ [p0, p1]: &mut [T0, T1]
+
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
+ ---------------------- "ConstructorMultiRef"                                     | ---------------------- "ConstructorMultiRef"
+ r, m ⊢ [p0, p1]: &&T                                                             | r, m ⊢ [p0, p1]: &&T
+
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
+ ------------------------ "ConstructorMultiRef"                                   | ------------------------ "ConstructorMultiRef"
+ r, m ⊢ [p0, p1]: &&mut T                                                         | r, m ⊢ [p0, p1]: &&mut T
+
+ inh, ro ⊢ [p0, p1]: &T                                                           | inh, ro ⊢ [p0, p1]: &T
+ ------------------------ "ConstructorMultiRef"                                   | ------------------------ "ConstructorMultiRef"
+ r, m ⊢ [p0, p1]: &mut &T                                                         | r, m ⊢ [p0, p1]: &mut &T
+
+ inh, ro ⊢ [p0, p1]: &mut T                                                       | inh, ro ⊢ [p0, p1]: &T
+ ----------------------------- "ConstructorMultiRef"                              | ----------------------------- "ConstructorMultiRef(ForceReadOnly)"
+ r, ro ⊢ [p0, p1]: &mut &mut T                                                    | r, ro ⊢ [p0, p1]: &mut &mut T
+
+ inh, rw ⊢ [p0, p1]: &mut T                                                       | inh, rw ⊢ [p0, p1]: &mut T
+ ----------------------------- "ConstructorMultiRef"                              | ----------------------------- "ConstructorMultiRef"
+ r, rw ⊢ [p0, p1]: &mut &mut T                                                    | r, rw ⊢ [p0, p1]: &mut &mut T
+
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ ---------------- "Deref"                                                         | ---------------- "Deref(EatOuter)"
+ real, m ⊢ &p: &T                                                                 | real, m ⊢ &p: &T
+
+ _, ro ⊢ p: T                                                                     | _, ro ⊢ p: T
+ ------------------------------------- "Deref"                                    | ------------------------------------- "Deref(EatOuter)"
+ inh, m ⊢ &p: &T, T is not a reference                                            | inh, m ⊢ &p: &T, T is not a reference
+
+ real, ro ⊢ p: &T                                                                 | inh, ro ⊢ p: &T
+ ---------------- "Deref"                                                         | ---------------- "Deref(EatInner)"
+ inh, m ⊢ &p: &&T                                                                 | inh, m ⊢ &p: &&T
+
+ real, ro ⊢ p: &mut T                                                             | inh, ro ⊢ p: &T
+ -------------------- "Deref"                                                     | -------------------- "DerefMutWithShared(EatInner)"
+ inh, m ⊢ &p: &&mut T                                                             | inh, m ⊢ &p: &&mut T
+
+ real, m ⊢ p: T                                                                   | real, m ⊢ p: T
+ ------------------------ "Deref"                                                 | ------------------------ "Deref(EatOuter)"
+ real, m ⊢ &mut p: &mut T                                                         | real, m ⊢ &mut p: &mut T
+
+ _, m ⊢ p: T                                                                      | _, m ⊢ p: T
+ --------------------------------------------- "Deref"                            | --------------------------------------------- "Deref(EatOuter)"
+ inh, m ⊢ &mut p: &mut T, T is not a reference                                    | inh, m ⊢ &mut p: &mut T, T is not a reference
+
+ real, m ⊢ p: &T                                                                  | real, m ⊢ p: &T
+ ------------------------ "Deref"                                                 | ------------------------ "Deref(EatInner, FallbackToOuter)"
+ inh, m ⊢ &mut p: &mut &T                                                         | inh, m ⊢ &mut p: &mut &T
+
+ real, ro ⊢ p: &mut T                                                             | inh, ro ⊢ p: &T
+ ----------------------------- "Deref"                                            | ----------------------------- "Deref(EatInner, ForceReadOnly)"
+ inh, ro ⊢ &mut p: &mut &mut T                                                    | inh, ro ⊢ &mut p: &mut &mut T
+
+ real, rw ⊢ p: &mut T                                                             | inh, rw ⊢ p: &mut T
+ ----------------------------- "Deref"                                            | ----------------------------- "Deref(EatInner)"
+ inh, rw ⊢ &mut p: &mut &mut T                                                    | inh, rw ⊢ &mut p: &mut &mut T
+
+                                                                                  | inh, m ⊢ p: &T
+                                                                                  | ------------------------ "Deref(EatInner)"
+                                                                                  | inh, m ⊢ &mut p: &&mut T
+
+ real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
+ -------------------- "DerefMutWithShared"                                        | -------------------- "DerefMutWithShared(EatOuter)"
+ real, m ⊢ &p: &mut T                                                             | real, m ⊢ &p: &mut T
+
+ _, ro ⊢ p: T                                                                     | _, ro ⊢ p: T
+ ----------------------------------------- "DerefMutWithShared"                   | ----------------------------------------- "DerefMutWithShared(EatOuter)"
+ inh, m ⊢ &p: &mut T, T is not a reference                                        | inh, m ⊢ &p: &mut T, T is not a reference
+
+ real, ro ⊢ p: &T                                                                 | inh, ro ⊢ p: &T
+ -------------------- "DerefMutWithShared"                                        | -------------------- "Deref(EatInner, ForceReadOnly)"
+ inh, m ⊢ &p: &mut &T                                                             | inh, m ⊢ &p: &mut &T
+
+ real, ro ⊢ p: &mut T                                                             | inh, ro ⊢ p: &T
+ ------------------------ "DerefMutWithShared"                                    | ------------------------ "DerefMutWithShared(EatInner)"
+ inh, m ⊢ &p: &mut &mut T                                                         | inh, m ⊢ &p: &mut &mut T
+
+                                                                                  | r, m ⊢ ref x: T
+                                                                                  | ------------------ "RefBindingResetBindingMode"
+                                                                                  | inh, m ⊢ ref x: &T
+
+                                                                                  | r, m ⊢ ref x: T
+                                                                                  | ---------------------- "RefBindingResetBindingMode"
+                                                                                  | inh, m ⊢ ref x: &mut T
+
+                                                                                  | r, m ⊢ ref mut x: T
+                                                                                  | ---------------------- "RefBindingResetBindingMode"
+                                                                                  | inh, m ⊢ ref mut x: &T
+
+                                                                                  | r, m ⊢ ref mut x: T
+                                                                                  | -------------------------- "RefBindingResetBindingMode"
+                                                                                  | inh, m ⊢ ref mut x: &mut T
+
+ inh, m ⊢ x: &T                                                                   | inh, m ⊢ x: &T
+ ------------------ "BindingBorrow"                                               | ------------------ "BindingBorrow"
+ real, m ⊢ ref x: T                                                               | real, m ⊢ ref x: T
+
+ inh, m ⊢ x: &mut T                                                               | inh, m ⊢ x: &mut T
+ ---------------------- "BindingBorrow"                                           | ---------------------- "BindingBorrow"
+ real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
+
+                                                                                  |
+ ----------- "Binding"                                                            | ----------- "Binding"
+ r, m ⊢ x: T                                                                      | r, m ⊢ x: T
+
+                                                                                  |
+ ------------------ "Binding"                                                     | ------------------ "Binding"
+ real, m ⊢ mut x: T                                                               | real, m ⊢ mut x: T
+
+                                                                                  |
+ ------------------ "Binding"                                                     |
+ inh, m ⊢ mut x: &T                                                               |
+
+                                                                                  |
+ ---------------------- "Binding"                                                 |
+ inh, m ⊢ mut x: &mut T                                                           |
+
+
+allow_ref_pat_on_ref_mut: true
+downgrade_mut_inside_shared: false -> true
+eat_inherited_ref_alone: true
+eat_mut_inside_shared: true
+fallback_to_outer: false -> true
+inherited_ref_on_ref: "EatOuter" -> "EatInner"
+match_constructor_through_ref: true
+mut_binding_on_inherited: "Keep" -> "Error"
+ref_binding_on_inherited: "Error" -> "ResetBindingMode"
+simplify_deref_mut: true
+Comparing against the saved ruleset. Use `unsave` to forget the saved ruleset.
+The current ruleset is on the left, and the saved one on the right.
+ real, rw ⊢ [&ref x, y]: &[&mut T, T]                                             | real, rw ⊢ [&ref x, y]: &[&mut T, T]
+ // Applying rule `ConstructorRef`                                                | // Applying rule `ConstructorRef`
+ inh, ro ⊢ &ref x: &&mut T                                                        | inh, ro ⊢ &ref x: &&mut T
+ inh, ro ⊢ y: &T                                                                  | inh, ro ⊢ y: &T
+ // Applying rule `DerefMutWithShared(EatInner)`                                  | // Applying rule `Deref`
+ inh, ro ⊢ ref x: &T                                                              | real, ro ⊢ ref x: &mut T
+ inh, ro ⊢ y: &T                                                                  | inh, ro ⊢ y: &T
+ // Applying rule `RefBindingResetBindingMode`                                    | // Applying rule `BindingBorrow`
+ _, ro ⊢ ref x: T                                                                 | inh, ro ⊢ x: &&mut T
+ inh, ro ⊢ y: &T                                                                  | inh, ro ⊢ y: &T
+ // Applying rule `BindingBorrow`                                                 | // Applying rule `Binding`
+ inh, ro ⊢ x: &T                                                                  | let x: &&mut T = &*&(*s).0
+ inh, ro ⊢ y: &T                                                                  | inh, ro ⊢ y: &T
+ // Applying rule `Binding`                                                       | // Applying rule `Binding`
+ let x: &T = &*&*(*s).0                                                           | let x: &&mut T = &*&(*s).0
+ inh, ro ⊢ y: &T                                                                  | let y: &T = &(*s).1
+ // Applying rule `Binding`                                                       |
+ let x: &T = &*&*(*s).0                                                           | // Final bindings (simplified):
+ let y: &T = &(*s).1                                                              | let x: &&mut T = &(*s).0;
+                                                                                  | let y: &T = &(*s).1;
+ // Final bindings (simplified):                                                  |
+ let x: &T = &*(*s).0;                                                            |
+ let y: &T = &(*s).1;                                                             |

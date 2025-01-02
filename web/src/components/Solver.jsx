@@ -1,6 +1,7 @@
 import init, {
     RuleSetJs,
     PredicateStyleJs,
+    diff_trace_solver_js,
     display_joint_rules_js,
     compare_rulesets_js,
 } from "../../typing_rust_patterns/typing_rust_patterns.js";
@@ -174,12 +175,14 @@ export function MainNavBar({compare, setCompare, style, setStyleName, styleMap})
 }
 
 export function SolverSteps({inputQuery, optionsLeft, optionsRight, compare, style}) {
-    const [stepsLeft, resultLeft] = useMemo(() => {
-        return optionsLeft.trace_solver(inputQuery, style);
-    }, [inputQuery, optionsLeft, style]);
-    const [stepsRight, resultRight] = useMemo(() => {
-        return optionsRight.trace_solver(inputQuery, style);
-    }, [inputQuery, optionsRight, style]);
+    const [stepsLeft, stepsRight, resultLeft, resultRight] = useMemo(() => {
+        if (compare) {
+            return diff_trace_solver_js(optionsLeft, optionsRight, inputQuery, style)
+        } else {
+            const [stepsLeft, resultLeft] = optionsLeft.trace_solver(inputQuery, style);
+            return [stepsLeft, stepsLeft, resultLeft, resultLeft];
+        }
+    }, [inputQuery, compare, optionsLeft, optionsRight, style]);
 
     const resultStyle = {position: 'sticky', bottom: 0, fontWeight: 'normal'};
 

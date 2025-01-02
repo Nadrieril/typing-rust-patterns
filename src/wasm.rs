@@ -150,7 +150,7 @@ impl RuleSetJs {
             Err(e) => return vec![format!("parse error: {e}"), String::new()],
         };
         let (trace, res) = self.as_ruleset().trace_solver(a, &req, style);
-        vec![trace, res.to_string()]
+        vec![trace.to_string(), res.to_string()]
     }
 
     pub fn display_rules(&self, &PredicateStyleJs(style): &PredicateStyleJs) -> Vec<String> {
@@ -255,6 +255,25 @@ impl PredicateStyleJs {
         let _ = writeln!(&mut out, "</ul>");
         out
     }
+}
+
+#[wasm_bindgen]
+pub fn diff_trace_solver_js(
+    left: &RuleSetJs,
+    right: &RuleSetJs,
+    request: &str,
+    &PredicateStyleJs(style): &PredicateStyleJs,
+) -> Vec<String> {
+    let a = &Arenas::default();
+    let req = match TypingRequest::parse(a, request) {
+        Ok(req) => req,
+        Err(e) => return vec![format!("parse error: {e}"), String::new()],
+    };
+    let (left_trace, left_res) = left.as_ruleset().trace_solver(a, &req, style);
+    let (right_trace, right_res) = right.as_ruleset().trace_solver(a, &req, style);
+    let (left_trace, right_trace) = left_trace.diff_display(&right_trace);
+    let (left_res, right_res) = left_res.display_diffed(&right_res);
+    vec![left_trace, right_trace, left_res, right_res]
 }
 
 #[wasm_bindgen]

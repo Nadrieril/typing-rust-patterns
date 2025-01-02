@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::fmt::Write;
 use std::ops::ControlFlow;
 
@@ -339,7 +338,8 @@ impl CliState {
                 println!("The current ruleset is on the left, and the saved one on the right.");
                 let (left, _) = trace_solver(a, request, self.options, self.predicate_style);
                 let (right, _) = trace_solver(a, request, saved, self.predicate_style);
-                let traces = DiffState::side_by_side(&left, &right);
+                let (left, right) = left.diff_display(&right);
+                let traces = side_by_side(&left, &right);
                 println!("{traces}")
             } else {
                 let (trace, _) = trace_solver(a, request, self.options, self.predicate_style);
@@ -429,46 +429,4 @@ fn side_by_side(left: &str, right: &str) -> String {
         let _ = writeln!(&mut out, " {l}{pad} |{gap}{r}");
     }
     out
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum DiffState {
-    Both,
-    Old,
-    New,
-}
-
-impl DiffState {
-    fn color_line<'a>(&self, line: &'a str) -> impl Display + 'a {
-        use colored::Colorize;
-        let color = match self {
-            Self::New => Some(Color::Green),
-            Self::Old => Some(Color::Red),
-            Self::Both => None,
-        };
-        if let Some(color) = color {
-            line.color(color)
-        } else {
-            <&str as Colorize>::clear(line)
-        }
-    }
-
-    fn side_by_side(left: &str, right: &str) -> String {
-        use DiffState::*;
-        let mut out = String::new();
-        for x in left.lines().zip_longest(right.lines()) {
-            let (l, r) = x.or("", "");
-            let pad = 80usize
-                .checked_sub(len_ignoring_markup(l))
-                .unwrap_or_default();
-            let pad = " ".repeat(pad);
-            let same = l == r;
-            let l_state = if same { Both } else { Old };
-            let r_state = if same { Both } else { New };
-            let l = l_state.color_line(l);
-            let r = r_state.color_line(r);
-            let _ = writeln!(&mut out, " {l}{pad} | {r}");
-        }
-        out
-    }
 }

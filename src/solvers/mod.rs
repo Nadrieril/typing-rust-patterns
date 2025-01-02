@@ -45,10 +45,16 @@ impl RuleSet {
         a: &'a Arenas<'a>,
         req: &TypingRequest<'a>,
         style: PredicateStyle,
-    ) -> (String, TypingResult<'a>) {
+    ) -> (DisplayTree<'a>, TypingResult<'a>) {
         match *self {
-            RuleSet::TypeBased(options) => trace_solver(a, *req, options, style),
-            RuleSet::BindingModeBased(conf) => trace_with_formality(a, conf, req),
+            RuleSet::TypeBased(options) => {
+                let (trace, res) = trace_solver(a, *req, options, style);
+                (trace.tag("trace_ty"), res)
+            }
+            RuleSet::BindingModeBased(conf) => {
+                let (trace, res) = trace_with_formality(a, conf, req);
+                (trace.to_display_tree(a).tag("trace_bm"), res)
+            }
         }
     }
 }

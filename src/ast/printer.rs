@@ -106,6 +106,39 @@ impl BindingMode {
     }
 }
 
+/// TODO: Currently displayed as a single leaf.
+impl<'d> ToDisplayTree<'d> for Pattern<'_> {
+    fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
+        match *self {
+            Self::Tuple(pats) => DisplayTree::sep_by(a, ", ", pats.iter())
+                .surrounded(a, "[", "]")
+                .tag("pat_list"),
+            Self::Ref(mutable, pat) => {
+                let needs_parens = mutable == Mutability::Shared
+                    && matches!(pat, Self::Binding(Mutability::Mutable, ..));
+                let (before, after) = if needs_parens {
+                    (format!("&{mutable}("), ")")
+                } else {
+                    (format!("&{mutable}"), "")
+                };
+                DisplayTree::sep_by(
+                    a,
+                    "",
+                    [
+                        before.to_display_tree(a),
+                        pat.to_display_tree(a),
+                        after.to_display_tree(a),
+                    ],
+                )
+            }
+            Self::Binding(mutable, mode, name) => {
+                DisplayTree::sep_by(a, "", [&mutable.to_string(), &mode.to_string(), name])
+            }
+            Self::Abstract(name) => name.to_display_tree(a),
+        }
+    }
+}
+
 impl<'d> ToDisplayTree<'d> for Type<'_> {
     fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
         match self {
@@ -183,8 +216,12 @@ impl TypingResult<'_> {
 
 impl<'a> TypingPredicate<'a> {
     /// Display as `let ...`.
-    pub fn display_as_let(&self) -> String {
-        format!("let {}: {} = {}", self.pat, self.expr.ty, self.expr)
+    pub fn display_as_let<'d>(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
+        self.pat
+            .to_display_tree(a)
+            .sep_then(a, ": ", self.expr.ty)
+            .sep_then(a, " = ", self.expr.to_string())
+            .preceded(a, "let ")
     }
 
     pub fn display(&self, style: PredicateStyle) -> String {
@@ -192,11 +229,11 @@ impl<'a> TypingPredicate<'a> {
         self.display_to_tree(a, style).to_string()
     }
 
+    /// Display according to the given predicate style.
     pub fn display_to_tree<'d>(&self, a: &'d Arenas<'d>, style: PredicateStyle) -> DisplayTree<'d> {
         match style {
             PredicateStyle::Expression => self
                 .pat
-                .to_string()
                 .to_display_tree(a)
                 .sep_then(a, " @ ", self.expr.to_string())
                 .sep_then(a, ": ", self.expr.ty),
@@ -273,11 +310,7 @@ impl<'a> TypingPredicate<'a> {
                         },
                     },
                 };
-                let post_turnstile = self
-                    .pat
-                    .to_string()
-                    .to_display_tree(a)
-                    .sep_then(a, ": ", ty);
+                let post_turnstile = self.pat.to_display_tree(a).sep_then(a, ": ", ty);
 
                 let parts: &[_] = if pre_turnstile.is_empty() {
                     &[post_turnstile]
@@ -347,20 +380,8 @@ impl Display for BindingMode {
 
 impl Display for Pattern<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            Self::Tuple(pats) => write!(f, "[{}]", pats.iter().format(", ")),
-            Self::Ref(mutable, pat) => {
-                let needs_parens = mutable == Mutability::Shared
-                    && matches!(pat, Self::Binding(Mutability::Mutable, ..));
-                if needs_parens {
-                    write!(f, "&{mutable}({pat})")
-                } else {
-                    write!(f, "&{mutable}{pat}")
-                }
-            }
-            Self::Binding(mutable, mode, name) => write!(f, "{mutable}{mode}{name}"),
-            Self::Abstract(name) => write!(f, "{name}"),
-        }
+        let a = &Arenas::default();
+        write!(f, "{}", self.to_display_tree(a))
     }
 }
 

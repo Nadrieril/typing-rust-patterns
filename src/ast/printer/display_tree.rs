@@ -10,13 +10,17 @@ use DisplayTreeKind::*;
 enum DisplayTreeKind<'a> {
     /// Leaf node.
     Leaf(&'a str),
-    /// Separated node. Considered different if the separator is different or the lengths are
-    /// different.
+    /// Separated node. Considered different if the separator is different. If the lengths are
+    /// different, different options are possible.
     Separated {
         /// The separator, intercalated between the children.
         sep: &'a str,
         /// The children.
         children: &'a [DisplayTree<'a>],
+        /// If the lengths differ and this is `true`, the first elements are diffed together until
+        /// exhaustion. If the lengths differ and this is `false`, we consider the whole subtree to
+        /// differ.
+        compare_common_prefix: bool,
     },
 }
 
@@ -25,7 +29,7 @@ pub struct DisplayTree<'a> {
     kind: DisplayTreeKind<'a>,
     /// Identifies the kind of node. Two nodes with different tags are always considered different.
     tag: &'static str,
-    /// Whether to this sub-tree unchanged for the purposes of diffing.
+    /// Whether to consider this sub-tree unchanged for the purposes of diffing.
     ignore_for_diff: bool,
 }
 
@@ -77,6 +81,14 @@ fn strip_markup(s: &str) -> String {
 }
 
 impl<'a> DisplayTree<'a> {
+    fn new_from_kind(kind: DisplayTreeKind<'a>) -> Self {
+        Self {
+            kind,
+            tag: "",
+            ignore_for_diff: false,
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         match self.kind {
             Leaf(s) => s.is_empty(),
@@ -87,7 +99,7 @@ impl<'a> DisplayTree<'a> {
     pub fn len_ignoring_markup(&self) -> usize {
         match self.kind {
             Leaf(s) => len_ignoring_markup(s),
-            Separated { sep, children } => {
+            Separated { sep, children, .. } => {
                 let sep_len = if children.len() <= 1 {
                     0
                 } else {
@@ -100,45 +112,44 @@ impl<'a> DisplayTree<'a> {
     }
 
     pub fn leaf_noalloc(s: &'a str) -> Self {
-        Self {
-            kind: Leaf(s),
-            tag: "",
-            ignore_for_diff: false,
-        }
+        Self::new_from_kind(Leaf(s))
     }
 
     pub fn leaf(a: &'a Arenas<'a>, s: &str) -> Self {
         Self::leaf_noalloc(a.alloc_str(s))
     }
 
+    fn mk_separated(
+        a: &'a Arenas<'a>,
+        sep: &str,
+        children: impl IntoIterator<Item: ToDisplayTree<'a>>,
+        compare_common_prefix: bool,
+    ) -> Self {
+        let children = children
+            .into_iter()
+            .map(|x| x.to_display_tree(a))
+            .collect_vec();
+        Self::new_from_kind(Separated {
+            sep: a.alloc_str(sep),
+            children: a.bump.alloc_slice_copy(&children),
+            compare_common_prefix,
+        })
+    }
+
     pub fn sep_by(
         a: &'a Arenas<'a>,
         sep: &str,
-        it: impl IntoIterator<Item: ToDisplayTree<'a>>,
+        children: impl IntoIterator<Item: ToDisplayTree<'a>>,
     ) -> Self {
-        let children = it.into_iter().map(|x| x.to_display_tree(a)).collect_vec();
-        Self {
-            kind: Separated {
-                sep: a.alloc_str(sep),
-                children: a.bump.alloc_slice_copy(&children),
-            },
-            tag: "",
-            ignore_for_diff: false,
-        }
+        Self::mk_separated(a, sep, children, false)
     }
 
-    /// Constructs `self` followed by `after`.
-    pub fn then(&self, a: &'a Arenas<'a>, x: impl ToDisplayTree<'a>) -> Self {
-        self.sep_then(a, "", x)
-    }
-
-    /// Constructs `self` surrounded by `before` and `after`.
-    pub fn surrounded(&self, a: &'a Arenas<'a>, before: &'static str, after: &'static str) -> Self {
-        Self::sep_by(
-            a,
-            "",
-            [Self::leaf_noalloc(before), *self, Self::leaf_noalloc(after)],
-        )
+    pub fn sep_by_compare_prefix(
+        a: &'a Arenas<'a>,
+        sep: &str,
+        children: impl IntoIterator<Item: ToDisplayTree<'a>>,
+    ) -> Self {
+        Self::mk_separated(a, sep, children, true)
     }
 
     /// Concatenates `self` and `x`, separated by `sep`.
@@ -148,17 +159,26 @@ impl<'a> DisplayTree<'a> {
         sep: &'static str,
         x: impl ToDisplayTree<'a>,
     ) -> Self {
-        Self::sep2_by(a, self, sep, x)
+        Self::sep_by(a, sep, [self.to_display_tree(a), x.to_display_tree(a)])
     }
 
-    /// Concatenates `x` and `y`, separated by `sep`.
-    pub fn sep2_by(
-        a: &'a Arenas<'a>,
-        x: impl ToDisplayTree<'a>,
-        sep: &str,
-        y: impl ToDisplayTree<'a>,
-    ) -> Self {
-        Self::sep_by(a, sep, [x.to_display_tree(a), y.to_display_tree(a)])
+    /// Constructs `self` followed by `after`.
+    pub fn then(&self, a: &'a Arenas<'a>, x: impl ToDisplayTree<'a>) -> Self {
+        self.sep_then(a, "", x)
+    }
+
+    /// Constructs `self` surrounded by `before` and `after`.
+    pub fn preceded(&self, a: &'a Arenas<'a>, before: &'static str) -> Self {
+        Self::sep_by(a, "", [Self::leaf_noalloc(before), *self])
+    }
+
+    /// Constructs `self` surrounded by `before` and `after`.
+    pub fn surrounded(&self, a: &'a Arenas<'a>, before: &'static str, after: &'static str) -> Self {
+        Self::sep_by(
+            a,
+            "",
+            [Self::leaf_noalloc(before), *self, Self::leaf_noalloc(after)],
+        )
     }
 
     pub fn ignore_for_diff(mut self) -> Self {
@@ -212,20 +232,30 @@ impl<'a> DisplayTree<'a> {
             (Leaf(l), Leaf(r)) if strip_markup(l) == strip_markup(r) => all_same(left, right),
             // The non-trivial case: the trees differ partially.
             (
-                Separated { sep, children: c1 },
+                Separated {
+                    sep,
+                    children: c1,
+                    compare_common_prefix: ccp1,
+                },
                 Separated {
                     sep: sep2,
                     children: c2,
+                    compare_common_prefix: ccp2,
                 },
-            ) if strip_markup(sep) == strip_markup(sep2) && c1.len() == c2.len() => {
+            ) if strip_markup(sep) == strip_markup(sep2)
+                && (c1.len() == c2.len() || ccp1 || ccp2) =>
+            {
                 let mut is_first = true;
                 let mut any_diff = false;
-                for (c1, c2) in c1.iter().zip(c2) {
-                    if !is_first {
+                for either_or_both in c1.iter().copied().zip_longest(c2.iter().copied()) {
+                    if !is_first && !either_or_both.is_right() {
                         write!(left, "{sep}")?;
+                    }
+                    if !is_first && !either_or_both.is_left() {
                         write!(right, "{sep}")?;
                     }
-                    any_diff |= c1.diff_display_inner(c2, left, right)?;
+                    let (c1, c2) = either_or_both.or_default();
+                    any_diff |= c1.diff_display_inner(&c2, left, right)?;
                     is_first = false;
                 }
                 Ok(any_diff)
@@ -237,11 +267,7 @@ impl<'a> DisplayTree<'a> {
 
 impl Default for DisplayTree<'_> {
     fn default() -> Self {
-        Self {
-            kind: Leaf(""),
-            tag: "",
-            ignore_for_diff: false,
-        }
+        Self::leaf_noalloc("")
     }
 }
 
@@ -249,7 +275,7 @@ impl<'a> Display for DisplayTree<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind {
             Leaf(s) => write!(f, "{s}")?,
-            Separated { sep, children } => {
+            Separated { sep, children, .. } => {
                 let mut is_first = true;
                 for child in children {
                     if !is_first {

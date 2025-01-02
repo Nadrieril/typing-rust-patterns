@@ -1,8 +1,4 @@
 use std::collections::VecDeque;
-use std::fmt;
-use std::fmt::Write;
-
-use itertools::Itertools;
 
 use crate::*;
 
@@ -57,33 +53,39 @@ impl<'a> TypingSolver<'a> {
         }
     }
 
-    pub fn display_state(&self, style: PredicateStyle) -> impl fmt::Display + '_ {
-        self.done_predicates
-            .iter()
-            .map(|p| p.display_as_let())
-            .chain(self.predicates.iter().map(|p| p.display(style)))
-            .join("\n")
+    pub fn display_state(&self, ctx: TypingCtx<'a>, style: PredicateStyle) -> DisplayTree<'a> {
+        let a = ctx.arenas;
+        DisplayTree::sep_by(
+            a,
+            "\n",
+            self.done_predicates
+                .iter()
+                .map(|p| p.display_as_let(a))
+                .chain(self.predicates.iter().map(|p| p.display_to_tree(a, style))),
+        )
     }
 
     pub fn display_final_state(
         &self,
         ctx: TypingCtx<'a>,
         _style: PredicateStyle,
-    ) -> impl fmt::Display + '_ {
+    ) -> DisplayTree<'a> {
+        let a = ctx.arenas;
         assert!(self.predicates.is_empty());
-        self.done_predicates
-            .iter()
-            .map(|p| {
+        DisplayTree::sep_by(
+            a,
+            "\n",
+            self.done_predicates.iter().map(|p| {
                 let p = p.simplify_expr(ctx);
                 let bck = p.expr.borrow_check();
                 let bck = bck
                     .err()
                     .map(|err| format!(" // Borrow-check error: {err:?}"))
                     .unwrap_or_default();
-                let p = p.display_as_let();
-                format!("{p};{bck}")
-            })
-            .join("\n")
+                let p = p.display_as_let(a);
+                p.sep_then(a, ";", bck)
+            }),
+        )
     }
 }
 
@@ -136,43 +138,47 @@ pub fn run_solver<'a>(
 
 /// Run the solver on this request and returns the trace as a string.
 pub fn trace_solver<'a>(
-    arenas: &'a Arenas<'a>,
+    a: &'a Arenas<'a>,
     request: TypingRequest<'a>,
     options: RuleOptions,
     style: PredicateStyle,
-) -> (String, TypingResult<'a>) {
+) -> (DisplayTree<'a>, TypingResult<'a>) {
     let ctx = TypingCtx {
-        arenas,
+        arenas: a,
         options,
         type_of_interest: TypeOfInterest::UserVisible,
     };
-    let mut trace = String::new();
+    let mut trace = Vec::new();
+    let mut final_state = None;
     let res = run_solver(ctx, &request, |solver, event| match event {
         SolverTraceEvent::Start => {
-            let _ = writeln!(&mut trace, "{}", solver.display_state(style));
+            trace.push(solver.display_state(ctx, style));
         }
         SolverTraceEvent::Step(rule) => {
             let line = format!("// Applying rule `{}`", rule.display(ctx.options));
-            let _ = writeln!(&mut trace, "{}", line.comment());
-            let _ = writeln!(&mut trace, "{}", solver.display_state(style));
+            trace.push(line.comment().to_display_tree(a).ignore_for_diff());
+            trace.push(solver.display_state(ctx, style));
         }
         SolverTraceEvent::CantStep(e) => match e {
             CantStep::Done => {
-                trace += "\n";
-                let _ = writeln!(
-                    &mut trace,
-                    "{}",
-                    "// Final bindings (simplified):".comment()
+                final_state = Some(
+                    "\n// Final bindings (simplified):"
+                        .comment()
+                        .to_display_tree(a)
+                        .sep_then(a, "\n", solver.display_final_state(ctx, style))
+                        .then(a, "\n"),
                 );
-                let _ = writeln!(&mut trace, "{}", solver.display_final_state(ctx, style));
             }
             CantStep::NoApplicableRule(pred, err) => {
                 let line = format!("// Type error for `{}`: {err:?}", pred.display(style));
-                let _ = writeln!(&mut trace, "{}", line.red());
+                trace.push(line.red().to_display_tree(a).ignore_for_diff());
             }
         },
     });
-    (trace, res)
+    let trace = DisplayTree::sep_by_compare_prefix(a, "\n", trace);
+    let final_state = final_state.unwrap_or_default();
+    let out = trace.sep_then(a, "\n", final_state);
+    (out, res)
 }
 
 pub fn typecheck_with_this_crate<'a>(

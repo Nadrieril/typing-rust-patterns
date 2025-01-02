@@ -478,14 +478,15 @@ impl<'a> RenderableTypingRule<'a> {
             preconditions.len_ignoring_markup(),
             postconditions.len_ignoring_markup(),
         );
-        let bar = "-".repeat(len);
+        let bar = "-".repeat(len).to_display_tree(a);
         let name = self.name.display(self.options);
         DisplayTree::sep_by(
             a,
             "\n",
             [
                 preconditions,
-                DisplayTree::sep2_by(a, bar, " ", format!("\"{name}\"")).ignore_for_diff(),
+                bar.sep_then(a, " ", format!("\"{name}\""))
+                    .ignore_for_diff(),
                 postconditions,
             ],
         )

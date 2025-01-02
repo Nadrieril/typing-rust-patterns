@@ -169,6 +169,6 @@ The current ruleset is on the left, and the saved one on the right.
  inh, ro ⊢ x: &mut T                                                              | inh, ro ⊢ x: &T
  // Applying rule `Binding`                                                       | // Applying rule `Binding`
  let x: &mut T = &mut (**s).0                                                     | let x: &T = &(**s).0
-                                                                                  | 
+                                                                                  |
  // Final bindings (simplified):                                                  | // Final bindings (simplified):
  let x: &mut T = &mut (**s).0; // Borrow-check error: MutBorrowBehindSharedBorrow | let x: &T = &(**s).0;
