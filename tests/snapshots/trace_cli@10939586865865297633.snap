@@ -6,10 +6,6 @@ Current ruleset was saved
 The two rulesets are described by the following sets of rules, with differences highlighted.
 The old ruleset is on the left, and the new one on the right.
 
- real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
- ----------------------------------- "Constructor"                                | ----------------------------------- "Constructor"
- _, m ⊢ [p0, p1]: [T0, T1]                                                        | _, m ⊢ [p0, p1]: [T0, T1]
-
  inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1                                            |
  ------------------------------------- "ConstructorRef"                           |
  r, m ⊢ [p0, p1]: &[T0, T1]                                                       |
@@ -34,10 +30,6 @@ The old ruleset is on the left, and the new one on the right.
  ---------------------------- "ConstructorMultiRef"                               |
  r, m ⊢ [p0, p1]: &mut &mut T                                                     |
 
- real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
- ---------------- "Deref"                                                         | ---------------- "Deref"
- real, m ⊢ &p: &T                                                                 | real, m ⊢ &p: &T
-
  _, ro ⊢ p: T                                                                     |
  ------------------------------------- "Deref"                                    |
  inh, m ⊢ &p: &T, T is not a reference                                            |
@@ -49,10 +41,6 @@ The old ruleset is on the left, and the new one on the right.
  real, ro ⊢ p: &mut T                                                             |
  -------------------- "Deref"                                                     |
  inh, m ⊢ &p: &&mut T                                                             |
-
- real, m ⊢ p: T                                                                   | real, m ⊢ p: T
- ------------------------ "Deref"                                                 | ------------------------ "Deref"
- real, m ⊢ &mut p: &mut T                                                         | real, m ⊢ &mut p: &mut T
 
  _, m ⊢ p: T                                                                      |
  --------------------------------------------- "Deref"                            |
@@ -82,22 +70,6 @@ The old ruleset is on the left, and the new one on the right.
  ------------------------ "DerefMutWithShared"                                    |
  inh, m ⊢ &p: &mut &mut T                                                         |
 
- inh, m ⊢ x: &T                                                                   | inh, m ⊢ x: &T
- ------------------ "BindingBorrow"                                               | ------------------ "BindingBorrow"
- real, m ⊢ ref x: T                                                               | real, m ⊢ ref x: T
-
- inh, m ⊢ x: &mut T                                                               | inh, m ⊢ x: &mut T
- ---------------------- "BindingBorrow"                                           | ---------------------- "BindingBorrow"
- real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
-
-                                                                                  |
- ----------- "Binding"                                                            | ----------- "Binding"
- r, m ⊢ x: T                                                                      | r, m ⊢ x: T
-
-                                                                                  |
- ------------------ "Binding"                                                     | ------------------ "Binding"
- real, m ⊢ mut x: T                                                               | real, m ⊢ mut x: T
-
                                                                                   |
  ------------------ "Binding"                                                     |
  inh, m ⊢ mut x: &T                                                               |
@@ -120,10 +92,6 @@ simplify_deref_mut: true
 Current and saved rulesets were swapped
 The two rulesets are described by the following sets of rules, with differences highlighted.
 The old current ruleset is on the left, and the new current one on the right.
-
- real, m ⊢ p0: T0,  real, m ⊢ p1: T1                                              | real, m ⊢ p0: T0,  real, m ⊢ p1: T1
- ----------------------------------- "Constructor"                                | ----------------------------------- "Constructor"
- _, m ⊢ [p0, p1]: [T0, T1]                                                        | _, m ⊢ [p0, p1]: [T0, T1]
 
                                                                                   | inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
                                                                                   | ------------------------------------- "ConstructorRef"
@@ -149,10 +117,6 @@ The old current ruleset is on the left, and the new current one on the right.
                                                                                   | ---------------------------- "ConstructorMultiRef"
                                                                                   | r, m ⊢ [p0, p1]: &mut &mut T
 
- real, ro ⊢ p: T                                                                  | real, ro ⊢ p: T
- ---------------- "Deref"                                                         | ---------------- "Deref"
- real, m ⊢ &p: &T                                                                 | real, m ⊢ &p: &T
-
                                                                                   | _, ro ⊢ p: T
                                                                                   | ------------------------------------- "Deref"
                                                                                   | inh, m ⊢ &p: &T, T is not a reference
@@ -164,10 +128,6 @@ The old current ruleset is on the left, and the new current one on the right.
                                                                                   | real, ro ⊢ p: &mut T
                                                                                   | -------------------- "Deref"
                                                                                   | inh, m ⊢ &p: &&mut T
-
- real, m ⊢ p: T                                                                   | real, m ⊢ p: T
- ------------------------ "Deref"                                                 | ------------------------ "Deref"
- real, m ⊢ &mut p: &mut T                                                         | real, m ⊢ &mut p: &mut T
 
                                                                                   | _, m ⊢ p: T
                                                                                   | --------------------------------------------- "Deref"
@@ -196,22 +156,6 @@ The old current ruleset is on the left, and the new current one on the right.
                                                                                   | real, ro ⊢ p: &mut T
                                                                                   | ------------------------ "DerefMutWithShared"
                                                                                   | inh, m ⊢ &p: &mut &mut T
-
- inh, m ⊢ x: &T                                                                   | inh, m ⊢ x: &T
- ------------------ "BindingBorrow"                                               | ------------------ "BindingBorrow"
- real, m ⊢ ref x: T                                                               | real, m ⊢ ref x: T
-
- inh, m ⊢ x: &mut T                                                               | inh, m ⊢ x: &mut T
- ---------------------- "BindingBorrow"                                           | ---------------------- "BindingBorrow"
- real, m ⊢ ref mut x: T                                                           | real, m ⊢ ref mut x: T
-
-                                                                                  |
- ----------- "Binding"                                                            | ----------- "Binding"
- r, m ⊢ x: T                                                                      | r, m ⊢ x: T
-
-                                                                                  |
- ------------------ "Binding"                                                     | ------------------ "Binding"
- real, m ⊢ mut x: T                                                               | real, m ⊢ mut x: T
 
                                                                                   |
                                                                                   | ------------------ "Binding"

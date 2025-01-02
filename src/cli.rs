@@ -103,6 +103,7 @@ impl CliState {
         &self,
         left: RuleOptions,
         right: RuleOptions,
+        include_unchanged: bool,
     ) -> Result<String, IncompatibleStyle> {
         let style = self.predicate_style;
         let a = &Arenas::default();
@@ -123,8 +124,10 @@ impl CliState {
                 left = left.dimmed();
                 right = right.dimmed();
             }
-            out += &side_by_side(&left, &right);
-            out += "\n";
+            if has_diff || include_unchanged {
+                out += &side_by_side(&left, &right);
+                out += "\n";
+            }
         }
         Ok(out)
     }
@@ -171,7 +174,7 @@ impl CliState {
                     println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
                     println!("The current ruleset is on the left, and the saved one on the right.");
                     println!();
-                    let s = self.display_joint_rules(self.options, saved).unwrap();
+                    let s = self.display_joint_rules(self.options, saved, true).unwrap();
                     print!("{s}");
                 }
             } else {
@@ -200,7 +203,9 @@ impl CliState {
                     "The old current ruleset is on the left, and the new current one on the right."
                 );
                 println!();
-                let s = self.display_joint_rules(saved, self.options).unwrap();
+                let s = self
+                    .display_joint_rules(saved, self.options, false)
+                    .unwrap();
                 println!("{s}");
                 display_options_diff(saved, self.options);
             } else {
@@ -256,7 +261,7 @@ impl CliState {
                         println!("The two rulesets are described by the following sets of rules, with differences highlighted.");
                         println!("The old ruleset is on the left, and the new one on the right.");
                         println!();
-                        match self.display_joint_rules(old_options, self.options) {
+                        match self.display_joint_rules(old_options, self.options, false) {
                             Ok(s) => {
                                 println!("{s}");
                                 display_options_diff(old_options, self.options);
