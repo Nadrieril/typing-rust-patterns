@@ -322,10 +322,13 @@ pub fn compare_rulesets_js(
         right_ruleset.as_ruleset(),
     )
     .into_iter()
-    .map(|(req, left, right)| CompareOutput {
-        req: req.to_string(),
-        left: left.to_string(),
-        right: right.to_string(),
+    .map(|(req, left, right)| {
+        let (left, right) = left.display_diffed(&right);
+        CompareOutput {
+            req: req.to_string(),
+            left,
+            right,
+        }
     })
     .map(|out| JsValue::from_serde(&out).unwrap())
     .collect()

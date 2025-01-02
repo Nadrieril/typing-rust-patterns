@@ -234,11 +234,12 @@ impl CliState {
                             of depth <= 3 and types of depth <= 4"
                         );
                     } else {
-                        for (test_case, left_res, right_res) in differences {
+                        for (test_case, left, right) in differences {
+                            let (left, right) = left.display_diffed(&right);
                             let test_case_str = test_case.to_string();
                             println!("Difference on `{test_case_str}`:");
-                            println!("    saved returned: {left_res}");
-                            println!("  current returned: {right_res}");
+                            println!("    saved returned: {left}");
+                            println!("  current returned: {right}");
                         }
                     }
                 }

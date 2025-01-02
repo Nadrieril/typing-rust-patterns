@@ -123,6 +123,64 @@ impl<'d> ToDisplayTree<'d> for Type<'_> {
     }
 }
 
+impl<'d> ToDisplayTree<'d> for BindingAssignments<'_> {
+    fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
+        DisplayTree::sep_by(
+            a,
+            ", ",
+            self.assignments
+                .iter()
+                .map(|(name, ty)| name.to_display_tree(a).sep_then(a, ": ", ty)),
+        )
+    }
+}
+
+impl<'d> ToDisplayTree<'d> for TypingResult<'_> {
+    fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
+        match self {
+            TypingResult::Success(bindings) => {
+                bindings.to_display_tree(a).surrounded(a, "Success(", ")")
+            }
+            TypingResult::BorrowError(bindings, s) => bindings
+                .to_display_tree(a)
+                .sep_then(a, ", ", format!("\"{s:?}\""))
+                .surrounded(a, "BorrowError(", ")"),
+            TypingResult::TypeError(TypeError::External(e)) => format!("{e}")
+                .to_display_tree(a)
+                .surrounded(a, "TypeError(\"", "\")"),
+            TypingResult::TypeError(e) => {
+                format!("{e:?}")
+                    .to_display_tree(a)
+                    .surrounded(a, "TypeError(\"", "\")")
+            }
+        }
+    }
+}
+
+impl TypingResult<'_> {
+    pub fn display(&self) -> String {
+        let a = &Arenas::default();
+        let out = self.to_display_tree(a).to_string();
+        match self {
+            TypingResult::Success(..) => out.green(),
+            TypingResult::BorrowError(..) | TypingResult::TypeError(..) => out.red(),
+        }
+    }
+
+    /// Display two typing results, adjusting colors to highlight differences.
+    pub fn display_diffed(&self, other: &Self) -> (String, String) {
+        let a = &Arenas::default();
+        match (self, other) {
+            (TypingResult::Success(..), TypingResult::Success(..)) => {
+                let left = self.to_display_tree(a);
+                let right = other.to_display_tree(a);
+                left.diff_display(&right)
+            }
+            _ => (self.to_string(), other.to_string()),
+        }
+    }
+}
+
 impl<'a> TypingPredicate<'a> {
     /// Display as `let ...`.
     pub fn display_as_let(&self) -> String {
@@ -359,30 +417,9 @@ impl Display for PredicateStyle {
     }
 }
 
-impl std::fmt::Display for BindingAssignments<'_> {
+impl Display for TypingResult<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.assignments
-                .iter()
-                .map(|(name, ty)| format!("{name}: {ty}"))
-                .format(", ")
-        )
-    }
-}
-
-impl std::fmt::Display for TypingResult<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let out = match self {
-            TypingResult::Success(bindings) => format!("Success({bindings})").green(),
-            TypingResult::BorrowError(bindings, s) => {
-                format!("BorrowError({bindings}, \"{s:?}\")").red()
-            }
-            TypingResult::TypeError(TypeError::External(e)) => format!("TypeError(\"{e}\")").red(),
-            TypingResult::TypeError(e) => format!("TypeError(\"{e:?}\")").red(),
-        };
-        write!(f, "{}", out)
+        write!(f, "{}", self.display())
     }
 }
 
