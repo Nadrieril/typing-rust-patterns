@@ -77,6 +77,13 @@ fn strip_markup(s: &str) -> String {
 }
 
 impl<'a> DisplayTree<'a> {
+    pub fn is_empty(&self) -> bool {
+        match self.kind {
+            Leaf(s) => s.is_empty(),
+            Separated { children, .. } => children.is_empty(),
+        }
+    }
+
     pub fn len_ignoring_markup(&self) -> usize {
         match self.kind {
             Leaf(s) => len_ignoring_markup(s),

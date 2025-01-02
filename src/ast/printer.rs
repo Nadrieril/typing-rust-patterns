@@ -221,7 +221,12 @@ impl<'a> TypingPredicate<'a> {
                     .to_display_tree(a)
                     .sep_then(a, ": ", ty);
 
-                pre_turnstile.sep_then(a, " ⊢ ", post_turnstile)
+                let parts: &[_] = if pre_turnstile.is_empty() {
+                    &[post_turnstile]
+                } else {
+                    &[pre_turnstile, post_turnstile]
+                };
+                DisplayTree::sep_by(a, " ⊢ ", parts)
             }
         }
     }
