@@ -33,13 +33,21 @@ The old ruleset is on the left, and the new one on the right.
  ----------------- "DerefMutWithShared"                                           |
  r, m ⊢ &p: &mut T                                                                |
 
-                                                                                  |
- ------------------ "Binding"                                                     |
- inh, m ⊢ mut x: &T                                                               |
+                                                                                  | inh, m ⊢ x: &&T
+                                                                                  | ------------------ "BindingBorrow"
+                                                                                  | inh, m ⊢ ref x: &T
 
-                                                                                  |
- ---------------------- "Binding"                                                 |
- inh, m ⊢ mut x: &mut T                                                           |
+                                                                                  | inh, m ⊢ x: &&mut T
+                                                                                  | ---------------------- "BindingBorrow"
+                                                                                  | inh, m ⊢ ref x: &mut T
+
+                                                                                  | inh, m ⊢ x: &mut &T
+                                                                                  | ---------------------- "BindingBorrow"
+                                                                                  | inh, m ⊢ ref mut x: &T
+
+                                                                                  | inh, m ⊢ x: &mut &mut T
+                                                                                  | -------------------------- "BindingBorrow"
+                                                                                  | inh, m ⊢ ref mut x: &mut T
 
 
 allow_ref_pat_on_ref_mut: true -> false
@@ -49,8 +57,8 @@ eat_mut_inside_shared: true -> false
 fallback_to_outer: "No"
 inherited_ref_on_ref: "EatOuter" -> "Error"
 match_constructor_through_ref: true -> false
-mut_binding_on_inherited: "Keep" -> "Error"
-ref_binding_on_inherited: "Error"
+mut_binding_on_inherited: "Keep"
+ref_binding_on_inherited: "Error" -> "AllocTemporary"
 simplify_deref_mut: true
 The current options can be fully described as the following set of rules.
 The typing predicate looks like `r, m ⊢ p: T`, where
@@ -72,17 +80,17 @@ real, m ⊢ p: T
 r, m ⊢ &mut p: &mut T
 
 inh, m ⊢ x: &T
------------------- "BindingBorrow"
-real, m ⊢ ref x: T
+--------------- "BindingBorrow"
+r, m ⊢ ref x: T
 
 inh, m ⊢ x: &mut T
----------------------- "BindingBorrow"
-real, m ⊢ ref mut x: T
+------------------- "BindingBorrow"
+r, m ⊢ ref mut x: T
 
 
 ----------- "Binding"
 r, m ⊢ x: T
 
 
------------------- "Binding"
-real, m ⊢ mut x: T
+--------------- "Binding"
+r, m ⊢ mut x: T

@@ -436,10 +436,8 @@ impl RuleOptions {
 
     /// Purely structural matching, with no match ergonomics.
     pub const STRUCTURAL: Self = RuleOptions {
-        match_constructor_through_ref: false,
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
-        mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::Error,
+        match_constructor_through_ref: false,
         allow_ref_pat_on_ref_mut: false,
         eat_inherited_ref_alone: false,
         eat_mut_inside_shared: false,
@@ -448,6 +446,8 @@ impl RuleOptions {
 
     /// The minimal amout of match ergonomics that's forward-compatible with most proposals.
     pub const MIN_ERGONOMICS: Self = RuleOptions {
+        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+        mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         match_constructor_through_ref: true,
         ..Self::STRUCTURAL
     };

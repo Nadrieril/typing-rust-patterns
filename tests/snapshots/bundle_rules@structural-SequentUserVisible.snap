@@ -11,33 +11,33 @@ info:
     simplify_deref_mut: true
     downgrade_mut_inside_shared: false
     eat_mut_inside_shared: false
-    ref_binding_on_inherited: Error
-    mut_binding_on_inherited: Error
+    ref_binding_on_inherited: AllocTemporary
+    mut_binding_on_inherited: Keep
 ---
-real ⊢ p0: T0,  real ⊢ p1: T1
------------------------------ "Constructor"
-_ ⊢ [p0, p1]: [T0, T1]
+p0: T0,  p1: T1
+------------------ "Constructor"
+[p0, p1]: [T0, T1]
 
-real ⊢ p: T
------------ "Deref"
-r ⊢ &p: &T
+p: T
+------ "Deref"
+&p: &T
 
-real ⊢ p: T
------------------- "Deref"
-r ⊢ &mut p: &mut T
+p: T
+-------------- "Deref"
+&mut p: &mut T
 
-inh ⊢ x: &T
---------------- "BindingBorrow"
-real ⊢ ref x: T
+x: &T
+-------- "BindingBorrow"
+ref x: T
 
-inh ⊢ x: &mut T
-------------------- "BindingBorrow"
-real ⊢ ref mut x: T
+x: &mut T
+------------ "BindingBorrow"
+ref mut x: T
+
+
+---- "Binding"
+x: T
 
 
 -------- "Binding"
-r ⊢ x: T
-
-
---------------- "Binding"
-real ⊢ mut x: T
+mut x: T

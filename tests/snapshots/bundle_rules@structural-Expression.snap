@@ -11,8 +11,8 @@ info:
     simplify_deref_mut: true
     downgrade_mut_inside_shared: false
     eat_mut_inside_shared: false
-    ref_binding_on_inherited: Error
-    mut_binding_on_inherited: Error
+    ref_binding_on_inherited: AllocTemporary
+    mut_binding_on_inherited: Keep
 ---
 p0 @ e.0: T0,  p1 @ e.1: T1
 --------------------------- "Constructor"
@@ -27,17 +27,17 @@ p @ *e: T
 &mut p @ e: &mut T
 
 x @ &e: &T
----------------------------------- "BindingBorrow"
-ref x @ e: T, e is not a reference
+------------ "BindingBorrow"
+ref x @ e: T
 
 x @ &mut e: &mut T
--------------------------------------- "BindingBorrow"
-ref mut x @ e: T, e is not a reference
+------------------ "BindingBorrow"
+ref mut x @ e: T
 
 
 -------- "Binding"
 x @ e: T
 
 
----------------------------------- "Binding"
-mut x @ e: T, e is not a reference
+------------ "Binding"
+mut x @ e: T
