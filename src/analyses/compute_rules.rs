@@ -579,9 +579,7 @@ fn bundle_rules() -> anyhow::Result<()> {
                     let _ = writeln!(&mut rules_str, "{rule}\n");
                 }
                 Err(err) => {
-                    let rule = rule
-                        .display(style.with_maximal_state())
-                        .unwrap_or_else(|_| rule.display(PredicateStyle::Expression).unwrap());
+                    let rule = rule.display(PredicateStyle::Expression).unwrap();
                     let _ = writeln!(
                         &mut rules_str,
                         "ERROR can't display the following rule with the requested style ({err:?})"

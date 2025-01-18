@@ -19,24 +19,24 @@ p0: T0,  p1: T1
 [p0, p1]: [T0, T1]
 
 ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
-real, ro ⊢ p: T
----------------- "Deref"
-real, m ⊢ &p: &T
+p @ *e: T
+-------------------------------- "Deref"
+&p @ e: &T, e is not a reference
 
 ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
-real, m ⊢ p: T
------------------------- "Deref"
-real, m ⊢ &mut p: &mut T
+p @ *e: T
+---------------------------------------- "Deref"
+&mut p @ e: &mut T, e is not a reference
 
 ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
-inh, m ⊢ x: &T
------------------- "BindingBorrow"
-real, m ⊢ ref x: T
+x @ &e: &T
+---------------------------------- "BindingBorrow"
+ref x @ e: T, e is not a reference
 
 ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
-inh, m ⊢ x: &mut T
----------------------- "BindingBorrow"
-real, m ⊢ ref mut x: T
+x @ &mut e: &mut T
+-------------------------------------- "BindingBorrow"
+ref mut x @ e: T, e is not a reference
 
 
 ---- "Binding"
@@ -44,5 +44,5 @@ x: T
 
 ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
 
------------------- "Binding"
-real, m ⊢ mut x: T
+---------------------------------- "Binding"
+mut x @ e: T, e is not a reference
