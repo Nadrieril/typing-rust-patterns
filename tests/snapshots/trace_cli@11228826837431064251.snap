@@ -1,5 +1,0 @@
----
-source: tests/trace_cli.rs
-info: set predicate_style SequentBindingMode
----
-

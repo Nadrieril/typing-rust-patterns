@@ -209,7 +209,7 @@ impl PredicateStyle {
     pub(crate) const KNOWN_PREDICATE_STYLES: &[(&str, PredicateStyle)] = &[
         ("Expression", PredicateStyle::Expression),
         (
-            "Sequent",
+            "SequentUserVisible",
             PredicateStyle::Sequent {
                 ty: TypeOfInterest::UserVisible,
                 show_reference_state: true,
@@ -217,7 +217,7 @@ impl PredicateStyle {
             },
         ),
         (
-            "SequentBindingMode",
+            "SequentInMemory",
             PredicateStyle::Sequent {
                 ty: TypeOfInterest::InMemory,
                 show_reference_state: true,
@@ -226,11 +226,18 @@ impl PredicateStyle {
         ),
     ];
 
-    pub fn to_name(&self) -> Option<&str> {
-        Self::KNOWN_PREDICATE_STYLES
-            .iter()
-            .find(|(_, style)| style == self)
-            .map(|(name, _)| *name)
+    pub fn to_name(&self) -> &str {
+        match self {
+            PredicateStyle::Expression => "Expression",
+            PredicateStyle::Sequent {
+                ty: TypeOfInterest::UserVisible,
+                ..
+            } => "SequentUserVisible",
+            PredicateStyle::Sequent {
+                ty: TypeOfInterest::InMemory,
+                ..
+            } => "SequentInMemory",
+        }
     }
 
     pub fn from_name(name: &str) -> anyhow::Result<Self> {

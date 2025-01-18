@@ -2,7 +2,7 @@
 source: tests/trace_cli.rs
 info: options
 ---
-predicate_style: Sequent
+predicate_style: SequentUserVisible
 allow_ref_pat_on_ref_mut: true
 downgrade_mut_inside_shared: false
 eat_inherited_ref_alone: true

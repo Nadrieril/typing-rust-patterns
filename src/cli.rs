@@ -45,11 +45,11 @@ impl CliState {
                 doc: "TODO",
             },
             OptionValue {
-                name: "Sequent",
+                name: "SequentUserVisible",
                 doc: "TODO",
             },
             OptionValue {
-                name: "SequentBindingMode",
+                name: "SequentInMemory",
                 doc: "TODO",
             },
         ],
@@ -61,7 +61,7 @@ impl CliState {
         Self {
             history: Vec::new(),
             options: RuleOptions::NADRI,
-            predicate_style: PredicateStyle::from_name("Sequent").unwrap(),
+            predicate_style: PredicateStyle::from_name("SequentUserVisible").unwrap(),
             saved: None,
         }
     }

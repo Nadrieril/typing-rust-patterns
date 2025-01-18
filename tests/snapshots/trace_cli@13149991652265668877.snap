@@ -76,7 +76,7 @@ match_constructor_through_ref: true
 mut_binding_on_inherited: "Keep" -> "Error"
 ref_binding_on_inherited: "Error" -> "ResetBindingMode"
 simplify_deref_mut: true
-predicate_style: Sequent
+predicate_style: SequentUserVisible
 allow_ref_pat_on_ref_mut: true
 downgrade_mut_inside_shared: true
 eat_inherited_ref_alone: true

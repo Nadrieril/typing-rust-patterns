@@ -25,7 +25,7 @@ Options are:
     How to handle a `mut x` binding on an inherited reference
 - simplify_deref_mut: false | true
     Whether to simplify `*&mut expr`, which removes some borrow errors
-- predicate_style: Expression | Sequent | SequentBindingMode
+- predicate_style: Expression | SequentUserVisible | SequentInMemory
     the style of the typing predicate; not all rulesets can be expressed in all styles, only `Expression` is compatible with all rulesets
 
 There also exist some predefined option-bundles. Activate one with `set <bundle>`

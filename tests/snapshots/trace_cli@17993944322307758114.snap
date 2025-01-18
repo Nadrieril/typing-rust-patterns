@@ -1,6 +1,6 @@
 ---
 source: tests/trace_cli.rs
-info: "set rfc3627\nset predicate_style SequentBindingMode\nrules"
+info: "set rfc3627\nset predicate_style SequentInMemory\nrules"
 ---
 The two rulesets are described by the following sets of rules, with differences highlighted.
 The old ruleset is on the left, and the new one on the right.

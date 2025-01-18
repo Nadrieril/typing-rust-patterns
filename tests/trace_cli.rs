@@ -20,12 +20,12 @@ fn trace_cli() -> anyhow::Result<()> {
         "&[[x]]: &[&mut [x]]",
         "set allow_ref_pat_on_ref_mut false\n&x: &mut T",
         "set structural\nrules",
-        "set rfc3627\nset predicate_style SequentBindingMode\nrules",
+        "set rfc3627\nset predicate_style SequentInMemory\nrules",
         "save\nset downgrade_mut_inside_shared true\nswap\ncompare",
         "save\nset structural\nswap\nrules",
         "set stable_rust\n[&x]: &[AT]",
         "&ap: &T",
-        "set predicate_style SequentBindingMode",
+        "set predicate_style SequentInMemory",
         "save;set structural;options",
         "save;set downgrade_mut_inside_shared true;swap;&[x]: &&mut [T]",
         // good to test trace diff
@@ -33,7 +33,7 @@ fn trace_cli() -> anyhow::Result<()> {
         // good to test rules diff
         "save;set fallback_to_outer EatOuter;set inherited_ref_on_ref EatInner",
         // hihi this crashes the cli
-        // "save;set predicate_style SequentBindingMode;swap;unsave;options;rules",
+        // "save;set predicate_style SequentInMemory;swap;unsave;options;rules",
     ];
     for &test_case in test_cases {
         let success = Command::cargo_bin("typing-rust-patterns")?
