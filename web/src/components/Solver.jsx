@@ -39,7 +39,14 @@ function useStateInParams({searchParams, setSearchParams}, key, def, read = (x) 
         });
     }
 
-    const [val, setVal] = useState(() => read(searchParams.get(key)) || def);
+    const [val, setVal] = useState(() => {
+        const valInUrl = searchParams.get(key);
+        if(valInUrl) {
+            return read(valInUrl);
+        } else {
+            return def;
+        }
+    });
     const setValAndParams = (v) => {
         setVal(v);
         setSearchParam(key, write(v));
