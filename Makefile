@@ -14,3 +14,11 @@ web-dev: wasm
 .PHONY: web-lint
 web-lint:
 	cd web && pnpm check
+
+.PHONY: web-build-dist
+web-build-dist: wasm
+	cd web && pnpm build
+
+.PHONY: web-build-dist
+web-serve-dist: web-build-dist
+	cd web/dist && ln -sf . typing-rust-patterns && python -m http.server
