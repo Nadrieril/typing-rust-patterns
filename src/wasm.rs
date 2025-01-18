@@ -196,12 +196,7 @@ impl PredicateStyleJs {
         let ty = TypeOfInterest::from_str(name).ok()?;
         let left = left.as_ruleset();
         let right = right.as_ruleset();
-        let style = PredicateStyle::Sequent {
-            ty,
-            show_reference_state: left.tracks_reference_state(ty)
-                || right.tracks_reference_state(ty),
-            show_scrut_access: left.tracks_scrut_mutability() || right.tracks_scrut_mutability(),
-        };
+        let style = PredicateStyle::sequent_with_minimal_state(ty, left, right);
         Some(PredicateStyleJs(style))
     }
 

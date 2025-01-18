@@ -115,3 +115,14 @@ impl RuleSet {
             .map(|b| b.name)
     }
 }
+
+impl From<RuleOptions> for RuleSet {
+    fn from(o: RuleOptions) -> Self {
+        RuleSet::TypeBased(o)
+    }
+}
+impl From<Conf> for RuleSet {
+    fn from(o: Conf) -> Self {
+        RuleSet::BindingModeBased(o)
+    }
+}

@@ -14,30 +14,30 @@ info:
     ref_binding_on_inherited: Error
     mut_binding_on_inherited: Error
 ---
-move, m ⊢ p0: T0,  move, m ⊢ p1: T1
------------------------------------ "Constructor"
-move, m ⊢ [p0, p1]: [T0, T1]
+move ⊢ p0: T0,  move ⊢ p1: T1
+----------------------------- "Constructor"
+move ⊢ [p0, p1]: [T0, T1]
 
-move, ro ⊢ p: T
----------------- "Deref"
-move, m ⊢ &p: &T
+move ⊢ p: T
+------------- "Deref"
+move ⊢ &p: &T
 
-move, m ⊢ p: T
------------------------- "Deref"
-move, m ⊢ &mut p: &mut T
+move ⊢ p: T
+--------------------- "Deref"
+move ⊢ &mut p: &mut T
 
-ref, m ⊢ x: T
------------------- "BindingBorrow"
-move, m ⊢ ref x: T
+ref ⊢ x: T
+--------------- "BindingBorrow"
+move ⊢ ref x: T
 
-ref mut, m ⊢ x: T
----------------------- "BindingBorrow"
-move, m ⊢ ref mut x: T
-
-
------------- "Binding"
-bm, m ⊢ x: T
+ref mut ⊢ x: T
+------------------- "BindingBorrow"
+move ⊢ ref mut x: T
 
 
------------------- "Binding"
-move, m ⊢ mut x: T
+--------- "Binding"
+bm ⊢ x: T
+
+
+--------------- "Binding"
+move ⊢ mut x: T

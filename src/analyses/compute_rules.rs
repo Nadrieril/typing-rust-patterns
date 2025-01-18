@@ -257,6 +257,29 @@ impl PredicateStyle {
         }
     }
 
+    /// Construct a sequent style that has the minimal state necessary to display the rules of
+    /// these rulesets. If you need this for a single ruleset, pass the same one twice.
+    pub fn sequent_with_minimal_state(toi: TypeOfInterest, left: RuleSet, right: RuleSet) -> Self {
+        PredicateStyle::Sequent {
+            ty: toi,
+            show_reference_state: left.tracks_reference_state(toi)
+                || right.tracks_reference_state(toi),
+            show_scrut_access: left.tracks_scrut_mutability() || right.tracks_scrut_mutability(),
+        }
+    }
+
+    /// Same as `self` but displays all the bits of state we know about.
+    pub fn with_maximal_state(self) -> Self {
+        match self {
+            PredicateStyle::Expression => PredicateStyle::Expression,
+            PredicateStyle::Sequent { ty, .. } => PredicateStyle::Sequent {
+                ty,
+                show_reference_state: true,
+                show_scrut_access: true,
+            },
+        }
+    }
+
     pub fn explain_predicate(self) -> PredicateExplanation {
         let pred = TypingPredicate::ABSTRACT.display(self);
 
@@ -517,15 +540,20 @@ fn bundle_rules() -> anyhow::Result<()> {
     // Try all styles
     let bundles = KNOWN_TY_BASED_BUNDLES
         .iter()
-        .copied()
-        .cartesian_product(
-            PredicateStyle::KNOWN_PREDICATE_STYLES
-                .iter()
-                .map(|(_, style)| *style),
-        )
-        .map(|(b, style)| (b.name, b.ruleset, style));
+        .map(|b| (b.name, b.ruleset))
+        .cartesian_product([
+            None,
+            Some(TypeOfInterest::UserVisible),
+            Some(TypeOfInterest::InMemory),
+        ]);
 
-    for (name, options, style) in bundles {
+    for ((name, options), toi) in bundles {
+        let style = match toi {
+            None => PredicateStyle::Expression,
+            Some(ty) => {
+                PredicateStyle::sequent_with_minimal_state(ty, options.into(), options.into())
+            }
+        };
         let ctx = TypingCtx {
             arenas,
             options,
@@ -536,25 +564,37 @@ fn bundle_rules() -> anyhow::Result<()> {
         typing_rules.sort_by_key(|rule| rule.name);
 
         let mut rules_str = String::new();
-        let _: Result<_, IncompatibleStyle> = try {
-            for rule in typing_rules {
-                let _ = writeln!(&mut rules_str, "{}\n", rule.display(style)?);
+        for rule in typing_rules {
+            match rule.display(style) {
+                Ok(rule) => {
+                    let _ = writeln!(&mut rules_str, "{rule}\n");
+                }
+                Err(IncompatibleStyle) => {
+                    let rule = rule
+                        .display(style.with_maximal_state())
+                        .unwrap_or_else(|_| rule.display(PredicateStyle::Expression).unwrap());
+                    let _ = writeln!(
+                        &mut rules_str,
+                        "ERROR can't display the following rule with the requested style"
+                    );
+                    let _ = writeln!(&mut rules_str, "{rule}\n");
+                }
             }
+        }
 
-            let info = TestCase {
-                bundle_name: name,
-                options,
-            };
-            insta::with_settings!({
-                snapshot_path => "../../tests/snapshots",
-                snapshot_suffix => format!("{name}-{}", style),
-                prepend_module_to_snapshot => false,
-                omit_expression => true,
-                info => &info,
-            }, {
-                insta::assert_snapshot!(rules_str);
-            });
+        let info = TestCase {
+            bundle_name: name,
+            options,
         };
+        insta::with_settings!({
+            snapshot_path => "../../tests/snapshots",
+            snapshot_suffix => format!("{name}-{}", style),
+            prepend_module_to_snapshot => false,
+            omit_expression => true,
+            info => &info,
+        }, {
+            insta::assert_snapshot!(rules_str);
+        });
     }
 
     Ok(())

@@ -14,30 +14,35 @@ info:
     ref_binding_on_inherited: Error
     mut_binding_on_inherited: Error
 ---
-real, m ⊢ p0: T0,  real, m ⊢ p1: T1
------------------------------------ "Constructor"
-_, m ⊢ [p0, p1]: [T0, T1]
+p0: T0,  p1: T1
+------------------ "Constructor"
+[p0, p1]: [T0, T1]
 
+ERROR can't display the following rule with the requested style
 real, ro ⊢ p: T
 ---------------- "Deref"
 real, m ⊢ &p: &T
 
+ERROR can't display the following rule with the requested style
 real, m ⊢ p: T
 ------------------------ "Deref"
 real, m ⊢ &mut p: &mut T
 
+ERROR can't display the following rule with the requested style
 inh, m ⊢ x: &T
 ------------------ "BindingBorrow"
 real, m ⊢ ref x: T
 
+ERROR can't display the following rule with the requested style
 inh, m ⊢ x: &mut T
 ---------------------- "BindingBorrow"
 real, m ⊢ ref mut x: T
 
 
------------ "Binding"
-r, m ⊢ x: T
+---- "Binding"
+x: T
 
+ERROR can't display the following rule with the requested style
 
 ------------------ "Binding"
 real, m ⊢ mut x: T
