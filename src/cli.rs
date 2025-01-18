@@ -266,7 +266,7 @@ impl CliState {
                                 println!("{s}");
                                 display_options_diff(old_options, self.options);
                             }
-                            Err(IncompatibleStyle) => {
+                            Err(_) => {
                                 self.options = old_options;
                                 print!(
                                     "Error: the new ruleset cannot be displayed with style {}. ",

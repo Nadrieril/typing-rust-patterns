@@ -334,7 +334,12 @@ impl PredicateStyle {
 }
 
 #[derive(Debug)]
-pub struct IncompatibleStyle;
+pub enum IncompatibleStyle {
+    NeedToShowReferenceState,
+    NeedToShowScrutAccess,
+    UnrepresentableExpression,
+    UnknownBindingMode,
+}
 
 enum RenderablePredicate<'a> {
     Pred(TypingPredicate<'a>),
@@ -419,8 +424,12 @@ impl<'a> TypingRule<'a> {
                             },
                         ..
                     },
-                ) if show_reference_state => {}
-                _ => return Err(IncompatibleStyle),
+                ) => {
+                    if !show_reference_state {
+                        return Err(IncompatibleStyle::NeedToShowReferenceState);
+                    }
+                }
+                _ => return Err(IncompatibleStyle::UnrepresentableExpression),
             },
             // In this style, the binding mode must be known unless the rule doesn't depend on it
             // at all.
@@ -428,7 +437,7 @@ impl<'a> TypingRule<'a> {
                 if self.postcondition.expr.binding_mode().is_err()
                     && matches!(self.postcondition.expr.ty, Type::Ref(..))
                 {
-                    return Err(IncompatibleStyle);
+                    return Err(IncompatibleStyle::UnknownBindingMode);
                 }
             }
         }
@@ -454,7 +463,7 @@ impl<'a> TypingRule<'a> {
                 Sequent {
                     show_scrut_access: false,
                     ..
-                } => return Err(IncompatibleStyle),
+                } => return Err(IncompatibleStyle::NeedToShowScrutAccess),
                 // We already print this information with the predicate.
                 Sequent { .. } => {}
             }
@@ -569,13 +578,13 @@ fn bundle_rules() -> anyhow::Result<()> {
                 Ok(rule) => {
                     let _ = writeln!(&mut rules_str, "{rule}\n");
                 }
-                Err(IncompatibleStyle) => {
+                Err(err) => {
                     let rule = rule
                         .display(style.with_maximal_state())
                         .unwrap_or_else(|_| rule.display(PredicateStyle::Expression).unwrap());
                     let _ = writeln!(
                         &mut rules_str,
-                        "ERROR can't display the following rule with the requested style"
+                        "ERROR can't display the following rule with the requested style ({err:?})"
                     );
                     let _ = writeln!(&mut rules_str, "{rule}\n");
                 }
