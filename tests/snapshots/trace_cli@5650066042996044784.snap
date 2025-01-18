@@ -30,45 +30,9 @@ The old ruleset is on the left, and the new one on the right.
  ---------------------------- "ConstructorMultiRef"                               |
  r, m ⊢ [p0, p1]: &mut &mut T                                                     |
 
- _, ro ⊢ p: T                                                                     |
- ------------------------------------- "Deref"                                    |
- inh, m ⊢ &p: &T, T is not a reference                                            |
-
- real, ro ⊢ p: &T                                                                 |
- ---------------- "Deref"                                                         |
- inh, m ⊢ &p: &&T                                                                 |
-
- real, ro ⊢ p: &mut T                                                             |
- -------------------- "Deref"                                                     |
- inh, m ⊢ &p: &&mut T                                                             |
-
- _, m ⊢ p: T                                                                      |
- --------------------------------------------- "Deref"                            |
- inh, m ⊢ &mut p: &mut T, T is not a reference                                    |
-
- real, m ⊢ p: &T                                                                  |
- ------------------------ "Deref"                                                 |
- inh, m ⊢ &mut p: &mut &T                                                         |
-
- real, m ⊢ p: &mut T                                                              |
- ---------------------------- "Deref"                                             |
- inh, m ⊢ &mut p: &mut &mut T                                                     |
-
  real, ro ⊢ p: T                                                                  |
- -------------------- "DerefMutWithShared"                                        |
- real, m ⊢ &p: &mut T                                                             |
-
- _, ro ⊢ p: T                                                                     |
- ----------------------------------------- "DerefMutWithShared"                   |
- inh, m ⊢ &p: &mut T, T is not a reference                                        |
-
- real, ro ⊢ p: &T                                                                 |
- -------------------- "DerefMutWithShared"                                        |
- inh, m ⊢ &p: &mut &T                                                             |
-
- real, ro ⊢ p: &mut T                                                             |
- ------------------------ "DerefMutWithShared"                                    |
- inh, m ⊢ &p: &mut &mut T                                                         |
+ ----------------- "DerefMutWithShared"                                           |
+ r, m ⊢ &p: &mut T                                                                |
 
                                                                                   |
  ------------------ "Binding"                                                     |

@@ -19,12 +19,12 @@ p0 @ e.0: T0,  p1 @ e.1: T1
 [p0, p1] @ e: [T0, T1]
 
 p @ *e: T
--------------------------------- "Deref"
-&p @ e: &T, e is not a reference
+---------- "Deref"
+&p @ e: &T
 
 p @ *e: T
----------------------------------------- "Deref"
-&mut p @ e: &mut T, e is not a reference
+------------------ "Deref"
+&mut p @ e: &mut T
 
 x @ &e: &T
 ---------------------------------- "BindingBorrow"

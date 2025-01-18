@@ -47,11 +47,15 @@ pub enum TypeError {
 
 impl<'a> TypingPredicate<'a> {
     /// Apply one step of rule to this predicate.
+    ///
     /// Note: The `downgrade_mut_inside_shared` option is special: it inspects `self.expr` in
     /// non-trivial ways.
     /// All the other rules inspect `self.pat`, `self.expr.ty`, `self.expr.binding_mode()` up to a
     /// fixed depth. We trigger `OverlyGeneral` errors it the rules needs more information to
     /// decide what to do. This is how we can auto-generate the rules listings.
+    ///
+    /// We take much care to inspect the predicate as little as possible, to make rules as simple
+    /// as possible.
     pub fn step(&self, ctx: TypingCtx<'a>) -> Result<(Rule, Vec<Self>), TypeError> {
         use DeepeningRequest as D;
         use Pattern as P;
@@ -138,9 +142,12 @@ impl<'a> TypingPredicate<'a> {
                 let mut reborrow_after = None;
 
                 // We only inspect the binding mode if there are options that need it.
-                let no_inspect_bm =
+                let always_eat_ref_ty =
                     matches!(o.inherited_ref_on_ref, InheritedRefOnRefBehavior::EatOuter)
-                        && (o.eat_inherited_ref_alone || !o.match_constructor_through_ref);
+                        && o.eat_inherited_ref_alone;
+                let no_inspect_bm = always_eat_ref_ty
+                    || (matches!(ctx.type_of_interest, TypeOfInterest::UserVisible)
+                        && !o.match_constructor_through_ref);
                 // Construct the dereferenced expression.
                 let expr = if !no_inspect_bm && let ByRef(bm_mtbl) = self.expr.binding_mode()? {
                     // The reference is inherited; options differ in their treatment of this case.

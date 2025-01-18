@@ -14,35 +14,30 @@ info:
     ref_binding_on_inherited: Error
     mut_binding_on_inherited: Error
 ---
-p0: T0,  p1: T1
------------------- "Constructor"
-[p0, p1]: [T0, T1]
+real ⊢ p0: T0,  real ⊢ p1: T1
+----------------------------- "Constructor"
+_ ⊢ [p0, p1]: [T0, T1]
 
-ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
-p @ *e: T
--------------------------------- "Deref"
-&p @ e: &T, e is not a reference
+real ⊢ p: T
+----------- "Deref"
+r ⊢ &p: &T
 
-ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
-p @ *e: T
----------------------------------------- "Deref"
-&mut p @ e: &mut T, e is not a reference
+real ⊢ p: T
+------------------ "Deref"
+r ⊢ &mut p: &mut T
 
-ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
-x @ &e: &T
----------------------------------- "BindingBorrow"
-ref x @ e: T, e is not a reference
+inh ⊢ x: &T
+--------------- "BindingBorrow"
+real ⊢ ref x: T
 
-ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
-x @ &mut e: &mut T
--------------------------------------- "BindingBorrow"
-ref mut x @ e: T, e is not a reference
+inh ⊢ x: &mut T
+------------------- "BindingBorrow"
+real ⊢ ref mut x: T
 
 
----- "Binding"
-x: T
+-------- "Binding"
+r ⊢ x: T
 
-ERROR can't display the following rule with the requested style (NeedToShowReferenceState)
 
----------------------------------- "Binding"
-mut x @ e: T, e is not a reference
+--------------- "Binding"
+real ⊢ mut x: T

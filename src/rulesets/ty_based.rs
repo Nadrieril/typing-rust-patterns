@@ -140,23 +140,23 @@ impl RuleOptions {
                     ref_binding_on_inherited,
                     mut_binding_on_inherited,
                 } = *self;
-                if !match_constructor_through_ref {
-                    false
-                } else if matches!(inherited_ref_on_ref, InheritedRefOnRefBehavior::EatOuter)
-                    && matches!(
+                let need_state_for_refs = {
+                    let always_eat_ref_ty =
+                        matches!(inherited_ref_on_ref, InheritedRefOnRefBehavior::EatOuter)
+                            && eat_inherited_ref_alone;
+                    match_constructor_through_ref && !always_eat_ref_ty
+                };
+                let need_state_for_bindings = {
+                    let ignore_state_for_bindings = matches!(
                         ref_binding_on_inherited,
                         RefBindingOnInheritedBehavior::AllocTemporary
-                    )
-                    && matches!(
+                    ) && matches!(
                         mut_binding_on_inherited,
                         MutBindingOnInheritedBehavior::Keep
-                    )
-                    && eat_inherited_ref_alone
-                {
-                    false
-                } else {
-                    true
-                }
+                    );
+                    !ignore_state_for_bindings
+                };
+                need_state_for_refs || need_state_for_bindings
             }
         }
     }
