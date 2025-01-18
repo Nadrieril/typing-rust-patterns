@@ -1,4 +1,5 @@
 import init, {
+    set_panic_hook,
     RuleSetJs,
     PredicateStyleJs,
     diff_trace_solver_js,
@@ -29,6 +30,7 @@ import Tabs from 'react-bootstrap/Tabs';
 import Tooltip from 'react-bootstrap/Tooltip';
 
 await init({});
+set_panic_hook();
 
 // Like `useState`, but mirror the value in the search parameters.
 function useStateInParams({searchParams, setSearchParams}, key, def, read = (x) => x, write = (x) => x) {

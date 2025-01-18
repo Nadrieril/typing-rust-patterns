@@ -13,6 +13,7 @@ base64 = "0.22.1"
 bincode = "2.0.0-rc.3"
 bumpalo = "3.16.0"
 colored = "2.1.0"
+console_error_panic_hook = "0.1.7"
 gloo-utils = { version = "0.1", features = ["serde"] }
 indoc = "2.0.5"
 itertools = "0.13.0"

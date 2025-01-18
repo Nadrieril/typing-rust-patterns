@@ -6,6 +6,11 @@ use std::cmp::Ordering;
 use std::fmt::Write;
 use wasm_bindgen::prelude::*;
 
+#[wasm_bindgen]
+pub fn set_panic_hook() {
+    console_error_panic_hook::set_once();
+}
+
 /// Encode a value as base64.
 fn encode_base64<T: Encode>(x: &T) -> String {
     use base64::{engine::general_purpose::URL_SAFE, Engine as _};
