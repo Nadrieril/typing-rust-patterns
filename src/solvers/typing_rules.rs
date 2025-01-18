@@ -59,10 +59,10 @@ impl<'a> TypingPredicate<'a> {
         let a = ctx.arenas;
         let o = ctx.options;
         if matches!(ctx.type_of_interest, TypeOfInterest::InMemory)
-            && !matches!(self.expr.ty, Type::Abstract(..))
+            && matches!(self.expr.ty, Type::Ref(..))
         {
-            // Force branching on the binding mode if the type is (partially-)known but the binding
-            // mode isn't.
+            // Force branching on the binding mode if the user-visible type is a reference (and
+            // thus may potentially be inherited). Otherwise we won't be able to display the rule.
             let _ = self.expr.binding_mode()?;
         }
 
@@ -138,15 +138,11 @@ impl<'a> TypingPredicate<'a> {
                 let mut reborrow_after = None;
 
                 // We only inspect the binding mode if there are options that need it.
-                let must_inspect_bm = matches!(
-                    o.inherited_ref_on_ref,
-                    InheritedRefOnRefBehavior::EatInner
-                        | InheritedRefOnRefBehavior::EatBoth
-                        | InheritedRefOnRefBehavior::Error
-                ) || (!o.eat_inherited_ref_alone
-                    && o.match_constructor_through_ref);
+                let no_inspect_bm =
+                    matches!(o.inherited_ref_on_ref, InheritedRefOnRefBehavior::EatOuter)
+                        && (o.eat_inherited_ref_alone || !o.match_constructor_through_ref);
                 // Construct the dereferenced expression.
-                let expr = if must_inspect_bm && let ByRef(bm_mtbl) = self.expr.binding_mode()? {
+                let expr = if !no_inspect_bm && let ByRef(bm_mtbl) = self.expr.binding_mode()? {
                     // The reference is inherited; options differ in their treatment of this case.
                     let underlying_place = self.expr.reset_binding_mode()?;
                     match underlying_place.ty {
@@ -154,7 +150,8 @@ impl<'a> TypingPredicate<'a> {
                             rule_variant = o.inherited_ref_on_ref;
                             match o.inherited_ref_on_ref {
                                 InheritedRefOnRefBehavior::EatOuter => self.expr.deref(a),
-                                InheritedRefOnRefBehavior::EatInner => {
+                                InheritedRefOnRefBehavior::EatInner
+                                | InheritedRefOnRefBehavior::EatBoth => {
                                     let can_eat_inner = match (p_mtbl, *inner_mtbl) {
                                         (Shared, Shared) => true,
                                         (Mutable, Mutable) => {
@@ -164,37 +161,12 @@ impl<'a> TypingPredicate<'a> {
                                         (Mutable, Shared) => false,
                                     };
                                     if can_eat_inner {
-                                        reborrow_after = Some(t_mtbl);
-                                        t_mtbl = *inner_mtbl;
-                                        underlying_place.deref(a)
-                                    } else {
-                                        match o.fallback_to_outer {
-                                            FallbackToOuterBehavior::No => {
-                                                return Err(TypeError::MutabilityMismatch)
-                                            }
-                                            FallbackToOuterBehavior::EatOuter => {
-                                                fallback_to_outer =
-                                                    FallbackToOuter(o.fallback_to_outer);
-                                                self.expr.deref(a)
-                                            }
-                                            FallbackToOuterBehavior::EatBoth => {
-                                                fallback_to_outer =
-                                                    FallbackToOuter(o.fallback_to_outer);
-                                                self.expr.deref(a).deref(a)
-                                            }
+                                        if matches!(
+                                            o.inherited_ref_on_ref,
+                                            InheritedRefOnRefBehavior::EatInner
+                                        ) {
+                                            reborrow_after = Some(t_mtbl);
                                         }
-                                    }
-                                }
-                                InheritedRefOnRefBehavior::EatBoth => {
-                                    let can_eat_inner = match (p_mtbl, *inner_mtbl) {
-                                        (Shared, Shared) => true,
-                                        (Mutable, Mutable) => {
-                                            bm_mtbl == Mutable || o.eat_mut_inside_shared
-                                        }
-                                        (Shared, Mutable) => o.allow_ref_pat_on_ref_mut,
-                                        (Mutable, Shared) => false,
-                                    };
-                                    if can_eat_inner {
                                         t_mtbl = *inner_mtbl;
                                         underlying_place.deref(a)
                                     } else {
@@ -220,17 +192,14 @@ impl<'a> TypingPredicate<'a> {
                                 }
                             }
                         }
-                        T::Tuple(_) | T::OtherNonRef(_) | T::AbstractNonRef(..)
-                            if o.eat_inherited_ref_alone =>
-                        {
-                            self.expr.deref(a)
-                        }
                         T::Tuple(_) | T::OtherNonRef(_) | T::AbstractNonRef(..) => {
-                            return Err(TypeError::InheritedRefIsAlone);
+                            if o.eat_inherited_ref_alone {
+                                self.expr.deref(a)
+                            } else {
+                                return Err(TypeError::InheritedRefIsAlone);
+                            }
                         }
-                        T::Abstract(_) => {
-                            return Err(TypeError::TooAbstract(D::Type));
-                        }
+                        T::Abstract(_) => return Err(TypeError::TooAbstract(D::Type)),
                     }
                 } else {
                     self.expr.deref(a)
