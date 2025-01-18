@@ -12,7 +12,7 @@ Options are:
     Whether `&p`/`&mut p` is allowed on an inherited reference if the underlying type isn't also a reference type
 - inherited_ref_on_ref: EatOuter | EatInner | EatBoth | Error
     How to handle a reference pattern on a double reference when the outer one is inherited
-- fallback_to_outer: false | true
+- fallback_to_outer: No | EatOuter | EatBoth
     Whether to try again in `EatOuter` mode when a `EatBoth` or `EatInner` case has a mutability mismatch
 - eat_mut_inside_shared: false | true
     In `EatInner` or `EatBoth`, `&mut p` can eat an inner `&mut T` from under a `&`

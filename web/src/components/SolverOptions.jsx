@@ -27,6 +27,14 @@ function InhMutRef() {
     return <span className="inherited-ref" title="inherited reference">&mut</span>
 }
 
+function Underline({ children, title }) {
+  return (
+    <span style={{textDecoration: "underline"}} title={title}>
+      {children}
+    </span>
+  );
+}
+
 // How to render options. Keys are  either `question` (for boolean options) or
 // one entry per rule variant.
 const prettyOptions = {
@@ -37,9 +45,9 @@ const prettyOptions = {
         question: <>&p: <InhRef/>[T]</>,
     },
     inherited_ref_on_ref: {
-        EatOuter: <>&p: <span style={{textDecoration: "underline"}} title="reference to consider"><InhRef/></span>&T</>,
-        EatInner: <>&p: <InhRef/><span style={{textDecoration: "underline"}} title="reference to consider">&</span>T</>,
-        EatBoth: <>&p: <span style={{textDecoration: "underline"}} title="reference to consider"><InhRef/>&</span>T</>,
+        EatOuter: <>&p: <Underline title="reference to consider"><InhRef/></Underline>&T</>,
+        EatInner: <>&p: <InhRef/><Underline title="reference to consider">&</Underline>T</>,
+        EatBoth: <>&p: <Underline title="reference to consider"><InhRef/>&</Underline>T</>,
         Error: <>&p: <InhRef/>&T</>,
     },
     ref_binding_on_inherited: {
@@ -53,7 +61,9 @@ const prettyOptions = {
         Error: <>mut x: <InhRef/>T</>,
     },
     fallback_to_outer: {
-        question: <>&mut p: <InhMutRef/> &T</>,
+        No: <>&mut p: <InhMutRef/> &T</>,
+        EatOuter: <>&mut p: <Underline title="reference to consume"><InhMutRef/></Underline> &T</>,
+        EatBoth: <>&mut p: <Underline title="reference to consume"><InhMutRef/> &</Underline>T</>,
     },
     eat_mut_inside_shared: {
         question: <>&mut p: <InhRef/>&mut T</>,
@@ -122,7 +132,7 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
 
     const variant =
         disabled ? "outline-light" :
-        (current_val == "false" || current_val == "Error") ? "outline-danger" :
+        (current_val == "false" || current_val == "Error" || current_val == "No") ? "outline-danger" :
         "outline-success";
 
     function textForValue(value_name) {

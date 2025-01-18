@@ -31,7 +31,7 @@ fn trace_cli() -> anyhow::Result<()> {
         // good to test trace diff
         "save;set rfc3627\n[&ref x, y]: &[&mut T, T]",
         // good to test rules diff
-        "save;set fallback_to_outer true;set inherited_ref_on_ref EatInner",
+        "save;set fallback_to_outer EatOuter;set inherited_ref_on_ref EatInner",
         // hihi this crashes the cli
         // "save;set predicate_style SequentBindingMode;swap;unsave;options;rules",
     ];

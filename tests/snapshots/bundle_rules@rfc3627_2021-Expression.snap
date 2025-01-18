@@ -6,7 +6,7 @@ info:
     match_constructor_through_ref: true
     eat_inherited_ref_alone: true
     inherited_ref_on_ref: EatBoth
-    fallback_to_outer: true
+    fallback_to_outer: EatOuter
     allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
     downgrade_mut_inside_shared: true
@@ -83,7 +83,7 @@ p @ *e: T
 &mut p @ &mut e: &mut &mut T
 
 p @ *&mut e: &T
------------------------- "Deref(EatBoth, FallbackToOuter)"
+------------------------ "Deref(EatBoth, FallbackToOuter(EatOuter))"
 &mut p @ &mut e: &mut &T
 
 p @ *&*e: T

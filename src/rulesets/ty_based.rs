@@ -44,6 +44,20 @@ pub enum InheritedRefOnRefBehavior {
     Error,
 }
 
+/// In `InheritedRefOnRefBehavior::EatBoth` or `EatInner` modes, what to do if a reference pattern
+/// fails to match against an underlying place of reference type.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Encode, Decode,
+)]
+pub enum FallbackToOuterBehavior {
+    /// Do nothing.
+    No,
+    /// If there is an inherited reference, match against it and consume it.
+    EatOuter,
+    /// If there is an inherited reference, match against it and consume both references.
+    EatBoth,
+}
+
 /// Choice of typing rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Encode, Decode)]
 pub struct RuleOptions {
@@ -55,9 +69,10 @@ pub struct RuleOptions {
     /// What happens with a `&mut?p` pattern matching on `&mut?&mut?T` where the outer reference is
     /// inherited.
     pub inherited_ref_on_ref: InheritedRefOnRefBehavior,
-    /// In the `EatBoth` and `EatInner` cases, if matching against the underlying place fails this
-    /// determines whether we try again in `EatOuter` mode.
-    pub fallback_to_outer: bool,
+    /// In `InheritedRefOnRefBehavior::EatBoth` or `EatInner` modes, if a reference pattern fails
+    /// to match against an underlying place of reference type, and there is an inherited
+    /// reference, this determines if we try matching against it.
+    pub fallback_to_outer: FallbackToOuterBehavior,
     /// Whether a `&p` pattern is allowed on `&mut T`. This is RFC3627 rule 5.
     pub allow_ref_pat_on_ref_mut: bool,
     /// Whether to simplify some expressions, which removes some borrow errors involving mixes of
@@ -249,14 +264,20 @@ pub const TY_BASED_OPTIONS_DOC: &[OptionsDoc] = &[
                 case has a mutability mismatch",
         values: &[
             OptionValue {
-                name: "false",
+                name: "No",
                 doc: "Don't try matching on the outer reference if \
                         matching on the inner reference caused a mutability mismatch",
             },
             OptionValue {
-                name: "true",
+                name: "EatOuter",
                 doc: "Try matching on the outer reference if \
                         matching on the inner reference caused a mutability mismatch",
+            },
+            OptionValue {
+                name: "EatBoth",
+                doc: "Try matching on the outer reference if \
+                        matching on the inner reference caused a mutability mismatch. \
+                        If this succeeds, consume both references.",
             },
         ],
     },
@@ -370,7 +391,7 @@ impl RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
-        fallback_to_outer: false,
+        fallback_to_outer: FallbackToOuterBehavior::No,
         allow_ref_pat_on_ref_mut: false,
         simplify_deref_mut: true,
         eat_inherited_ref_alone: false,
@@ -384,7 +405,7 @@ impl RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
-        fallback_to_outer: true,
+        fallback_to_outer: FallbackToOuterBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: true,
         simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
@@ -399,7 +420,7 @@ impl RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::AllocTemporary,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Keep,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatOuter,
-        fallback_to_outer: false,
+        fallback_to_outer: FallbackToOuterBehavior::No,
         allow_ref_pat_on_ref_mut: true,
         simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
@@ -434,14 +455,14 @@ impl RuleOptions {
     pub const RFC3627_2021: Self = RuleOptions {
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::ResetBindingMode,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatBoth,
-        fallback_to_outer: true,
+        fallback_to_outer: FallbackToOuterBehavior::EatOuter,
         ..RuleOptions::ERGO2024
     };
 
     pub const ERGO2024_BREAKING_ONLY: Self = RuleOptions {
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
-        fallback_to_outer: false,
+        fallback_to_outer: FallbackToOuterBehavior::No,
         ..RuleOptions::STABLE_RUST
     };
 

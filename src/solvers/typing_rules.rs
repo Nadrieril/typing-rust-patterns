@@ -30,7 +30,7 @@ pub enum DowngradeMutToRef {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct FallbackToOuter(pub bool);
+pub struct FallbackToOuter(pub FallbackToOuterBehavior);
 
 #[derive(Debug, Clone, Copy)]
 pub enum TypeError {
@@ -134,7 +134,7 @@ impl<'a> TypingPredicate<'a> {
             // Dereference rules
             (P::Ref(p_mtbl, p_inner), T::Ref(mut t_mtbl, _)) => {
                 let mut rule_variant = InheritedRefOnRefBehavior::EatOuter;
-                let mut fallback_to_outer = FallbackToOuter(false);
+                let mut fallback_to_outer = FallbackToOuter(FallbackToOuterBehavior::No);
                 let mut reborrow_after = None;
 
                 // We only inspect the binding mode if there are options that need it.
@@ -167,11 +167,22 @@ impl<'a> TypingPredicate<'a> {
                                         reborrow_after = Some(t_mtbl);
                                         t_mtbl = *inner_mtbl;
                                         underlying_place.deref(a)
-                                    } else if o.fallback_to_outer {
-                                        fallback_to_outer = FallbackToOuter(true);
-                                        self.expr.deref(a)
                                     } else {
-                                        return Err(TypeError::MutabilityMismatch);
+                                        match o.fallback_to_outer {
+                                            FallbackToOuterBehavior::No => {
+                                                return Err(TypeError::MutabilityMismatch)
+                                            }
+                                            FallbackToOuterBehavior::EatOuter => {
+                                                fallback_to_outer =
+                                                    FallbackToOuter(o.fallback_to_outer);
+                                                self.expr.deref(a)
+                                            }
+                                            FallbackToOuterBehavior::EatBoth => {
+                                                fallback_to_outer =
+                                                    FallbackToOuter(o.fallback_to_outer);
+                                                self.expr.deref(a).deref(a)
+                                            }
+                                        }
                                     }
                                 }
                                 InheritedRefOnRefBehavior::EatBoth => {
@@ -186,11 +197,22 @@ impl<'a> TypingPredicate<'a> {
                                     if can_eat_inner {
                                         t_mtbl = *inner_mtbl;
                                         underlying_place.deref(a)
-                                    } else if o.fallback_to_outer {
-                                        fallback_to_outer = FallbackToOuter(true);
-                                        self.expr.deref(a)
                                     } else {
-                                        return Err(TypeError::MutabilityMismatch);
+                                        match o.fallback_to_outer {
+                                            FallbackToOuterBehavior::No => {
+                                                return Err(TypeError::MutabilityMismatch)
+                                            }
+                                            FallbackToOuterBehavior::EatOuter => {
+                                                fallback_to_outer =
+                                                    FallbackToOuter(o.fallback_to_outer);
+                                                self.expr.deref(a)
+                                            }
+                                            FallbackToOuterBehavior::EatBoth => {
+                                                fallback_to_outer =
+                                                    FallbackToOuter(o.fallback_to_outer);
+                                                self.expr.deref(a).deref(a)
+                                            }
+                                        }
                                     }
                                 }
                                 InheritedRefOnRefBehavior::Error => {

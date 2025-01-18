@@ -70,7 +70,7 @@ allow_ref_pat_on_ref_mut: true
 downgrade_mut_inside_shared: false -> true
 eat_inherited_ref_alone: true
 eat_mut_inside_shared: true
-fallback_to_outer: false -> true
+fallback_to_outer: "No" -> "EatOuter"
 inherited_ref_on_ref: "EatOuter" -> "EatInner"
 match_constructor_through_ref: true
 mut_binding_on_inherited: "Keep" -> "Error"
@@ -81,7 +81,7 @@ allow_ref_pat_on_ref_mut: true
 downgrade_mut_inside_shared: true
 eat_inherited_ref_alone: true
 eat_mut_inside_shared: true
-fallback_to_outer: true
+fallback_to_outer: "EatOuter"
 inherited_ref_on_ref: "EatInner"
 match_constructor_through_ref: true
 mut_binding_on_inherited: "Error"

@@ -14,7 +14,7 @@ allow_ref_pat_on_ref_mut: true -> false
 downgrade_mut_inside_shared: false
 eat_inherited_ref_alone: true
 eat_mut_inside_shared: true
-fallback_to_outer: false
+fallback_to_outer: "No"
 inherited_ref_on_ref: "EatOuter"
 match_constructor_through_ref: true
 mut_binding_on_inherited: "Keep"

@@ -1,0 +1,57 @@
+---
+source: tests/trace_cli.rs
+info: save;set fallback_to_outer EatOuter;set inherited_ref_on_ref EatInner
+---
+Current ruleset was saved
+The two rulesets are described by the following sets of rules, with differences highlighted.
+The old ruleset is on the left, and the new one on the right.
+
+
+allow_ref_pat_on_ref_mut: true
+downgrade_mut_inside_shared: false
+eat_inherited_ref_alone: true
+eat_mut_inside_shared: true
+fallback_to_outer: "No" -> "EatOuter"
+inherited_ref_on_ref: "EatOuter"
+match_constructor_through_ref: true
+mut_binding_on_inherited: "Keep"
+ref_binding_on_inherited: "Error"
+simplify_deref_mut: true
+The two rulesets are described by the following sets of rules, with differences highlighted.
+The old ruleset is on the left, and the new one on the right.
+
+ real, ro ⊢ p: &T                                                                 | inh, ro ⊢ p: &T
+ ---------------- "Deref"                                                         | ---------------- "Deref(EatInner)"
+ inh, m ⊢ &p: &&T                                                                 | inh, m ⊢ &p: &&T
+
+ real, ro ⊢ p: &mut T                                                             | inh, ro ⊢ p: &T
+ -------------------- "Deref"                                                     | -------------------- "DerefMutWithShared(EatInner)"
+ inh, m ⊢ &p: &&mut T                                                             | inh, m ⊢ &p: &&mut T
+
+ real, m ⊢ p: &mut T                                                              | inh, m ⊢ p: &mut T
+ ---------------------------- "Deref"                                             | ---------------------------- "Deref(EatInner)"
+ inh, m ⊢ &mut p: &mut &mut T                                                     | inh, m ⊢ &mut p: &mut &mut T
+
+                                                                                  | inh, m ⊢ p: &T
+                                                                                  | ------------------------ "Deref(EatInner)"
+                                                                                  | inh, m ⊢ &mut p: &&mut T
+
+ real, ro ⊢ p: &T                                                                 | inh, ro ⊢ p: &mut T
+ -------------------- "DerefMutWithShared"                                        | -------------------- "Deref(EatInner)"
+ inh, m ⊢ &p: &mut &T                                                             | inh, m ⊢ &p: &mut &T
+
+ real, ro ⊢ p: &mut T                                                             | inh, ro ⊢ p: &mut T
+ ------------------------ "DerefMutWithShared"                                    | ------------------------ "DerefMutWithShared(EatInner)"
+ inh, m ⊢ &p: &mut &mut T                                                         | inh, m ⊢ &p: &mut &mut T
+
+
+allow_ref_pat_on_ref_mut: true
+downgrade_mut_inside_shared: false
+eat_inherited_ref_alone: true
+eat_mut_inside_shared: true
+fallback_to_outer: "EatOuter"
+inherited_ref_on_ref: "EatOuter" -> "EatInner"
+match_constructor_through_ref: true
+mut_binding_on_inherited: "Keep"
+ref_binding_on_inherited: "Error"
+simplify_deref_mut: true

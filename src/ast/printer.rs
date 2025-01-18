@@ -346,10 +346,9 @@ impl Rule {
             extras.push(format!("{x:?}"))
         }
         if let Deref(_, _, x) = *self
-            && options.fallback_to_outer
-            && x == FallbackToOuter(true)
+            && x != FallbackToOuter(FallbackToOuterBehavior::No)
         {
-            extras.push(format!("FallbackToOuter"))
+            extras.push(format!("FallbackToOuter({:?})", x.0))
         }
 
         let mut out = variant_name.to_string();

@@ -6,7 +6,7 @@ info:
     match_constructor_through_ref: true
     eat_inherited_ref_alone: true
     inherited_ref_on_ref: EatInner
-    fallback_to_outer: true
+    fallback_to_outer: EatOuter
     allow_ref_pat_on_ref_mut: true
     simplify_deref_mut: true
     downgrade_mut_inside_shared: true
@@ -111,7 +111,7 @@ ref mut, rw ⊢ p: T
 ref mut, rw ⊢ &mut p: &mut T
 
 move, m ⊢ p: &T
------------------------ "Deref(EatInner, FallbackToOuter)"
+----------------------- "Deref(EatInner, FallbackToOuter(EatOuter))"
 ref mut, m ⊢ &mut p: &T
 
 ref, ro ⊢ p: T
