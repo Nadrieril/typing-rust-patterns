@@ -10,3 +10,7 @@ wasm:
 .PHONY: web-dev
 web-dev: wasm
 	cd web && pnpm dev
+
+.PHONY: web-lint
+web-lint:
+	cd web && pnpm check

@@ -4,7 +4,6 @@ import init, {
     PredicateStyleJs,
     diff_trace_solver_js,
     display_joint_rules_js,
-    compare_rulesets_js,
 } from "../../typing_rust_patterns/typing_rust_patterns.js";
 import SolverOptions from './SolverOptions.jsx';
 
@@ -12,9 +11,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
-import Dropdown from 'react-bootstrap/Dropdown';
 import FloatingLabel from 'react-bootstrap/FloatingLabel';
 import Form from 'react-bootstrap/Form';
 import InputGroup from 'react-bootstrap/InputGroup';
@@ -54,10 +51,6 @@ function useStateInParams({searchParams, setSearchParams}, key, def, read = (x) 
         setSearchParam(key, write(v));
     }
     return [val, setValAndParams]
-}
-
-function InhRef() {
-    return <span className="inherited-ref" title="inherited reference">&</span>
 }
 
 export function Help({show, setShow, style}) {

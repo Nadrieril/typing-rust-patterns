@@ -1,23 +1,13 @@
-import init, { RuleSetJs } from "../../typing_rust_patterns/typing_rust_patterns.js";
-
 import { useRef, useState, useEffect } from 'react';
 import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
-import Dropdown from 'react-bootstrap/Dropdown';
 import Form from 'react-bootstrap/Form';
-import InputGroup from 'react-bootstrap/InputGroup';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
-import Row from 'react-bootstrap/Row';
 import Stack from 'react-bootstrap/Stack';
-import Table from 'react-bootstrap/Table';
 import Tooltip from 'react-bootstrap/Tooltip';
-
-await init({});
 
 function InhRef() {
     return <span className="inherited-ref" title="inherited reference">&</span>
@@ -161,7 +151,7 @@ export function OptionElem({ option, options, setOptions, fullWidth }) {
             variant={variant}
             className={"text-nowrap " + (fullWidth ? "w-100" : "")}
             disabled={disabled}
-            onClick={(e) => { setKey(option.name, next_value.name); return false; }}
+            onClick={(_e) => { setKey(option.name, next_value.name); return false; }}
         >
             {hiddenOptionsForWidth}
             <span style={style}>
