@@ -98,7 +98,7 @@ export function Help({show, setShow, style}) {
     </>
 }
 
-const availableStyles = ['UserVisible', 'InMemory'];
+const availableStyles = ['UserVisible', 'InMemory', 'Expression'];
 
 export function MainNavBar({compare, setCompare, style, setStyleName, styleMap}) {
     const navigate = useNavigate()
@@ -408,7 +408,7 @@ export default function Solver() {
     const [optionsRight, setOptionsRight] = useStateInParams(sp, 'opts2', RuleSetJs.from_bundle_name('rfc3627', 'rfc3627'), RuleSetJs.decode, (o) => o.encode());
     const [inputQuery, setInputQuery] = useStateInParams(sp, 'q', "[&x]: &mut [&T]");
     const [mode, setMode] = useStateInParams(sp, 'mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));
-    const [styleName, setStyleName] = useStateInParams(sp, 'style', 'UserVisible',  validateIn(['UserVisible', 'InMemory', 'Sequent', 'SequentBindingMode']));
+    const [styleName, setStyleName] = useStateInParams(sp, 'style', 'UserVisible',  validateIn(['UserVisible', 'InMemory', 'Expression', 'Sequent', 'SequentBindingMode']));
 
     // Map from style name to predicate style. Takes into account the selected
     // options to hide parts of the predicate we don't care about.

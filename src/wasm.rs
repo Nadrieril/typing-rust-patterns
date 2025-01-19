@@ -193,10 +193,14 @@ impl PredicateStyleJs {
         left: &RuleSetJs,
         right: &RuleSetJs,
     ) -> Option<PredicateStyleJs> {
-        let ty = TypeOfInterest::from_str(name).ok()?;
-        let left = left.as_ruleset();
-        let right = right.as_ruleset();
-        let style = PredicateStyle::sequent_with_minimal_state(ty, left, right);
+        let style = if name == "Expression" {
+            PredicateStyle::Expression
+        } else {
+            let ty = TypeOfInterest::from_str(name).ok()?;
+            let left = left.as_ruleset();
+            let right = right.as_ruleset();
+            PredicateStyle::sequent_with_minimal_state(ty, left, right)
+        };
         Some(PredicateStyleJs(style))
     }
 
@@ -208,7 +212,10 @@ impl PredicateStyleJs {
         let mut out = String::new();
         match self.0 {
             PredicateStyle::Expression => {
-                todo!("explain expression style")
+                let _ = write!(
+                    &mut out,
+                    "Track the user-observable type along with the expression being matched on"
+                );
             }
             PredicateStyle::Sequent {
                 ty: type_of_interest,
