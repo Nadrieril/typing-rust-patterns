@@ -141,18 +141,40 @@ impl<'d> ToDisplayTree<'d> for Pattern<'_> {
 
 impl<'d> ToDisplayTree<'d> for Type<'_> {
     fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
-        match self {
-            Self::Tuple(tys) => DisplayTree::sep_by(a, ", ", tys.iter())
-                .surrounded(a, "[", "]")
-                .tag("ty_list"),
-            Self::Ref(mutable, ty) => format!("&{mutable}")
-                .to_display_tree(a)
-                .then(a, ty)
-                .tag("ty_ref"),
-            Self::OtherNonRef(name) | Self::AbstractNonRef(name) | Self::Abstract(name) => {
-                name.to_display_tree(a)
+        /// Remove the refs in front of this type.
+        fn strip_refs<'a>(ty: &'a Type<'a>, mutabilities: &mut Vec<Mutability>) -> &'a Type<'a> {
+            match ty {
+                Type::Ref(mtbl, ty) => {
+                    mutabilities.push(*mtbl);
+                    strip_refs(ty, mutabilities)
+                }
+                _ => &ty,
             }
         }
+        let mut mutabilities = Vec::new();
+        let ty = strip_refs(self, &mut mutabilities);
+        let leaf = match ty {
+            Type::Tuple(tys) => DisplayTree::sep_by(a, ", ", tys.iter())
+                .surrounded(a, "[", "]")
+                .tag("ty_list"),
+            Type::OtherNonRef(name) | Type::AbstractNonRef(name) | Type::Abstract(name) => {
+                name.to_display_tree(a)
+            }
+            Type::Ref(..) => unreachable!(),
+        };
+        // Types tend be the same on the inside; so we want to show that the innermost types are
+        // the same and the surrounding refs differ. To do this, we extract the list of refs and
+        // add them to the same list, with `Suffix` compare mode.
+        DisplayTree::sep_by_compare_mode(
+            a,
+            "",
+            mutabilities
+                .iter()
+                .map(|mutable| format!("&{mutable}").to_display_tree(a))
+                .chain([leaf]),
+            CompareMode::Suffix,
+        )
+        .tag("ty_refs")
     }
 }
 
