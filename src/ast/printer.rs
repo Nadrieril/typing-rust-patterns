@@ -215,15 +215,6 @@ impl TypingResult<'_> {
 }
 
 impl<'a> TypingPredicate<'a> {
-    /// Display as `let ...`.
-    pub fn display_as_let<'d>(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
-        self.pat
-            .to_display_tree(a)
-            .sep_then(a, ": ", self.expr.ty)
-            .sep_then(a, " = ", self.expr.to_string())
-            .preceded(a, "let ")
-    }
-
     pub fn display(&self, style: PredicateStyle) -> String {
         let a = &Arenas::default();
         self.display_to_tree(a, style).to_string()
@@ -232,11 +223,12 @@ impl<'a> TypingPredicate<'a> {
     /// Display according to the given predicate style.
     pub fn display_to_tree<'d>(&self, a: &'d Arenas<'d>, style: PredicateStyle) -> DisplayTree<'d> {
         match style {
-            PredicateStyle::Expression => self
+            PredicateStyle::Let => self
                 .pat
                 .to_display_tree(a)
-                .sep_then(a, " @ ", self.expr.to_string())
-                .sep_then(a, ": ", self.expr.ty),
+                .sep_then(a, ": ", self.expr.ty)
+                .sep_then(a, " = ", self.expr.to_string())
+                .preceded(a, "let "),
             PredicateStyle::Sequent {
                 ty: toi,
                 show_reference_state,
@@ -424,7 +416,7 @@ impl Display for TypingRequest<'_> {
 
 impl Display for TypingPredicate<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.display(PredicateStyle::Expression))
+        write!(f, "{}", self.display(PredicateStyle::Let))
     }
 }
 

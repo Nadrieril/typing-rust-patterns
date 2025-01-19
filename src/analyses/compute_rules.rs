@@ -46,7 +46,7 @@ pub fn compute_rules<'a>(ctx: TypingCtx<'a>) -> Vec<TypingRule<'a>> {
         match pred.typing_rule(ctx) {
             Ok(rule) => {
                 if TRACE {
-                    let rule_str = rule.display(PredicateStyle::Expression).unwrap();
+                    let rule_str = rule.display(PredicateStyle::Let).unwrap();
                     let rule_str = rule_str.replace("\n", "\n    ");
                     println!("  Pushing rule:\n    {rule_str}");
                 }
@@ -185,8 +185,8 @@ impl TypeOfInterest {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Encode, Decode)]
 pub enum PredicateStyle {
-    /// `pattern @ expression : ty`
-    Expression,
+    /// `let pattern : ty = expression`
+    Let,
     /// `state ⊢ pattern : ty`
     Sequent {
         /// Which type is shown in the sequent.
@@ -207,7 +207,7 @@ pub struct PredicateExplanation {
 
 impl PredicateStyle {
     pub(crate) const KNOWN_PREDICATE_STYLES: &[(&str, PredicateStyle)] = &[
-        ("Expression", PredicateStyle::Expression),
+        ("Let", PredicateStyle::Let),
         (
             "SequentUserVisible",
             PredicateStyle::Sequent {
@@ -228,7 +228,7 @@ impl PredicateStyle {
 
     pub fn to_name(&self) -> &str {
         match self {
-            PredicateStyle::Expression => "Expression",
+            PredicateStyle::Let => "Let",
             PredicateStyle::Sequent {
                 ty: TypeOfInterest::UserVisible,
                 ..
@@ -252,7 +252,7 @@ impl PredicateStyle {
 
     pub fn type_of_interest(self) -> TypeOfInterest {
         match self {
-            PredicateStyle::Expression => TypeOfInterest::UserVisible,
+            PredicateStyle::Let => TypeOfInterest::UserVisible,
             PredicateStyle::Sequent { ty, .. } => ty,
         }
     }
@@ -271,7 +271,7 @@ impl PredicateStyle {
     /// Same as `self` but displays all the bits of state we know about.
     pub fn with_maximal_state(self) -> Self {
         match self {
-            PredicateStyle::Expression => PredicateStyle::Expression,
+            PredicateStyle::Let => PredicateStyle::Let,
             PredicateStyle::Sequent { ty, .. } => PredicateStyle::Sequent {
                 ty,
                 show_reference_state: true,
@@ -285,7 +285,7 @@ impl PredicateStyle {
 
         let mut components = vec![];
         match self {
-            PredicateStyle::Expression => {
+            PredicateStyle::Let => {
                 components.push(format!("{} is an expression", "e".code()));
             }
             PredicateStyle::Sequent {
@@ -401,7 +401,7 @@ impl<'a> TypingRule<'a> {
         // selected style.
         match style {
             // This style can display all expressions.
-            Expression => {}
+            Let => {}
             // In this style, only a few select expressions can be branched on (i.e. in the
             // postcondition). We error if the expression is not of an appropriate shape.
             Sequent {
@@ -445,7 +445,7 @@ impl<'a> TypingRule<'a> {
         let cstrs = self.collect_side_constraints();
         let mut postconditions = vec![RenderablePredicate::Pred(self.postcondition)];
         match style {
-            Expression => {
+            Let => {
                 if cstrs.abstract_expr_is_not_ref {
                     postconditions.push(RenderablePredicate::ExprNotRef(abstract_expr));
                 }
@@ -457,7 +457,7 @@ impl<'a> TypingRule<'a> {
         }
         if let Some(mtbl) = cstrs.scrutinee_mutability {
             match style {
-                Expression => {
+                Let => {
                     postconditions.push(RenderablePredicate::Mutability(abstract_expr, mtbl));
                 }
                 Sequent {
@@ -558,7 +558,7 @@ fn bundle_rules() -> anyhow::Result<()> {
 
     for ((name, options), toi) in bundles {
         let style = match toi {
-            None => PredicateStyle::Expression,
+            None => PredicateStyle::Let,
             Some(ty) => {
                 PredicateStyle::sequent_with_minimal_state(ty, options.into(), options.into())
             }
@@ -579,7 +579,7 @@ fn bundle_rules() -> anyhow::Result<()> {
                     let _ = writeln!(&mut rules_str, "{rule}\n");
                 }
                 Err(err) => {
-                    let rule = rule.display(PredicateStyle::Expression).unwrap();
+                    let rule = rule.display(PredicateStyle::Let).unwrap();
                     let _ = writeln!(
                         &mut rules_str,
                         "ERROR can't display the following rule with the requested style ({err:?})"

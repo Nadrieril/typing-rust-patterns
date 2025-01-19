@@ -15,11 +15,11 @@ info:
   bundle_name: stateless
   request: "&ref mut x: &mut T"
 ---
-&ref mut x @ s: &mut T
+let &ref mut x: &mut T = s
 // Applying rule `DerefMutWithShared`
-ref mut x @ *&*s: T
+let ref mut x: T = *&*s
 // Applying rule `BindingBorrow`
-x @ &mut *&*s: &mut T
+let x: &mut T = &mut *&*s
 // Applying rule `Binding`
 let x: &mut T = &mut *&*s
 

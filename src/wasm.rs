@@ -193,8 +193,8 @@ impl PredicateStyleJs {
         left: &RuleSetJs,
         right: &RuleSetJs,
     ) -> Option<PredicateStyleJs> {
-        let style = if name == "Expression" {
-            PredicateStyle::Expression
+        let style = if name == "Let" {
+            PredicateStyle::Let
         } else {
             let ty = TypeOfInterest::from_str(name).ok()?;
             let left = left.as_ruleset();
@@ -205,13 +205,16 @@ impl PredicateStyleJs {
     }
 
     pub fn to_name(&self) -> String {
-        self.0.type_of_interest().to_str()
+        match self.0 {
+            PredicateStyle::Let => "Let".to_string(),
+            PredicateStyle::Sequent { ty, .. } => ty.to_str(),
+        }
     }
 
     pub fn doc(&self) -> String {
         let mut out = String::new();
         match self.0 {
-            PredicateStyle::Expression => {
+            PredicateStyle::Let => {
                 let _ = write!(
                     &mut out,
                     "Track the user-observable type along with the expression being matched on"

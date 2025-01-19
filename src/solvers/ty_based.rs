@@ -60,7 +60,7 @@ impl<'a> TypingSolver<'a> {
             "\n",
             self.done_predicates
                 .iter()
-                .map(|p| p.display_as_let(a))
+                .map(|p| p.display_to_tree(a, PredicateStyle::Let))
                 .chain(self.predicates.iter().map(|p| p.display_to_tree(a, style))),
         )
     }
@@ -82,7 +82,7 @@ impl<'a> TypingSolver<'a> {
                     .err()
                     .map(|err| format!(" // Borrow-check error: {err:?}"))
                     .unwrap_or_default();
-                let p = p.display_as_let(a);
+                let p = p.display_to_tree(a, PredicateStyle::Let);
                 p.sep_then(a, ";", bck)
             }),
         )

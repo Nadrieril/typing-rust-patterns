@@ -15,13 +15,13 @@ info:
   bundle_name: stateless
   request: "[x, y]: &[T, U]"
 ---
-[x, y] @ s: &[T, U]
+let [x, y]: &[T, U] = s
 // Applying rule `ConstructorRef`
-x @ &(*s).0: &T
-y @ &(*s).1: &U
+let x: &T = &(*s).0
+let y: &U = &(*s).1
 // Applying rule `Binding`
 let x: &T = &(*s).0
-y @ &(*s).1: &U
+let y: &U = &(*s).1
 // Applying rule `Binding`
 let x: &T = &(*s).0
 let y: &U = &(*s).1

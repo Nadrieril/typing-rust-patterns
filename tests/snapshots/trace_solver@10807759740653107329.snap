@@ -15,7 +15,7 @@ info:
   bundle_name: stateless
   request: "x: &T"
 ---
-x @ s: &T
+let x: &T = s
 // Applying rule `Binding`
 let x: &T = s
 

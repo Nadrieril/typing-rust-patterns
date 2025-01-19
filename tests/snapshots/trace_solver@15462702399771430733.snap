@@ -15,9 +15,9 @@ info:
   bundle_name: stateless
   request: "ref x: T"
 ---
-ref x @ s: T
+let ref x: T = s
 // Applying rule `BindingBorrow`
-x @ &s: &T
+let x: &T = &s
 // Applying rule `Binding`
 let x: &T = &s
 

@@ -33,7 +33,7 @@ fn trace_solver(test_case: TestCase<'_>) -> anyhow::Result<()> {
     let a = &Arenas::default();
     let req = TypingRequest::parse(a, &test_case.request).unwrap();
     let (trace, _) =
-        typing_rust_patterns::trace_solver(a, req, test_case.options, PredicateStyle::Expression);
+        typing_rust_patterns::trace_solver(a, req, test_case.options, PredicateStyle::Let);
     insta::with_settings!({
         prepend_module_to_snapshot => false,
         omit_expression => true,

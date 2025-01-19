@@ -15,13 +15,13 @@ info:
   bundle_name: stable_rust
   request: "&[&x]: &&[&&T]"
 ---
-&[&x] @ s: &&[&&T]
+let &[&x]: &&[&&T] = s
 // Applying rule `Deref(EatOuter)`
-[&x] @ *s: &[&&T]
+let [&x]: &[&&T] = *s
 // Applying rule `ConstructorRef`
-&x @ &(**s).0: &&&T
+let &x: &&&T = &(**s).0
 // Applying rule `Deref(EatBoth)`
-x @ *(**s).0: &T
+let x: &T = *(**s).0
 // Applying rule `Binding`
 let x: &T = *(**s).0
 

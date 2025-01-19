@@ -15,7 +15,7 @@ info:
   bundle_name: stable_rust
   request: "[&x]: &[T]"
 ---
-[&x] @ s: &[T]
+let [&x]: &[T] = s
 // Applying rule `ConstructorRef`
-&x @ &(*s).0: &T
-// Type error for `&x @ &(*s).0: &T`: InheritedRefIsAlone
+let &x: &T = &(*s).0
+// Type error for `let &x: &T = &(*s).0`: InheritedRefIsAlone

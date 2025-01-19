@@ -15,11 +15,11 @@ info:
   bundle_name: rfc3627
   request: "[&mut x]: &mut [&T]"
 ---
-[&mut x] @ s: &mut [&T]
+let [&mut x]: &mut [&T] = s
 // Applying rule `ConstructorRef`
-&mut x @ &mut (*s).0: &mut &T
+let &mut x: &mut &T = &mut (*s).0
 // Applying rule `Deref(EatInner, FallbackToOuter(EatOuter))`
-x @ *&mut (*s).0: &T
+let x: &T = *&mut (*s).0
 // Applying rule `Binding`
 let x: &T = *&mut (*s).0
 

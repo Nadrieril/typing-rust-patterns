@@ -15,11 +15,11 @@ info:
   bundle_name: stateless
   request: "[x]: &mut &[T]"
 ---
-[x] @ s: &mut &[T]
+let [x]: &mut &[T] = s
 // Applying rule `ConstructorMultiRef`
-[x] @ &**s: &[T]
+let [x]: &[T] = &**s
 // Applying rule `ConstructorRef`
-x @ &(*&**s).0: &T
+let x: &T = &(*&**s).0
 // Applying rule `Binding`
 let x: &T = &(*&**s).0
 

@@ -1,0 +1,43 @@
+---
+source: src/analyses/compute_rules.rs
+info:
+  bundle_name: structural
+  options:
+    match_constructor_through_ref: false
+    eat_inherited_ref_alone: false
+    inherited_ref_on_ref: Error
+    fallback_to_outer: "No"
+    allow_ref_pat_on_ref_mut: false
+    simplify_deref_mut: true
+    downgrade_mut_inside_shared: false
+    eat_mut_inside_shared: false
+    ref_binding_on_inherited: AllocTemporary
+    mut_binding_on_inherited: Keep
+---
+let p0: T0 = e.0,  let p1: T1 = e.1
+----------------------------------- "Constructor"
+let [p0, p1]: [T0, T1] = e
+
+let p: T = *e
+-------------- "Deref"
+let &p: &T = e
+
+let p: T = *e
+---------------------- "Deref"
+let &mut p: &mut T = e
+
+let x: &T = &e
+---------------- "BindingBorrow"
+let ref x: T = e
+
+let x: &mut T = &mut e
+---------------------- "BindingBorrow"
+let ref mut x: T = e
+
+
+------------ "Binding"
+let x: T = e
+
+
+---------------- "Binding"
+let mut x: T = e

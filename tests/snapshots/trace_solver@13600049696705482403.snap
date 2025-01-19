@@ -15,13 +15,13 @@ info:
   bundle_name: ~
   request: "[ref mut x]: &mut [T]"
 ---
-[ref mut x] @ s: &mut [T]
+let [ref mut x]: &mut [T] = s
 // Applying rule `ConstructorRef`
-ref mut x @ &mut (*s).0: &mut T
+let ref mut x: &mut T = &mut (*s).0
 // Applying rule `RefBindingResetBindingMode`
-ref mut x @ (*s).0: T
+let ref mut x: T = (*s).0
 // Applying rule `BindingBorrow`
-x @ &mut (*s).0: &mut T
+let x: &mut T = &mut (*s).0
 // Applying rule `Binding`
 let x: &mut T = &mut (*s).0
 

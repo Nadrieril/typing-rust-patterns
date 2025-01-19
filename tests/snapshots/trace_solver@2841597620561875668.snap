@@ -15,7 +15,7 @@ info:
   bundle_name: ~
   request: "mut x: &T"
 ---
-mut x @ s: &T
+let mut x: &T = s
 // Applying rule `Binding`
 let mut x: &T = s
 

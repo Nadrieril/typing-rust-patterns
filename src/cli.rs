@@ -41,7 +41,7 @@ impl CliState {
         name: "predicate_style",
         values: &[
             OptionValue {
-                name: "Expression",
+                name: "Let",
                 doc: "TODO",
             },
             OptionValue {
@@ -54,7 +54,7 @@ impl CliState {
             },
         ],
         doc: "the style of the typing predicate; not all rulesets can be expressed in all styles, \
-        only `Expression` is compatible with all rulesets",
+                only `Let` is compatible with all rulesets",
     }];
 
     pub fn new() -> Self {

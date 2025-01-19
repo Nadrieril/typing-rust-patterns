@@ -15,7 +15,7 @@ info:
   bundle_name: stateless
   request: "x: &mut T"
 ---
-x @ s: &mut T
+let x: &mut T = s
 // Applying rule `Binding`
 let x: &mut T = s
 

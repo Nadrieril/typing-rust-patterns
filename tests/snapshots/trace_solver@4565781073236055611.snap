@@ -15,7 +15,7 @@ info:
   bundle_name: rfc3627
   request: "[mut x]: &[T]"
 ---
-[mut x] @ s: &[T]
+let [mut x]: &[T] = s
 // Applying rule `ConstructorRef`
-mut x @ &(*s).0: &T
-// Type error for `mut x @ &(*s).0: &T`: MutBindingOnInhRef
+let mut x: &T = &(*s).0
+// Type error for `let mut x: &T = &(*s).0`: MutBindingOnInhRef

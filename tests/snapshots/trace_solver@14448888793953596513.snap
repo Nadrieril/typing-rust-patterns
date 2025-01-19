@@ -15,11 +15,11 @@ info:
   bundle_name: ~
   request: "&[[&x]]: &[&mut [T]]"
 ---
-&[[&x]] @ s: &[&mut [T]]
+let &[[&x]]: &[&mut [T]] = s
 // Applying rule `Deref`
-[[&x]] @ *s: [&mut [T]]
+let [[&x]]: [&mut [T]] = *s
 // Applying rule `Constructor`
-[&x] @ (*s).0: &mut [T]
+let [&x]: &mut [T] = (*s).0
 // Applying rule `ConstructorRef`
-&x @ &mut (*(*s).0).0: &mut T
-// Type error for `&x @ &mut (*(*s).0).0: &mut T`: MutabilityMismatch
+let &x: &mut T = &mut (*(*s).0).0
+// Type error for `let &x: &mut T = &mut (*(*s).0).0`: MutabilityMismatch
