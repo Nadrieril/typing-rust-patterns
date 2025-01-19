@@ -5,6 +5,17 @@ use itertools::Itertools;
 use crate::*;
 use DisplayTreeKind::*;
 
+/// How to compare two separated lists of different lengths.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CompareMode {
+    /// We consider the whole subtree to differ.
+    None,
+    /// The first elements are diffed together until exhaustion.
+    Prefix,
+    /// The last elements are diffed together until exhaustion.
+    Suffix,
+}
+
 /// A structured representation of a string to be displayed. Used to compute structured diffs.
 #[derive(Clone, Copy)]
 enum DisplayTreeKind<'a> {
@@ -17,10 +28,8 @@ enum DisplayTreeKind<'a> {
         sep: &'a str,
         /// The children.
         children: &'a [DisplayTree<'a>],
-        /// If the lengths differ and this is `true`, the first elements are diffed together until
-        /// exhaustion. If the lengths differ and this is `false`, we consider the whole subtree to
-        /// differ.
-        compare_common_prefix: bool,
+        /// How to compare elements if the lengths differ.
+        compare_mode: CompareMode,
     },
 }
 
@@ -119,11 +128,11 @@ impl<'a> DisplayTree<'a> {
         Self::leaf_noalloc(a.alloc_str(s))
     }
 
-    fn mk_separated(
+    pub fn sep_by_compare_mode(
         a: &'a Arenas<'a>,
         sep: &str,
         children: impl IntoIterator<Item: ToDisplayTree<'a>>,
-        compare_common_prefix: bool,
+        compare_mode: CompareMode,
     ) -> Self {
         let children = children
             .into_iter()
@@ -132,7 +141,7 @@ impl<'a> DisplayTree<'a> {
         Self::new_from_kind(Separated {
             sep: a.alloc_str(sep),
             children: a.bump.alloc_slice_copy(&children),
-            compare_common_prefix,
+            compare_mode,
         })
     }
 
@@ -141,7 +150,7 @@ impl<'a> DisplayTree<'a> {
         sep: &str,
         children: impl IntoIterator<Item: ToDisplayTree<'a>>,
     ) -> Self {
-        Self::mk_separated(a, sep, children, false)
+        Self::sep_by_compare_mode(a, sep, children, CompareMode::None)
     }
 
     pub fn sep_by_compare_prefix(
@@ -149,7 +158,7 @@ impl<'a> DisplayTree<'a> {
         sep: &str,
         children: impl IntoIterator<Item: ToDisplayTree<'a>>,
     ) -> Self {
-        Self::mk_separated(a, sep, children, true)
+        Self::sep_by_compare_mode(a, sep, children, CompareMode::Prefix)
     }
 
     /// Concatenates `self` and `x`, separated by `sep`.
@@ -235,26 +244,44 @@ impl<'a> DisplayTree<'a> {
                 Separated {
                     sep,
                     children: c1,
-                    compare_common_prefix: ccp1,
+                    compare_mode: ccp1,
                 },
                 Separated {
                     sep: sep2,
                     children: c2,
-                    compare_common_prefix: ccp2,
+                    compare_mode: _, // we only look at one of tham
                 },
             ) if strip_markup(sep) == strip_markup(sep2)
-                && (c1.len() == c2.len() || ccp1 || ccp2) =>
+                && (c1.len() == c2.len() || ccp1 != CompareMode::None) =>
             {
+                use std::iter::repeat_n;
+                // Pad the two lists so they have the same length; pad at the start or end
+                // depending on how we want to match the lists up.
+                let len1 = c1.len();
+                let len2 = c2.len();
+                let len = std::cmp::max(len1, len2);
+                let (prefix1, prefix2, suffix1, suffix2) = match ccp1 {
+                    CompareMode::None => (0, 0, 0, 0),
+                    CompareMode::Prefix => (0, 0, len - len1, len - len2),
+                    CompareMode::Suffix => (len - len1, len - len2, 0, 0),
+                };
+                let c1 = repeat_n(None, prefix1)
+                    .chain(c1.iter().copied().map(Some))
+                    .chain(repeat_n(None, suffix1));
+                let c2 = repeat_n(None, prefix2)
+                    .chain(c2.iter().copied().map(Some))
+                    .chain(repeat_n(None, suffix2));
+
                 let mut is_first = true;
                 let mut any_diff = false;
-                for either_or_both in c1.iter().copied().zip_longest(c2.iter().copied()) {
-                    if !is_first && !either_or_both.is_right() {
+                for (l, r) in c1.zip(c2) {
+                    if !is_first && !l.is_none() {
                         write!(left, "{sep}")?;
                     }
-                    if !is_first && !either_or_both.is_left() {
+                    if !is_first && !r.is_none() {
                         write!(right, "{sep}")?;
                     }
-                    let (c1, c2) = either_or_both.or_default();
+                    let (c1, c2) = (l.unwrap_or_default(), r.unwrap_or_default());
                     any_diff |= c1.diff_display_inner(&c2, left, right)?;
                     is_first = false;
                 }

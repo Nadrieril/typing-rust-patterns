@@ -156,6 +156,73 @@ impl<'d> ToDisplayTree<'d> for Type<'_> {
     }
 }
 
+impl<'d> ToDisplayTree<'d> for ExprKind<'_> {
+    fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
+        enum Symbol {
+            Deref,
+            Ref(Mutability),
+        }
+        /// Remove the refs and derefs in front of this expression.
+        fn strip_symbols<'a>(e: &'a ExprKind<'a>, symbols: &mut Vec<Symbol>) -> &'a ExprKind<'a> {
+            match e {
+                ExprKind::Ref(mtbl, e) => {
+                    symbols.push(Symbol::Ref(*mtbl));
+                    strip_symbols(&e.kind, symbols)
+                }
+                ExprKind::Deref(e) => {
+                    symbols.push(Symbol::Deref);
+                    strip_symbols(&e.kind, symbols)
+                }
+                _ => &e,
+            }
+        }
+        let mut symbols = Vec::new();
+        let e = strip_symbols(self, &mut symbols);
+        let leaf = match e {
+            ExprKind::Scrutinee => "s".to_display_tree(a),
+            ExprKind::Abstract { .. } => "e".to_display_tree(a),
+            ExprKind::Field(e, n) => {
+                let needs_parens = matches!(e.kind, ExprKind::Deref(..));
+                let (before, after) = if needs_parens { ("(", ")") } else { ("", "") };
+                DisplayTree::sep_by(
+                    a,
+                    "",
+                    [
+                        before.to_display_tree(a),
+                        e.to_display_tree(a),
+                        after.to_display_tree(a),
+                        ".".to_display_tree(a),
+                        format!("{n}").to_display_tree(a),
+                    ],
+                )
+            }
+            ExprKind::Ref(..) | ExprKind::Deref(..) => unreachable!(),
+        };
+        // We cleverly diff expressions: expressions tend to start the same then diverge; so we
+        // want to show that the innermost expressions are the same and the surrounding `&`/`*`
+        // differ. To do this, we extract the list of `&`/`*` and add them to the same list, with
+        // `Suffix` compare mode.
+        DisplayTree::sep_by_compare_mode(
+            a,
+            "",
+            symbols
+                .iter()
+                .map(|s| match s {
+                    Symbol::Deref => "*".to_display_tree(a),
+                    Symbol::Ref(mutable) => format!("&{mutable}").to_display_tree(a),
+                })
+                .chain([leaf]),
+            CompareMode::Suffix,
+        )
+    }
+}
+
+impl<'d> ToDisplayTree<'d> for Expression<'_> {
+    fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
+        self.kind.to_display_tree(a)
+    }
+}
+
 impl<'d> ToDisplayTree<'d> for BindingAssignments<'_> {
     fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
         DisplayTree::sep_by(
@@ -227,7 +294,7 @@ impl<'a> TypingPredicate<'a> {
                 .pat
                 .to_display_tree(a)
                 .sep_then(a, ": ", self.expr.ty)
-                .sep_then(a, " = ", self.expr.to_string())
+                .sep_then(a, " = ", self.expr)
                 .preceded(a, "let "),
             PredicateStyle::Sequent {
                 ty: toi,
@@ -385,26 +452,15 @@ impl Display for Type<'_> {
 
 impl Display for Expression<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.kind)
+        let a = &Arenas::default();
+        write!(f, "{}", self.to_display_tree(a))
     }
 }
 
 impl Display for ExprKind<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ExprKind::Scrutinee => write!(f, "s"),
-            ExprKind::Abstract { .. } => write!(f, "e"),
-            ExprKind::Ref(mutable, e) => write!(f, "&{mutable}{e}"),
-            ExprKind::Deref(e) => write!(f, "*{e}"),
-            ExprKind::Field(e, n) => {
-                let needs_parens = matches!(e.kind, ExprKind::Deref(..));
-                if needs_parens {
-                    write!(f, "({e}).{n}")
-                } else {
-                    write!(f, "{e}.{n}")
-                }
-            }
-        }
+        let a = &Arenas::default();
+        write!(f, "{}", self.to_display_tree(a))
     }
 }
 
