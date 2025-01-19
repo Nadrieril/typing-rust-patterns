@@ -141,68 +141,35 @@ impl<'d> ToDisplayTree<'d> for Pattern<'_> {
 
 impl<'d> ToDisplayTree<'d> for Type<'_> {
     fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
-        /// Remove the refs in front of this type.
-        fn strip_refs<'a>(ty: &'a Type<'a>, mutabilities: &mut Vec<Mutability>) -> &'a Type<'a> {
-            match ty {
-                Type::Ref(mtbl, ty) => {
-                    mutabilities.push(*mtbl);
-                    strip_refs(ty, mutabilities)
-                }
-                _ => &ty,
-            }
-        }
-        let mut mutabilities = Vec::new();
-        let ty = strip_refs(self, &mut mutabilities);
-        let leaf = match ty {
-            Type::Tuple(tys) => DisplayTree::sep_by(a, ", ", tys.iter())
+        match self {
+            Self::Tuple(tys) => DisplayTree::sep_by(a, ", ", tys.iter())
                 .surrounded(a, "[", "]")
                 .tag("ty_list"),
-            Type::OtherNonRef(name) | Type::AbstractNonRef(name) | Type::Abstract(name) => {
+            Self::Ref(mutable, ty) => format!("&{mutable}")
+                .to_display_tree(a)
+                .prepend_to_tagged_list(a, "ty_refs", "", CompareMode::Suffix, ty),
+            Self::OtherNonRef(name) | Self::AbstractNonRef(name) | Self::Abstract(name) => {
                 name.to_display_tree(a)
             }
-            Type::Ref(..) => unreachable!(),
-        };
-        // Types tend be the same on the inside; so we want to show that the innermost types are
-        // the same and the surrounding refs differ. To do this, we extract the list of refs and
-        // add them to the same list, with `Suffix` compare mode.
-        DisplayTree::sep_by_compare_mode(
-            a,
-            "",
-            mutabilities
-                .iter()
-                .map(|mutable| format!("&{mutable}").to_display_tree(a))
-                .chain([leaf]),
-            CompareMode::Suffix,
-        )
-        .tag("ty_refs")
+        }
     }
 }
 
 impl<'d> ToDisplayTree<'d> for ExprKind<'_> {
     fn to_display_tree(&self, a: &'d Arenas<'d>) -> DisplayTree<'d> {
-        enum Symbol {
-            Deref,
-            Ref(Mutability),
-        }
-        /// Remove the refs and derefs in front of this expression.
-        fn strip_symbols<'a>(e: &'a ExprKind<'a>, symbols: &mut Vec<Symbol>) -> &'a ExprKind<'a> {
-            match e {
-                ExprKind::Ref(mtbl, e) => {
-                    symbols.push(Symbol::Ref(*mtbl));
-                    strip_symbols(&e.kind, symbols)
-                }
-                ExprKind::Deref(e) => {
-                    symbols.push(Symbol::Deref);
-                    strip_symbols(&e.kind, symbols)
-                }
-                _ => &e,
-            }
-        }
-        let mut symbols = Vec::new();
-        let e = strip_symbols(self, &mut symbols);
-        let leaf = match e {
+        match self {
             ExprKind::Scrutinee => "s".to_display_tree(a),
             ExprKind::Abstract { .. } => "e".to_display_tree(a),
+            ExprKind::Ref(mutable, e) => format!("&{mutable}")
+                .to_display_tree(a)
+                .prepend_to_tagged_list(a, "expr_symbols", "", CompareMode::Suffix, e),
+            ExprKind::Deref(e) => "*".to_display_tree(a).prepend_to_tagged_list(
+                a,
+                "expr_symbols",
+                "",
+                CompareMode::Suffix,
+                e,
+            ),
             ExprKind::Field(e, n) => {
                 let needs_parens = matches!(e.kind, ExprKind::Deref(..));
                 let (before, after) = if needs_parens { ("(", ")") } else { ("", "") };
@@ -218,24 +185,7 @@ impl<'d> ToDisplayTree<'d> for ExprKind<'_> {
                     ],
                 )
             }
-            ExprKind::Ref(..) | ExprKind::Deref(..) => unreachable!(),
-        };
-        // We cleverly diff expressions: expressions tend to start the same then diverge; so we
-        // want to show that the innermost expressions are the same and the surrounding `&`/`*`
-        // differ. To do this, we extract the list of `&`/`*` and add them to the same list, with
-        // `Suffix` compare mode.
-        DisplayTree::sep_by_compare_mode(
-            a,
-            "",
-            symbols
-                .iter()
-                .map(|s| match s {
-                    Symbol::Deref => "*".to_display_tree(a),
-                    Symbol::Ref(mutable) => format!("&{mutable}").to_display_tree(a),
-                })
-                .chain([leaf]),
-            CompareMode::Suffix,
-        )
+        }
     }
 }
 

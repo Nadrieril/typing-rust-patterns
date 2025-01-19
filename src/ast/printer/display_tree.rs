@@ -200,6 +200,35 @@ impl<'a> DisplayTree<'a> {
         self
     }
 
+    /// Incrementally build a list by prepending new elements to it. This will only prepend to a
+    /// subtree if the tags match.
+    pub fn prepend_to_tagged_list(
+        &self,
+        a: &'a Arenas<'a>,
+        tag: &'static str,
+        sep: &str,
+        compare_mode: CompareMode,
+        x: impl ToDisplayTree<'a>,
+    ) -> Self {
+        let this = self.to_display_tree(a);
+        let mut inner = x.to_display_tree(a);
+        match &mut inner.kind {
+            Separated { children, .. } if inner.tag == tag => {
+                let new_children = [this]
+                    .into_iter()
+                    .chain(children.iter().copied())
+                    .collect_vec();
+                *children = a.bump.alloc_slice_copy(&new_children);
+                inner
+            }
+            _ => {
+                // Base case: create a new list.
+                let children = [this, inner];
+                Self::sep_by_compare_mode(a, sep, children, compare_mode).tag(tag)
+            }
+        }
+    }
+
     /// Display `self` and `other`, highlighting differences.
     pub fn diff_display(&self, other: &Self) -> (String, String) {
         let (left, right, _) = self.diff_display_has_diff(other);
