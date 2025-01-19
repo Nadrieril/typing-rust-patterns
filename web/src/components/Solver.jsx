@@ -41,7 +41,7 @@ function useStateInParams({searchParams, setSearchParams}, key, def, read = (x) 
     const [val, setVal] = useState(() => {
         const valInUrl = searchParams.get(key);
         if(valInUrl) {
-            return read(valInUrl);
+            return read(valInUrl) || def;
         } else {
             return def;
         }
