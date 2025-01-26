@@ -79,20 +79,29 @@ export function CalculateWidth({ contents, setWidth }) {
 }
 
 export function Preset({ options, setOptions }) {
-    const bundlesDoc = options.bundles_doc();
+    const bundlesDoc = options.bundles_doc().map(bundle => {
+        bundle.doc = bundle.name + " : " + bundle.doc;
+        return bundle
+    });
     const active_bundle_name = options.get_bundle_name();
     const active_bundle = bundlesDoc.filter(bundle => bundle.name == active_bundle_name).pop();
+    function truncateText(text, length) {
+      return text.length <= length ? text : text.substr(0, length) + '\u2026'
+    }
     const bundles = bundlesDoc.map(bundle => {
         return <option
             key={bundle.name}
             value={bundle.name}
             title={bundle.doc}
         >
-            {bundle.name}
+            {truncateText(bundle.name, 16)}
         </option>
     });
 
-    return <OverlayTrigger placement="bottom" overlay={<Tooltip>{active_bundle ? active_bundle.doc : "This ruleset does not have a name"}</Tooltip>}>
+    return <OverlayTrigger
+        placement="bottom"
+        overlay={<Tooltip>{active_bundle ? active_bundle.doc : "This ruleset does not have a name"}</Tooltip>}
+    >
         <Form.Select
             className="w-auto me-auto"
             value={active_bundle_name || "custom"}
