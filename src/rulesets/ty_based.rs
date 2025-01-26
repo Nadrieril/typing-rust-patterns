@@ -439,13 +439,6 @@ impl RuleOptions {
         ..RuleOptions::STABLE_RUST
     };
 
-    /// A backwards-compatible proposal by @dianne that behaves close to the 2024 stateless
-    /// proposal.
-    pub const EAT_OUTER_2021: Self = RuleOptions {
-        fallback_to_outer: FallbackToOuterBehavior::EatBoth,
-        ..RuleOptions::STATELESS_2021
-    };
-
     /// Purely structural matching, with no match ergonomics.
     pub const STRUCTURAL: Self = RuleOptions {
         inherited_ref_on_ref: InheritedRefOnRefBehavior::Error,
@@ -454,14 +447,6 @@ impl RuleOptions {
         eat_inherited_ref_alone: false,
         eat_mut_inside_shared: false,
         ..Self::STATELESS
-    };
-
-    /// The minimal amout of match ergonomics that's forward-compatible with most proposals.
-    pub const MIN_ERGONOMICS: Self = RuleOptions {
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
-        mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
-        match_constructor_through_ref: true,
-        ..Self::STRUCTURAL
     };
 
     pub const RFC3627_2021: Self = RuleOptions {
@@ -523,12 +508,17 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
     BundleDoc {
         name: "stateless_2021",
         ruleset: RuleOptions::STATELESS_2021,
-        doc: "The currently-planned version of the `stateless` ruleset for edition 2021. Not actually stateless.",
+        doc: "The currently-planned version of the `stateless` ruleset for edition 2021. \
+            Not actually stateless.",
     },
     BundleDoc {
         name: "eat_outer_2021",
-        ruleset: RuleOptions::EAT_OUTER_2021,
-        doc: "A backwards-compatible proposal by @dianne that behaves close to the 2024 stateless proposal.",
+        ruleset: RuleOptions {
+            fallback_to_outer: FallbackToOuterBehavior::EatBoth,
+            ..RuleOptions::STATELESS_2021
+        },
+        doc: "A backwards-compatible proposal by @dianne that behaves close to the\
+            2024 stateless proposal.",
     },
     BundleDoc {
         name: "rfc3627",
@@ -552,7 +542,12 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
     },
     BundleDoc {
         name: "min_ergonomics",
-        ruleset: RuleOptions::MIN_ERGONOMICS,
+        ruleset: RuleOptions {
+            ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+            mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+            match_constructor_through_ref: true,
+            ..RuleOptions::STRUCTURAL
+        },
         doc: "The minimal amout of match ergonomics that's forward-compatible with most proposals",
     },
     BundleDoc {
