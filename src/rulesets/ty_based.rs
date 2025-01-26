@@ -503,7 +503,16 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
         name: "stateless_no_temporaries",
         ruleset: RuleOptions::STATELESS_NO_TEMPORARIES,
         doc: "A reasonable proposal; like `stateless` but \
-                forbids `ref` bindings that create temporaries",
+            forbids `ref` bindings that create temporaries",
+    },
+    BundleDoc {
+        name: "stateless_no_binding_modifiers",
+        ruleset: RuleOptions {
+            ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+            mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+            ..RuleOptions::STATELESS
+        },
+        doc: "Like `stateless` but forbids `ref` and `mut` bindings on inherited references.",
     },
     BundleDoc {
         name: "stateless_2021",
@@ -524,6 +533,15 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
         name: "rfc3627",
         ruleset: RuleOptions::ERGO2024,
         doc: "The accepted RFC3627 behavior",
+    },
+    BundleDoc {
+        name: "rfc3627_no_binding_modifiers",
+        ruleset: RuleOptions {
+            ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
+            mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
+            ..RuleOptions::ERGO2024
+        },
+        doc: "Like RFC3627 but forbids `ref` and `mut` bindings on inherited references.",
     },
     BundleDoc {
         name: "rfc3627_2021",
