@@ -100,7 +100,7 @@ export function Help({show, setShow, style}) {
 
 const availableStyles = ['UserVisible', 'InMemory', 'Let'];
 
-export function MainNavBar({compare, setCompare, style, setStyleName, styleMap}) {
+export function MainNavBar({compare, setCompare, style, setStyleName, styleMap, swapRulesets}) {
     const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams();
     function resetSearchParams() {
@@ -164,6 +164,12 @@ export function MainNavBar({compare, setCompare, style, setStyleName, styleMap})
                                     onClick={() => setCompare(!compare)}
                                 >Compare</Button>
                             </OverlayTrigger>
+                            { compare ?
+                                <OverlayTrigger placement="bottom" overlay={<Tooltip>Swap the two rulesets</Tooltip>}>
+                                    <Button onClick={() => swapRulesets()} >Swap</Button>
+                                </OverlayTrigger>
+                                : null
+                            }
                             <ButtonGroup vertical={mainNavShow}>{styles}</ButtonGroup>
                         </Stack>
                     </Nav>
@@ -428,10 +434,15 @@ export default function Solver() {
     }, [compare, optionsLeft, optionsRight]);
     const style = styleMap[styleName];
 
+    const swapRulesets = () => {
+        setOptionsLeft(optionsRight);
+        setOptionsRight(optionsLeft);
+    };
+
     return (
         <>
             <div className="sticky-top">
-                <MainNavBar {...{compare, setCompare, style, setStyleName, styleMap}}/>
+                <MainNavBar {...{compare, setCompare, style, setStyleName, styleMap, swapRulesets}}/>
                 <SolverOptions options={optionsLeft} setOptions={setOptionsLeft} title={compare ? <>Left&nbsp;&nbsp;&nbsp;</> : null}/>
                 {compare ? <SolverOptions options={optionsRight} setOptions={setOptionsRight} title="Right"/> : null}
             </div>
