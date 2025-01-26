@@ -517,7 +517,7 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
             fallback_to_outer: FallbackToOuterBehavior::EatBoth,
             ..RuleOptions::STATELESS_2021
         },
-        doc: "A backwards-compatible proposal by @dianne that behaves close to the\
+        doc: "A backwards-compatible proposal by @dianne that behaves close to the \
             2024 stateless proposal.",
     },
     BundleDoc {

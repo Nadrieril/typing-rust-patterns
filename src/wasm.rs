@@ -27,6 +27,30 @@ fn decode_base64<T: Decode>(x: JsValue) -> Option<T> {
     Some(bincode::decode_from_slice(&bits, config).ok()?.0)
 }
 
+#[test]
+/// Ensure we don't change the encoding of rulesets, as that would break saved links into the app.
+fn ruleset_encodings() -> anyhow::Result<()> {
+    use std::fmt::Write;
+    let mut out = String::new();
+    for b in KNOWN_TY_BASED_BUNDLES {
+        let ruleset = RuleSetJs {
+            this_solver: true,
+            ty_based: b.ruleset,
+            bm_based: Conf::rfc2005(),
+        };
+        let _ = writeln!(&mut out, "{}: {}", b.name, ruleset.encode());
+    }
+    insta::with_settings!({
+        snapshot_path => "../tests/snapshots",
+        snapshot_suffix => "ruleset-encodings",
+        prepend_module_to_snapshot => false,
+        omit_expression => true,
+    }, {
+        insta::assert_snapshot!(out);
+    });
+    Ok(())
+}
+
 /// Like `RuleSet` but remembers the ruleset of the other solver to avoid losing state in the
 /// frontend.
 #[wasm_bindgen]
