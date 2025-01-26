@@ -60,7 +60,7 @@ impl CliState {
     pub fn new() -> Self {
         Self {
             history: Vec::new(),
-            options: RuleOptions::NADRI,
+            options: RuleOptions::STATELESS_NO_TEMPORARIES,
             predicate_style: PredicateStyle::from_name("SequentUserVisible").unwrap(),
             saved: None,
         }

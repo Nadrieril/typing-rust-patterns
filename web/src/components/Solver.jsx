@@ -410,7 +410,7 @@ export default function Solver() {
     const [searchParams, setSearchParams] = useSearchParams();
     const sp = {searchParams, setSearchParams};
     const [compare, setCompare] = useStateInParams(sp, 'compare', false, (x) => x == 'true');
-    const [optionsLeft, setOptionsLeft] = useStateInParams(sp, 'opts1', RuleSetJs.from_bundle_name('nadri', 'stable'), RuleSetJs.decode, (o) => o.encode());
+    const [optionsLeft, setOptionsLeft] = useStateInParams(sp, 'opts1', RuleSetJs.from_bundle_name('stateless_no_temporaries', 'stable'), RuleSetJs.decode, (o) => o.encode());
     const [optionsRight, setOptionsRight] = useStateInParams(sp, 'opts2', RuleSetJs.from_bundle_name('rfc3627', 'rfc3627'), RuleSetJs.decode, (o) => o.encode());
     const [inputQuery, setInputQuery] = useStateInParams(sp, 'q', "[&x]: &mut [&T]");
     const [mode, setMode] = useStateInParams(sp, 'mode', 'typechecker', validateIn(['typechecker', 'rules', 'compare']));

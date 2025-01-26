@@ -273,13 +273,13 @@ fn compare() {
     let a = &Arenas::default();
     let compare: &[(&str, RuleSet, TestSettings, RuleSet)] = &[
         (
-            "nadri",
+            "stateless_no_temporaries",
             TypeBased(RuleOptions {
                 // `ergo-formality` doesn't support the `Keep` option.
                 mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
                 // `ergo-formality` doesn't support any option.
                 ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
-                ..RuleOptions::NADRI
+                ..RuleOptions::STATELESS_NO_TEMPORARIES
             }),
             Somewhat.expect(Equal).shallower(),
             BindingModeBased({

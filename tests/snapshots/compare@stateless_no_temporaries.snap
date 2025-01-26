@@ -1,6 +1,6 @@
 ---
 source: src/analyses/compare.rs
-info: nadri
+info: stateless_no_temporaries
 ---
 Difference on `[&x]: &mut [&CT]`:
    left returned: Success(x: &CT)

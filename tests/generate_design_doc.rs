@@ -5,7 +5,7 @@ use typing_rust_patterns::*;
 #[test]
 fn generate_design_doc() -> anyhow::Result<()> {
     colored::control::set_override(false);
-    let options = RuleOptions::NADRI;
+    let options = RuleOptions::STATELESS_NO_TEMPORARIES;
 
     let examples = [
         ("[&x]: &[&T]", "`x: &T`"),

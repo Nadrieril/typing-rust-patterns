@@ -31,7 +31,7 @@ Options are:
 There also exist some predefined option-bundles. Activate one with `set <bundle>`
 - stable_rust: The behavior of current stable rust
 - stateless: A proposal that tracks no hidden state; purely type-based
-- nadri: A reasonable proposal; like `stateless` but forbids `ref` bindings that create temporaries
+- stateless_no_temporaries: A reasonable proposal; like `stateless` but forbids `ref` bindings that create temporaries
 - stateless_2021: The currently-planned version of the `stateless` ruleset for edition 2021. Not actually stateless.
 - eat_outer_2021: A backwards-compatible proposal by @dianne that behaves close to the 2024 stateless proposal.
 - rfc3627: The accepted RFC3627 behavior

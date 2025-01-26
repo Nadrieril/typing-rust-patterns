@@ -1,7 +1,7 @@
 ---
 source: src/analyses/compute_rules.rs
 info:
-  bundle_name: nadri
+  bundle_name: stateless_no_temporaries
   options:
     match_constructor_through_ref: true
     eat_inherited_ref_alone: true

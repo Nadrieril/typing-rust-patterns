@@ -426,7 +426,7 @@ impl RuleOptions {
     };
 
     /// The default setting for the solver. A reasonable proposal.
-    pub const NADRI: Self = RuleOptions {
+    pub const STATELESS_NO_TEMPORARIES: Self = RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
         ..Self::STATELESS
     };
@@ -515,8 +515,8 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
         doc: "A proposal that tracks no hidden state; purely type-based",
     },
     BundleDoc {
-        name: "nadri",
-        ruleset: RuleOptions::NADRI,
+        name: "stateless_no_temporaries",
+        ruleset: RuleOptions::STATELESS_NO_TEMPORARIES,
         doc: "A reasonable proposal; like `stateless` but \
                 forbids `ref` bindings that create temporaries",
     },
