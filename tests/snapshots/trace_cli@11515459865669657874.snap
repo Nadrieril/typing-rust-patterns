@@ -29,12 +29,14 @@ Options are:
     the style of the typing predicate; not all rulesets can be expressed in all styles, only `Let` is compatible with all rulesets
 
 There also exist some predefined option-bundles. Activate one with `set <bundle>`
-- nadri: A reasonable proposal; like `stateless` but forbids `ref` bindings that create temporaries
-- stateless: A proposal that tracks no hidden state; purely type-based
 - stable_rust: The behavior of current stable rust
+- stateless: A proposal that tracks no hidden state; purely type-based
+- nadri: A reasonable proposal; like `stateless` but forbids `ref` bindings that create temporaries
+- stateless_2021: The currently-planned version of the `stateless` ruleset for edition 2021. Not actually stateless.
+- eat_outer_2021: A backwards-compatible proposal by @dianne that behaves close to the 2024 stateless proposal.
 - rfc3627: The accepted RFC3627 behavior
 - rfc3627_2021: The accepted RFC3627 behavior under edition 2021
 - rfc3627_2024_min: The breaking changes for edition 2024 planned in RFC3627
-- min_ergonomics: The minimal amout of match ergonomics that's forward-compatible with most proposals
 - structural: Purely structural matching, with no match ergonomics
+- min_ergonomics: The minimal amout of match ergonomics that's forward-compatible with most proposals
 - waffle: A proposal by @WaffleLapkin (excluding the proposed rule3 extension)

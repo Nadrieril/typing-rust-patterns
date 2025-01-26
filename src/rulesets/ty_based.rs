@@ -401,16 +401,13 @@ impl RuleOptions {
 
     /// Reproduces RFC3627 (match ergonomics 2024) behavior
     pub const ERGO2024: Self = RuleOptions {
-        match_constructor_through_ref: true,
-        ref_binding_on_inherited: RefBindingOnInheritedBehavior::ResetBindingMode,
         mut_binding_on_inherited: MutBindingOnInheritedBehavior::Error,
         inherited_ref_on_ref: InheritedRefOnRefBehavior::EatInner,
         fallback_to_outer: FallbackToOuterBehavior::EatOuter,
         allow_ref_pat_on_ref_mut: true,
-        simplify_deref_mut: true,
         eat_inherited_ref_alone: true,
         downgrade_mut_inside_shared: true,
-        eat_mut_inside_shared: true,
+        ..RuleOptions::STABLE_RUST
     };
 
     /// A fairly permissive proposal, with the benefit of requiring 0 implicit state: we never
@@ -432,6 +429,21 @@ impl RuleOptions {
     pub const NADRI: Self = RuleOptions {
         ref_binding_on_inherited: RefBindingOnInheritedBehavior::Error,
         ..Self::STATELESS
+    };
+
+    /// The currently-planned version of the `stateless` ruleset for edition 2021. Not actually
+    /// stateless.
+    pub const STATELESS_2021: Self = RuleOptions {
+        allow_ref_pat_on_ref_mut: true,
+        eat_inherited_ref_alone: true,
+        ..RuleOptions::STABLE_RUST
+    };
+
+    /// A backwards-compatible proposal by @dianne that behaves close to the 2024 stateless
+    /// proposal.
+    pub const EAT_OUTER_2021: Self = RuleOptions {
+        fallback_to_outer: FallbackToOuterBehavior::EatBoth,
+        ..RuleOptions::STATELESS_2021
     };
 
     /// Purely structural matching, with no match ergonomics.
@@ -493,10 +505,9 @@ impl RuleOptions {
 /// The known bundles, with a short explanation.
 pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
     BundleDoc {
-        name: "nadri",
-        ruleset: RuleOptions::NADRI,
-        doc: "A reasonable proposal; like `stateless` but \
-                forbids `ref` bindings that create temporaries",
+        name: "stable_rust",
+        ruleset: RuleOptions::STABLE_RUST,
+        doc: "The behavior of current stable rust",
     },
     BundleDoc {
         name: "stateless",
@@ -504,9 +515,20 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
         doc: "A proposal that tracks no hidden state; purely type-based",
     },
     BundleDoc {
-        name: "stable_rust",
-        ruleset: RuleOptions::STABLE_RUST,
-        doc: "The behavior of current stable rust",
+        name: "nadri",
+        ruleset: RuleOptions::NADRI,
+        doc: "A reasonable proposal; like `stateless` but \
+                forbids `ref` bindings that create temporaries",
+    },
+    BundleDoc {
+        name: "stateless_2021",
+        ruleset: RuleOptions::STATELESS_2021,
+        doc: "The currently-planned version of the `stateless` ruleset for edition 2021. Not actually stateless.",
+    },
+    BundleDoc {
+        name: "eat_outer_2021",
+        ruleset: RuleOptions::EAT_OUTER_2021,
+        doc: "A backwards-compatible proposal by @dianne that behaves close to the 2024 stateless proposal.",
     },
     BundleDoc {
         name: "rfc3627",
@@ -524,14 +546,14 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
         doc: "The breaking changes for edition 2024 planned in RFC3627",
     },
     BundleDoc {
-        name: "min_ergonomics",
-        ruleset: RuleOptions::MIN_ERGONOMICS,
-        doc: "The minimal amout of match ergonomics that's forward-compatible with most proposals",
-    },
-    BundleDoc {
         name: "structural",
         ruleset: RuleOptions::STRUCTURAL,
         doc: "Purely structural matching, with no match ergonomics",
+    },
+    BundleDoc {
+        name: "min_ergonomics",
+        ruleset: RuleOptions::MIN_ERGONOMICS,
+        doc: "The minimal amout of match ergonomics that's forward-compatible with most proposals",
     },
     BundleDoc {
         name: "waffle",

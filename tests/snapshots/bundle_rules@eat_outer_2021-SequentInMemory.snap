@@ -1,0 +1,159 @@
+---
+source: src/analyses/compute_rules.rs
+info:
+  bundle_name: eat_outer_2021
+  options:
+    match_constructor_through_ref: true
+    eat_inherited_ref_alone: true
+    inherited_ref_on_ref: EatBoth
+    fallback_to_outer: EatBoth
+    allow_ref_pat_on_ref_mut: true
+    simplify_deref_mut: true
+    downgrade_mut_inside_shared: false
+    eat_mut_inside_shared: true
+    ref_binding_on_inherited: ResetBindingMode
+    mut_binding_on_inherited: ResetBindingMode
+---
+move ⊢ p0: T0,  move ⊢ p1: T1
+----------------------------- "Constructor"
+move ⊢ [p0, p1]: [T0, T1]
+
+ref ⊢ p0: T0,  ref ⊢ p1: T1
+--------------------------- "ConstructorRef"
+move ⊢ [p0, p1]: &[T0, T1]
+
+ref ⊢ p0: T0,  ref ⊢ p1: T1
+--------------------------- "ConstructorRef"
+ref ⊢ [p0, p1]: [T0, T1]
+
+ref mut ⊢ p0: T0,  ref mut ⊢ p1: T1
+----------------------------------- "ConstructorRef"
+move ⊢ [p0, p1]: &mut [T0, T1]
+
+ref mut ⊢ p0: T0,  ref mut ⊢ p1: T1
+----------------------------------- "ConstructorRef"
+ref mut ⊢ [p0, p1]: [T0, T1]
+
+ref ⊢ [p0, p1]: T
+-------------------- "ConstructorMultiRef"
+move ⊢ [p0, p1]: &&T
+
+ref ⊢ [p0, p1]: T
+------------------------ "ConstructorMultiRef"
+move ⊢ [p0, p1]: &&mut T
+
+ref ⊢ [p0, p1]: T
+------------------ "ConstructorMultiRef"
+ref ⊢ [p0, p1]: &T
+
+ref ⊢ [p0, p1]: T
+---------------------- "ConstructorMultiRef"
+ref ⊢ [p0, p1]: &mut T
+
+ref ⊢ [p0, p1]: T
+------------------------ "ConstructorMultiRef"
+move ⊢ [p0, p1]: &mut &T
+
+ref mut ⊢ [p0, p1]: T
+---------------------------- "ConstructorMultiRef"
+move ⊢ [p0, p1]: &mut &mut T
+
+ref ⊢ [p0, p1]: T
+---------------------- "ConstructorMultiRef"
+ref mut ⊢ [p0, p1]: &T
+
+ref mut ⊢ [p0, p1]: T
+-------------------------- "ConstructorMultiRef"
+ref mut ⊢ [p0, p1]: &mut T
+
+move ⊢ p: T
+------------- "Deref(EatOuter)"
+move ⊢ &p: &T
+
+move ⊢ p: T
+--------------------------------- "Deref(EatOuter)"
+ref ⊢ &p: T, T is not a reference
+
+move ⊢ p: T
+--------------------- "Deref(EatOuter)"
+move ⊢ &mut p: &mut T
+
+move ⊢ p: T
+----------------------------------------- "Deref(EatOuter)"
+ref mut ⊢ &mut p: T, T is not a reference
+
+move ⊢ p: T
+------------ "Deref(EatBoth)"
+ref ⊢ &p: &T
+
+move ⊢ p: T
+---------------- "Deref(EatBoth)"
+ref mut ⊢ &p: &T
+
+move ⊢ p: T
+-------------------- "Deref(EatBoth)"
+ref ⊢ &mut p: &mut T
+
+move ⊢ p: T
+------------------------ "Deref(EatBoth)"
+ref mut ⊢ &mut p: &mut T
+
+move ⊢ p: T
+-------------------- "Deref(EatBoth, FallbackToOuter(EatBoth))"
+ref mut ⊢ &mut p: &T
+
+move ⊢ p: T
+----------------- "DerefMutWithShared(EatOuter)"
+move ⊢ &p: &mut T
+
+move ⊢ p: T
+------------------------------------- "DerefMutWithShared(EatOuter)"
+ref mut ⊢ &p: T, T is not a reference
+
+move ⊢ p: T
+---------------- "DerefMutWithShared(EatBoth)"
+ref ⊢ &p: &mut T
+
+move ⊢ p: T
+-------------------- "DerefMutWithShared(EatBoth)"
+ref mut ⊢ &p: &mut T
+
+bm ⊢ ref x: T
+-------------- "RefBindingResetBindingMode"
+ref ⊢ ref x: T
+
+bm ⊢ ref x: T
+------------------ "RefBindingResetBindingMode"
+ref mut ⊢ ref x: T
+
+bm ⊢ ref mut x: T
+------------------ "RefBindingResetBindingMode"
+ref ⊢ ref mut x: T
+
+bm ⊢ ref mut x: T
+---------------------- "RefBindingResetBindingMode"
+ref mut ⊢ ref mut x: T
+
+bm ⊢ mut x: T
+-------------- "MutBindingResetBindingMode"
+ref ⊢ mut x: T
+
+bm ⊢ mut x: T
+------------------ "MutBindingResetBindingMode"
+ref mut ⊢ mut x: T
+
+ref ⊢ x: T
+--------------- "BindingBorrow"
+move ⊢ ref x: T
+
+ref mut ⊢ x: T
+------------------- "BindingBorrow"
+move ⊢ ref mut x: T
+
+
+--------- "Binding"
+bm ⊢ x: T
+
+
+--------------- "Binding"
+move ⊢ mut x: T
