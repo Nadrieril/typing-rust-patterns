@@ -1,0 +1,123 @@
+---
+source: src/analyses/compute_rules.rs
+info:
+  bundle_name: rfc3627_no_binding_modifiers
+  options:
+    match_constructor_through_ref: true
+    eat_inherited_ref_alone: true
+    inherited_ref_on_ref: EatInner
+    fallback_to_outer: EatOuter
+    allow_ref_pat_on_ref_mut: true
+    simplify_deref_mut: true
+    downgrade_mut_inside_shared: true
+    eat_mut_inside_shared: true
+    ref_binding_on_inherited: Error
+    mut_binding_on_inherited: Error
+---
+let p0: T0 = e.0,  let p1: T1 = e.1
+----------------------------------- "Constructor"
+let [p0, p1]: [T0, T1] = e
+
+let p0: &T0 = &(*e).0,  let p1: &T1 = &(*e).1
+--------------------------------------------- "ConstructorRef"
+let [p0, p1]: &[T0, T1] = e
+
+let p0: &mut T0 = &mut (*e).0,  let p1: &mut T1 = &mut (*e).1
+------------------------------------------------------------- "ConstructorRef"
+let [p0, p1]: &mut [T0, T1] = e, e mutable
+
+let p0: &T0 = &(*e).0,  let p1: &T1 = &(*e).1
+--------------------------------------------- "ConstructorRef(ForceReadOnly)"
+let [p0, p1]: &mut [T0, T1] = e, e read-only
+
+let [p0, p1]: &T = &**e
+----------------------- "ConstructorMultiRef"
+let [p0, p1]: &&T = e
+
+let [p0, p1]: &T = &**e
+------------------------- "ConstructorMultiRef"
+let [p0, p1]: &&mut T = e
+
+let [p0, p1]: &T = &**e
+------------------------- "ConstructorMultiRef"
+let [p0, p1]: &mut &T = e
+
+let [p0, p1]: &mut T = &mut **e
+---------------------------------------- "ConstructorMultiRef"
+let [p0, p1]: &mut &mut T = e, e mutable
+
+let [p0, p1]: &T = &**e
+------------------------------------------ "ConstructorMultiRef(ForceReadOnly)"
+let [p0, p1]: &mut &mut T = e, e read-only
+
+let p: T = *e
+------------------------------------ "Deref(EatOuter)"
+let &p: &T = e, e is not a reference
+
+let p: T = *&e
+------------------------------------- "Deref(EatOuter)"
+let &p: &T = &e, T is not a reference
+
+let p: T = *e
+-------------------------------------------- "Deref(EatOuter)"
+let &mut p: &mut T = e, e is not a reference
+
+let p: T = *&mut e
+------------------------------------------------- "Deref(EatOuter)"
+let &mut p: &mut T = &mut e, T is not a reference
+
+let p: &T = &*e
+---------------- "Deref(EatInner)"
+let &p: &&T = &e
+
+let p: &T = &*e
+------------------------ "Deref(EatInner)"
+let &mut p: &&mut T = &e
+
+let p: &mut T = &mut *e
+------------------------------------------- "Deref(EatInner)"
+let &mut p: &mut &mut T = &mut e, e mutable
+
+let p: &T = *&mut e
+---------------------------- "Deref(EatInner, FallbackToOuter(EatOuter))"
+let &mut p: &mut &T = &mut e
+
+let p: &T = &*e
+------------------------ "Deref(EatInner, ForceReadOnly)"
+let &p: &mut &T = &mut e
+
+let p: &T = &*e
+--------------------------------------------- "Deref(EatInner, ForceReadOnly)"
+let &mut p: &mut &mut T = &mut e, e read-only
+
+let p: T = *&*e
+---------------------------------------- "DerefMutWithShared(EatOuter)"
+let &p: &mut T = e, e is not a reference
+
+let p: T = *&*&mut e
+--------------------------------------------- "DerefMutWithShared(EatOuter)"
+let &p: &mut T = &mut e, T is not a reference
+
+let p: &T = &*&*e
+-------------------- "DerefMutWithShared(EatInner)"
+let &p: &&mut T = &e
+
+let p: &T = &*&*e
+---------------------------- "DerefMutWithShared(EatInner)"
+let &p: &mut &mut T = &mut e
+
+let x: &T = &e
+-------------------------------------- "BindingBorrow"
+let ref x: T = e, e is not a reference
+
+let x: &mut T = &mut e
+------------------------------------------ "BindingBorrow"
+let ref mut x: T = e, e is not a reference
+
+
+------------ "Binding"
+let x: T = e
+
+
+-------------------------------------- "Binding"
+let mut x: T = e, e is not a reference

@@ -1,0 +1,155 @@
+---
+source: src/analyses/compute_rules.rs
+info:
+  bundle_name: rfc3627_no_binding_modifiers
+  options:
+    match_constructor_through_ref: true
+    eat_inherited_ref_alone: true
+    inherited_ref_on_ref: EatInner
+    fallback_to_outer: EatOuter
+    allow_ref_pat_on_ref_mut: true
+    simplify_deref_mut: true
+    downgrade_mut_inside_shared: true
+    eat_mut_inside_shared: true
+    ref_binding_on_inherited: Error
+    mut_binding_on_inherited: Error
+---
+move, m ⊢ p0: T0,  move, m ⊢ p1: T1
+----------------------------------- "Constructor"
+move, m ⊢ [p0, p1]: [T0, T1]
+
+ref, ro ⊢ p0: T0,  ref, ro ⊢ p1: T1
+----------------------------------- "ConstructorRef"
+move, m ⊢ [p0, p1]: &[T0, T1]
+
+ref, ro ⊢ p0: T0,  ref, ro ⊢ p1: T1
+----------------------------------- "ConstructorRef"
+ref, m ⊢ [p0, p1]: [T0, T1]
+
+ref mut, rw ⊢ p0: T0,  ref mut, rw ⊢ p1: T1
+------------------------------------------- "ConstructorRef"
+move, rw ⊢ [p0, p1]: &mut [T0, T1]
+
+ref mut, rw ⊢ p0: T0,  ref mut, rw ⊢ p1: T1
+------------------------------------------- "ConstructorRef"
+ref mut, rw ⊢ [p0, p1]: [T0, T1]
+
+ref, ro ⊢ p0: T0,  ref, ro ⊢ p1: T1
+----------------------------------- "ConstructorRef(ForceReadOnly)"
+move, ro ⊢ [p0, p1]: &mut [T0, T1]
+
+ref, ro ⊢ p0: T0,  ref, ro ⊢ p1: T1
+----------------------------------- "ConstructorRef(ForceReadOnly)"
+ref mut, ro ⊢ [p0, p1]: [T0, T1]
+
+ref, ro ⊢ [p0, p1]: T
+----------------------- "ConstructorMultiRef"
+move, m ⊢ [p0, p1]: &&T
+
+ref, ro ⊢ [p0, p1]: T
+--------------------------- "ConstructorMultiRef"
+move, m ⊢ [p0, p1]: &&mut T
+
+ref, ro ⊢ [p0, p1]: T
+--------------------- "ConstructorMultiRef"
+ref, m ⊢ [p0, p1]: &T
+
+ref, ro ⊢ [p0, p1]: T
+------------------------- "ConstructorMultiRef"
+ref, m ⊢ [p0, p1]: &mut T
+
+ref, ro ⊢ [p0, p1]: T
+--------------------------- "ConstructorMultiRef"
+move, m ⊢ [p0, p1]: &mut &T
+
+ref mut, rw ⊢ [p0, p1]: T
+-------------------------------- "ConstructorMultiRef"
+move, rw ⊢ [p0, p1]: &mut &mut T
+
+ref, ro ⊢ [p0, p1]: T
+------------------------- "ConstructorMultiRef"
+ref mut, m ⊢ [p0, p1]: &T
+
+ref mut, rw ⊢ [p0, p1]: T
+------------------------------ "ConstructorMultiRef"
+ref mut, rw ⊢ [p0, p1]: &mut T
+
+ref, ro ⊢ [p0, p1]: T
+-------------------------------- "ConstructorMultiRef(ForceReadOnly)"
+move, ro ⊢ [p0, p1]: &mut &mut T
+
+ref, ro ⊢ [p0, p1]: T
+------------------------------ "ConstructorMultiRef(ForceReadOnly)"
+ref mut, ro ⊢ [p0, p1]: &mut T
+
+move, ro ⊢ p: T
+---------------- "Deref(EatOuter)"
+move, m ⊢ &p: &T
+
+move, ro ⊢ p: T
+------------------------------------ "Deref(EatOuter)"
+ref, m ⊢ &p: T, T is not a reference
+
+move, m ⊢ p: T
+------------------------ "Deref(EatOuter)"
+move, m ⊢ &mut p: &mut T
+
+move, m ⊢ p: T
+-------------------------------------------- "Deref(EatOuter)"
+ref mut, m ⊢ &mut p: T, T is not a reference
+
+ref, ro ⊢ p: T
+--------------- "Deref(EatInner)"
+ref, m ⊢ &p: &T
+
+ref, m ⊢ p: T
+----------------------- "Deref(EatInner)"
+ref, m ⊢ &mut p: &mut T
+
+ref mut, rw ⊢ p: T
+---------------------------- "Deref(EatInner)"
+ref mut, rw ⊢ &mut p: &mut T
+
+move, m ⊢ p: &T
+----------------------- "Deref(EatInner, FallbackToOuter(EatOuter))"
+ref mut, m ⊢ &mut p: &T
+
+ref, ro ⊢ p: T
+------------------- "Deref(EatInner, ForceReadOnly)"
+ref mut, m ⊢ &p: &T
+
+ref, ro ⊢ p: T
+---------------------------- "Deref(EatInner, ForceReadOnly)"
+ref mut, ro ⊢ &mut p: &mut T
+
+move, ro ⊢ p: T
+-------------------- "DerefMutWithShared(EatOuter)"
+move, m ⊢ &p: &mut T
+
+move, ro ⊢ p: T
+---------------------------------------- "DerefMutWithShared(EatOuter)"
+ref mut, m ⊢ &p: T, T is not a reference
+
+ref, ro ⊢ p: T
+------------------- "DerefMutWithShared(EatInner)"
+ref, m ⊢ &p: &mut T
+
+ref, ro ⊢ p: T
+----------------------- "DerefMutWithShared(EatInner)"
+ref mut, m ⊢ &p: &mut T
+
+ref, m ⊢ x: T
+------------------ "BindingBorrow"
+move, m ⊢ ref x: T
+
+ref mut, m ⊢ x: T
+---------------------- "BindingBorrow"
+move, m ⊢ ref mut x: T
+
+
+------------ "Binding"
+bm, m ⊢ x: T
+
+
+------------------ "Binding"
+move, m ⊢ mut x: T

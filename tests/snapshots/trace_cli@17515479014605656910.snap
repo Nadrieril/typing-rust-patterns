@@ -32,10 +32,13 @@ There also exist some predefined option-bundles. Activate one with `set <bundle>
 - stable_rust: The behavior of current stable rust
 - stateless: A proposal that tracks no hidden state; purely type-based
 - stateless_no_temporaries: A reasonable proposal; like `stateless` but forbids `ref` bindings that create temporaries
+- stateless_no_binding_modifiers: Like `stateless` but forbids `ref` and `mut` bindings on inherited references.
 - stateless_2021: The currently-planned version of the `stateless` ruleset for edition 2021. Not actually stateless.
 - eat_outer_2021: A backwards-compatible proposal by @dianne that behaves close to the 2024 stateless proposal.
 - rfc3627: The accepted RFC3627 behavior
+- rfc3627_no_binding_modifiers: Like RFC3627 but forbids `ref` and `mut` bindings on inherited references.
 - rfc3627_2021: The accepted RFC3627 behavior under edition 2021
+- rfc3627_2021_always_eat_both: Variant of `rfc3627_2021` proposed by @dianne that always eats two layers of references.
 - rfc3627_2024_min: The breaking changes for edition 2024 planned in RFC3627
 - structural: Purely structural matching, with no match ergonomics
 - min_ergonomics: The minimal amout of match ergonomics that's forward-compatible with most proposals

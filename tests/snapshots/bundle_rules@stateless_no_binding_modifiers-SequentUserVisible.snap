@@ -1,0 +1,71 @@
+---
+source: src/analyses/compute_rules.rs
+info:
+  bundle_name: stateless_no_binding_modifiers
+  options:
+    match_constructor_through_ref: true
+    eat_inherited_ref_alone: true
+    inherited_ref_on_ref: EatOuter
+    fallback_to_outer: "No"
+    allow_ref_pat_on_ref_mut: true
+    simplify_deref_mut: true
+    downgrade_mut_inside_shared: false
+    eat_mut_inside_shared: true
+    ref_binding_on_inherited: Error
+    mut_binding_on_inherited: Error
+---
+real ⊢ p0: T0,  real ⊢ p1: T1
+----------------------------- "Constructor"
+_ ⊢ [p0, p1]: [T0, T1]
+
+inh ⊢ p0: &T0,  inh ⊢ p1: &T1
+----------------------------- "ConstructorRef"
+r ⊢ [p0, p1]: &[T0, T1]
+
+inh ⊢ p0: &mut T0,  inh ⊢ p1: &mut T1
+------------------------------------- "ConstructorRef"
+r ⊢ [p0, p1]: &mut [T0, T1]
+
+inh ⊢ [p0, p1]: &T
+------------------ "ConstructorMultiRef"
+r ⊢ [p0, p1]: &&T
+
+inh ⊢ [p0, p1]: &T
+--------------------- "ConstructorMultiRef"
+r ⊢ [p0, p1]: &&mut T
+
+inh ⊢ [p0, p1]: &T
+--------------------- "ConstructorMultiRef"
+r ⊢ [p0, p1]: &mut &T
+
+inh ⊢ [p0, p1]: &mut T
+------------------------- "ConstructorMultiRef"
+r ⊢ [p0, p1]: &mut &mut T
+
+real ⊢ p: T
+----------- "Deref"
+r ⊢ &p: &T
+
+real ⊢ p: T
+------------------ "Deref"
+r ⊢ &mut p: &mut T
+
+real ⊢ p: T
+-------------- "DerefMutWithShared"
+r ⊢ &p: &mut T
+
+inh ⊢ x: &T
+--------------- "BindingBorrow"
+real ⊢ ref x: T
+
+inh ⊢ x: &mut T
+------------------- "BindingBorrow"
+real ⊢ ref mut x: T
+
+
+-------- "Binding"
+r ⊢ x: T
+
+
+--------------- "Binding"
+real ⊢ mut x: T

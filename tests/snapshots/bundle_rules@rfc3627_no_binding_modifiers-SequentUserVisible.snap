@@ -1,0 +1,123 @@
+---
+source: src/analyses/compute_rules.rs
+info:
+  bundle_name: rfc3627_no_binding_modifiers
+  options:
+    match_constructor_through_ref: true
+    eat_inherited_ref_alone: true
+    inherited_ref_on_ref: EatInner
+    fallback_to_outer: EatOuter
+    allow_ref_pat_on_ref_mut: true
+    simplify_deref_mut: true
+    downgrade_mut_inside_shared: true
+    eat_mut_inside_shared: true
+    ref_binding_on_inherited: Error
+    mut_binding_on_inherited: Error
+---
+real, m ⊢ p0: T0,  real, m ⊢ p1: T1
+----------------------------------- "Constructor"
+_, m ⊢ [p0, p1]: [T0, T1]
+
+inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+------------------------------------- "ConstructorRef"
+r, m ⊢ [p0, p1]: &[T0, T1]
+
+inh, rw ⊢ p0: &mut T0,  inh, rw ⊢ p1: &mut T1
+--------------------------------------------- "ConstructorRef"
+r, rw ⊢ [p0, p1]: &mut [T0, T1]
+
+inh, ro ⊢ p0: &T0,  inh, ro ⊢ p1: &T1
+------------------------------------- "ConstructorRef(ForceReadOnly)"
+r, ro ⊢ [p0, p1]: &mut [T0, T1]
+
+inh, ro ⊢ [p0, p1]: &T
+---------------------- "ConstructorMultiRef"
+r, m ⊢ [p0, p1]: &&T
+
+inh, ro ⊢ [p0, p1]: &T
+------------------------ "ConstructorMultiRef"
+r, m ⊢ [p0, p1]: &&mut T
+
+inh, ro ⊢ [p0, p1]: &T
+------------------------ "ConstructorMultiRef"
+r, m ⊢ [p0, p1]: &mut &T
+
+inh, rw ⊢ [p0, p1]: &mut T
+----------------------------- "ConstructorMultiRef"
+r, rw ⊢ [p0, p1]: &mut &mut T
+
+inh, ro ⊢ [p0, p1]: &T
+----------------------------- "ConstructorMultiRef(ForceReadOnly)"
+r, ro ⊢ [p0, p1]: &mut &mut T
+
+real, ro ⊢ p: T
+---------------- "Deref(EatOuter)"
+real, m ⊢ &p: &T
+
+_, ro ⊢ p: T
+------------------------------------- "Deref(EatOuter)"
+inh, m ⊢ &p: &T, T is not a reference
+
+real, m ⊢ p: T
+------------------------ "Deref(EatOuter)"
+real, m ⊢ &mut p: &mut T
+
+_, m ⊢ p: T
+--------------------------------------------- "Deref(EatOuter)"
+inh, m ⊢ &mut p: &mut T, T is not a reference
+
+inh, ro ⊢ p: &T
+---------------- "Deref(EatInner)"
+inh, m ⊢ &p: &&T
+
+inh, m ⊢ p: &T
+------------------------ "Deref(EatInner)"
+inh, m ⊢ &mut p: &&mut T
+
+inh, rw ⊢ p: &mut T
+----------------------------- "Deref(EatInner)"
+inh, rw ⊢ &mut p: &mut &mut T
+
+real, m ⊢ p: &T
+------------------------ "Deref(EatInner, FallbackToOuter(EatOuter))"
+inh, m ⊢ &mut p: &mut &T
+
+inh, ro ⊢ p: &T
+-------------------- "Deref(EatInner, ForceReadOnly)"
+inh, m ⊢ &p: &mut &T
+
+inh, ro ⊢ p: &T
+----------------------------- "Deref(EatInner, ForceReadOnly)"
+inh, ro ⊢ &mut p: &mut &mut T
+
+real, ro ⊢ p: T
+-------------------- "DerefMutWithShared(EatOuter)"
+real, m ⊢ &p: &mut T
+
+_, ro ⊢ p: T
+----------------------------------------- "DerefMutWithShared(EatOuter)"
+inh, m ⊢ &p: &mut T, T is not a reference
+
+inh, ro ⊢ p: &T
+-------------------- "DerefMutWithShared(EatInner)"
+inh, m ⊢ &p: &&mut T
+
+inh, ro ⊢ p: &T
+------------------------ "DerefMutWithShared(EatInner)"
+inh, m ⊢ &p: &mut &mut T
+
+inh, m ⊢ x: &T
+------------------ "BindingBorrow"
+real, m ⊢ ref x: T
+
+inh, m ⊢ x: &mut T
+---------------------- "BindingBorrow"
+real, m ⊢ ref mut x: T
+
+
+----------- "Binding"
+r, m ⊢ x: T
+
+
+------------------ "Binding"
+real, m ⊢ mut x: T
