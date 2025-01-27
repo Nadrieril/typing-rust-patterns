@@ -217,11 +217,8 @@ impl<'d> ToDisplayTree<'d> for TypingResult<'_> {
                 .to_display_tree(a)
                 .sep_then(a, ", ", format!("\"{s:?}\""))
                 .surrounded(a, "BorrowError(", ")"),
-            TypingResult::TypeError(TypeError::External(e)) => format!("{e}")
-                .to_display_tree(a)
-                .surrounded(a, "TypeError(\"", "\")"),
             TypingResult::TypeError(e) => {
-                format!("{e:?}")
+                format!("{e}")
                     .to_display_tree(a)
                     .surrounded(a, "TypeError(\"", "\")")
             }
@@ -457,6 +454,21 @@ impl Display for PredicateStyle {
 impl Display for TypingResult<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
+    }
+}
+
+impl Display for BorrowCheckError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Display for TypeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TypeError::External(e) => write!(f, "{e}"),
+            _ => write!(f, "{self:?}"),
+        }
     }
 }
 

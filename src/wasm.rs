@@ -3,6 +3,7 @@ use bincode::{Decode, Encode};
 use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 use std::fmt::Write;
 use wasm_bindgen::prelude::*;
 
@@ -360,12 +361,58 @@ pub fn compare_rulesets_js(
         req: String,
         left: String,
         right: String,
+        structured: StructuredCompareOutput,
+    }
+    #[derive(Debug, Clone, Serialize)]
+    pub struct StructuredCompareOutput {
+        query: StructuredCompareOutputQuery,
+        left: StructuredCompareOutputResult,
+        right: StructuredCompareOutputResult,
+    }
+    #[derive(Debug, Clone, Serialize)]
+    pub struct StructuredCompareOutputQuery {
+        pattern: String,
+        #[serde(rename = "type")]
+        type_: String,
+    }
+    #[derive(Debug, Clone, Serialize)]
+    #[serde(tag = "kind")]
+    pub enum StructuredCompareOutputResult {
+        Success {
+            bindings: BTreeMap<String, String>,
+        },
+        BorrowError {
+            name: String,
+            bindings: BTreeMap<String, String>,
+        },
+        TypeError {
+            name: String,
+        },
     }
 
     assert!(direction.abs() <= 1);
     let direction: Ordering = unsafe { std::mem::transmute(direction) };
 
     let a = &Arenas::default();
+    let bindings_to_strings = |bindings: &BindingAssignments| {
+        bindings
+            .assignments
+            .iter()
+            .map(|(var, ty)| (var.to_string(), ty.to_string()))
+            .collect()
+    };
+    let ty_res_to_structured = |res: &TypingResult| match res {
+        TypingResult::Success(bindings) => StructuredCompareOutputResult::Success {
+            bindings: bindings_to_strings(bindings),
+        },
+        TypingResult::BorrowError(bindings, e) => StructuredCompareOutputResult::BorrowError {
+            name: e.to_string(),
+            bindings: bindings_to_strings(bindings),
+        },
+        TypingResult::TypeError(e) => StructuredCompareOutputResult::TypeError {
+            name: e.to_string(),
+        },
+    };
     compare_rulesets(
         a,
         pat_depth,
@@ -376,11 +423,21 @@ pub fn compare_rulesets_js(
     )
     .into_iter()
     .map(|(req, left, right)| {
+        let structured = StructuredCompareOutput {
+            query: StructuredCompareOutputQuery {
+                pattern: req.pat.to_string(),
+                type_: req.ty.to_string(),
+            },
+            left: ty_res_to_structured(&left),
+            right: ty_res_to_structured(&right),
+        };
         let (left, right) = left.display_diffed(&right);
+        let req = req.to_string();
         CompareOutput {
-            req: req.to_string(),
+            req,
             left,
             right,
+            structured,
         }
     })
     .map(|out| JsValue::from_serde(&out).unwrap())

@@ -415,10 +415,19 @@ export function CompareDisplay({
     const worker = new Worker(new URL("./worker.ts", import.meta.url), {
       type: "module",
     });
+    const truncateAt = 300;
     worker.onmessage = function (event) {
       switch (event.data.type) {
         case "compare":
-          setOutput(event.data.output);
+          var output = event.data.output;
+          const structured_compare = output.map(x => x.structured);
+          console.log(JSON.stringify(structured_compare));
+          if (output.length > truncateAt) {
+              const diff = output.length - truncateAt;
+              output.length = truncateAt;
+              output.push({ req: `and ${diff} more...` })
+          }
+          setOutput(output);
           break;
         case "loaded":
           if (showCompare) {
