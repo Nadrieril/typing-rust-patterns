@@ -549,6 +549,15 @@ pub static KNOWN_TY_BASED_BUNDLES: &[BundleDoc<RuleOptions>] = &[
         doc: "The accepted RFC3627 behavior under edition 2021",
     },
     BundleDoc {
+        name: "rfc3627_2021_always_eat_both",
+        ruleset: RuleOptions {
+            fallback_to_outer: FallbackToOuterBehavior::EatBoth,
+            ..RuleOptions::RFC3627_2021
+        },
+        doc: "Variant of `rfc3627_2021` proposed by @dianne that always \
+            eats two layers of references.",
+    },
+    BundleDoc {
         name: "rfc3627_2024_min",
         ruleset: RuleOptions::ERGO2024_BREAKING_ONLY,
         doc: "The breaking changes for edition 2024 planned in RFC3627",
